@@ -4,4 +4,4 @@
 
 * OS
 
-  * [02. Operating System Services](Operating System Services.md)
+  * [02. Operating System Structure](./OS/OperatingSystemStructure.md)
