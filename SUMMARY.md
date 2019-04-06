@@ -2,6 +2,6 @@
 
 * [Introduction](README.md)
 
-* [OS](OS.md)
+* OS
 
   * [02. Operating System Services](Operating System Services.md)
