@@ -1,5 +1,5 @@
 # Today I Learned Blog
-![img](./capture/introductionImage.jpeg)
+![img](./capture/introduction.jpeg)
 
 </br>
 
