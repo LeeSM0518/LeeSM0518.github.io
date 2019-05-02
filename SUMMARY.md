@@ -10,3 +10,4 @@
 
 * Data Structure (자료구조)
   * [01. Start of data structure](./datastructure/Chapter01_start_of_datastructure.md)
+  * [02. Recursion](./datastructure/Chapter02_Recursion)
