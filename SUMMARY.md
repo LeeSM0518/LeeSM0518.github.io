@@ -12,3 +12,5 @@
   * [01. Start of data structure](./datastructure/Chapter01_start_of_datastructure.md)
   * [02. Recursion](./datastructure/Chapter02_Recursion.md)
   * [03. Array List](./datastructure/Chapter03_Array_List.md)
+  * [04. Linked List](./datastructure/Chapter04_Linked_List.md)
+  * [05. Expansion of the linked list](./datastructure/Chapter05_Expansion_of_the_linked_list.md)
