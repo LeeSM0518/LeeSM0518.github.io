@@ -395,4 +395,63 @@
   }
   ```
 
+
+
+## 2.6. 기타 연산들
+
+* **출력 연산 코드**
+
+  ```java
+  public void displayList() {
+    DoublyListNode node = this.headerNode.rLink;
   
+    if (this.currentCount == 0) {
+      System.out.println("자료가 없습니다.");
+      return;
+    } else {
+      System.out.println("노드 개수: " + this.currentCount);
+  
+      for (int i = 0; i < currentCount; i++) {
+        System.out.println("[" + i + "], " + node.data);
+        node = node.rLink;
+      }
+    }
+  }
+  ```
+
+* **main 코드**
+
+  ```java
+  public static void main(String[] args) {
+    DoublyList<Integer> list = new DoublyList<>();
+  
+    list.addNode(0, 1);
+    list.addNode(1, 2);
+    list.addNode(2, 3);
+  
+    list.displayList();
+  
+    list.removeNode(0);
+  
+    list.displayList();
+  }
+  ```
+
+  **실행 결과**
+
+  ```
+  노드 개수: 3
+  [0], 1
+  [1], 2
+  [2], 3
+  노드 개수: 2
+  [0], 2
+  [1], 3
+  ```
+
+
+
+# 3. 연결 리스트의 응용: 다항식
+
+
+
