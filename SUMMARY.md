@@ -14,3 +14,4 @@
   * [03. Array List](./datastructure/Chapter03_Array_List.md)
   * [04. Linked List](./datastructure/Chapter04_Linked_List.md)
   * [05. Expansion of the linked list](./datastructure/Chapter05_Expansion_of_the_linked_list.md)
+  * [06. Stack](.datastructure/Chapter06_stack.md)
