@@ -401,3 +401,199 @@ boolean isFull() {
 
 
 
+## 5.3. 큐의 생성
+
+```java
+package chapter07_queue;
+
+public class LinkedQueue {
+
+    private int currentCount;       // 현재 노드의 개수
+    private LinkedNode front;       // Front 노드
+    private LinkedNode rear;        // rear 노드
+
+    public LinkedQueue() {
+        currentCount = 0;
+    }
+
+}
+```
+
+
+
+## 5.4. 인큐 연산
+
+### 5.4.1. 빈 큐가 아닐 때 인큐 연산
+
+* **인큐 과정**
+  1. 새로운 노드 생성
+  2. 기존 리어의 다음 노드로 새로 추가한 노드를 지정
+  3. 큐의 리어 노드 링크의 변경
+
+
+
+### 5.4.2. 빈 큐일 때 인큐 연산
+
+* 빈 큐일 때 인큐를 하면 새로 추가한 노드는 유일한 노드이기 때문에 **프런트 이면서 동시에 리어 이다.**
+
+
+
+### 5.4.3. 코드
+
+```java
+public <T> void enqueue(T data) {
+  LinkedNode node = new LinkedNode<>(data, null);
+
+  if (!isEmpty()) {
+    rear.link = node;
+    rear = node;
+  } else {
+    front = node;
+    rear = node;
+  }
+
+  currentCount++;
+}
+
+boolean isEmpty() {
+  return currentCount == 0;
+}
+```
+
+
+
+## 5.5. 디큐와 피크 연산
+
+### 5.5.1. 일반적일 때 디큐 연산
+
+* **디큐 과정**
+  1. 큐의 프론트 노드 재지정
+  2. 반환 노드의 링크 초기화
+
+
+
+### 5.5.2. 노드가 한 개일 때 디큐 연산
+
+* **디큐 과정**
+  1. 큐의 프론트를 null로 지정
+  2. 큐의 리어를 null로 지정
+
+
+
+### 5.5.3. 코드
+
+```java
+public Node dequeue() {
+  LinkedNode node;
+
+  if (!isEmpty()) {
+    node = front;
+    front = front.link;
+    node.link = null;
+
+    currentCount--;
+  } else {
+    System.out.println("큐가 비어 있습니다.");
+    return null;
+  }
+
+  if (!isEmpty()) rear = null;
+
+  return node;
+}
+```
+
+
+
+### 5.5.4. 피크 연산
+
+```java
+public LinkedNode peek() {
+  LinkedNode node = null;
+
+  if (!isEmpty()) {
+    node = front;
+  } else {
+    System.out.println("큐가 비어 있습니다.");
+  }
+
+  return node;
+}
+```
+
+
+
+## 5.6. 기타 연산
+
+* **순회 연산**
+
+  ```java
+  public void displayQueue() {
+    LinkedNode node;
+  
+    if (!isEmpty()) {
+      int i = 0;
+      System.out.println("현재 노드 개수: " + currentCount);
+      node = front;
+      while (node != null) {
+        System.out.println("[" + i++ + "] - [" + node.data + "]");
+        node = node.link;
+      }
+    } else {
+      System.out.println("큐가 비어 있습니다.");
+    }
+  }
+  ```
+
+* **main 메소드**
+
+  ```java
+  public static void main(String[] args) {
+    LinkedQueue linkedQueue = new LinkedQueue();
+  
+    linkedQueue.enqueue("A");
+    linkedQueue.enqueue("B");
+    linkedQueue.enqueue("C");
+    linkedQueue.enqueue("D");
+    linkedQueue.displayQueue();
+  
+    System.out.println("dequeue: " + linkedQueue.dequeue().data);
+    linkedQueue.displayQueue();
+  
+    System.out.println("peek: " + linkedQueue.peek().data);
+    linkedQueue.displayQueue();
+  
+    linkedQueue.enqueue("E");
+    linkedQueue.displayQueue();
+  }
+  ```
+
+  **실행 결과**
+
+  ```java
+  현재 노드 개수: 4
+  [0] - [A]
+  [1] - [B]
+  [2] - [C]
+  [3] - [D]
+  
+  dequeue: A
+  현재 노드 개수: 3
+  [0] - [B]
+  [1] - [C]
+  [2] - [D]
+  
+  peek: B
+  현재 노드 개수: 3
+  [0] - [B]
+  [1] - [C]
+  [2] - [D]
+  
+  현재 노드 개수: 4
+  [0] - [B]
+  [1] - [C]
+  [2] - [D]
+  [3] - [E]
+  ```
+
+  
