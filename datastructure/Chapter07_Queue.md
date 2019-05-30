@@ -270,19 +270,19 @@ boolean isFull() {
 
 ```java
 @Override
-    public Node dequeue() {
-        Node node = null;
+public Node dequeue() {
+  Node node = null;
 
-        if (!isEmpty()) {
-            front = (front + 1) % maxCount;     // 논리적으로 마지막과 처음을 연결
-            node = nodes[front];
-            currentCount--;
-        } else {
-            System.out.println("큐가 비어 있습니다.");
-        }
+  if (!isEmpty()) {
+    front = (front + 1) % maxCount;     // 논리적으로 마지막과 처음을 연결
+    node = nodes[front];
+    currentCount--;
+  } else {
+    System.out.println("큐가 비어 있습니다.");
+  }
 
-        return node;
-    }
+  return node;
+}
 ```
 
 
@@ -413,6 +413,8 @@ public class LinkedQueue {
     private LinkedNode rear;        // rear 노드
 
     public LinkedQueue() {
+      	front = null;
+      	rear = null;
         currentCount = 0;
     }
 
@@ -438,7 +440,7 @@ public class LinkedQueue {
 
 
 
-### 5.4.3. 코드
+### 5.4.3. 인큐 연산 코드
 
 ```java
 public <T> void enqueue(T data) {
@@ -480,7 +482,7 @@ boolean isEmpty() {
 
 
 
-### 5.5.3. 코드
+### 5.5.3. 디큐 연산 코드
 
 ```java
 public Node dequeue() {
@@ -497,7 +499,7 @@ public Node dequeue() {
     return null;
   }
 
-  if (!isEmpty()) rear = null;
+  if (isEmpty()) rear = null;
 
   return node;
 }
