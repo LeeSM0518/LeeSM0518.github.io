@@ -16,3 +16,4 @@
   * [05. Expansion of the linked list](./datastructure/Chapter05_Expansion_of_the_linked_list.md)
   * [06. Stack](./datastructure/Chapter06_stack.md)
   * [07. Queue](./datastructure/Chapter07_Queue.md)
+  * [08. Tree.md](./datastructure/Chapter08_Tree.md)
