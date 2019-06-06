@@ -382,7 +382,10 @@ private void postorderTraversalRecursiveTreeNode(TreeNode node) {
 
   <img src="../capture/스크린샷 2019-06-02 오후 4.57.59.png" width="700">
 
+
+
 * **코드**
+  
   ```java
   public static void main(String[] args) {
     Tree tree = new Tree('A');
@@ -409,10 +412,10 @@ private void postorderTraversalRecursiveTreeNode(TreeNode node) {
     tree.inorderTraversalRecursiveTree();
     tree.postorderTraversalRecursiveTree();
   }
-  ```
-
-* **실행 결과**
-
+```
+  
+  **실행 결과**
+  
   ```java
   재귀 전위 순회
   A
@@ -441,6 +444,6 @@ private void postorderTraversalRecursiveTreeNode(TreeNode node) {
   C
   A
   ```
-
+  
   
 
