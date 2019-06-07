@@ -19,3 +19,4 @@
   * [08. Tree](./datastructure/Chapter08_Tree.md)
 
 * Data communication (데이터 통신)
+  * [Error detection and Correction](./datacommunication/Chapter10.ErrorDetectionAndCorrection.md)
