@@ -148,5 +148,6 @@
 ## 10.3.2. Cyclic Redundancy Check (순환 중복 검사)
 
 * **Cyclic codes (순환 코드)** : 순환되는 성질이 있는 선형 블록 코드(linear block codes)
-  * 
+  * Linear block codes : 코드간 XOR 연산을 하면 다른 코드를 얻을 수 있는 블록코드
+* 
 

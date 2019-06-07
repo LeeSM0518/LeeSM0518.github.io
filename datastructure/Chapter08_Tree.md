@@ -382,68 +382,68 @@ private void postorderTraversalRecursiveTreeNode(TreeNode node) {
 
   <img src="../capture/스크린샷 2019-06-02 오후 4.57.59.png" width="700">
 
+**코드**
+
+```java
+public static void main(String[] args) {
+  Tree tree = new Tree('A');
+  TreeNode[] treeNodes = new TreeNode[]{
+    new TreeNode<>('B'),
+    new TreeNode<>('C'),
+    new TreeNode<>('D'),
+    new TreeNode<>('E'),
+    new TreeNode<>('F'),
+    new TreeNode<>('G')
+  };
+
+  tree.addLeftChildNode(tree.getRootNode(), treeNodes[0]);
+  tree.addRightChildNode(tree.getRootNode(), treeNodes[1]);
+
+  tree.addLeftChildNode(treeNodes[0], treeNodes[2]);
+  tree.addRightChildNode(treeNodes[0], treeNodes[3]);
+
+  tree.addLeftChildNode(treeNodes[1], treeNodes[4]);
+  tree.addRightChildNode(treeNodes[1], treeNodes[5]);
 
 
-* **코드**
-  
-  ```java
-  public static void main(String[] args) {
-    Tree tree = new Tree('A');
-    TreeNode[] treeNodes = new TreeNode[]{
-      new TreeNode<>('B'),
-      new TreeNode<>('C'),
-      new TreeNode<>('D'),
-      new TreeNode<>('E'),
-      new TreeNode<>('F'),
-      new TreeNode<>('G')
-    };
-  
-    tree.addLeftChildNode(tree.getRootNode(), treeNodes[0]);
-    tree.addRightChildNode(tree.getRootNode(), treeNodes[1]);
-  
-    tree.addLeftChildNode(treeNodes[0], treeNodes[2]);
-    tree.addRightChildNode(treeNodes[0], treeNodes[3]);
-  
-    tree.addLeftChildNode(treeNodes[1], treeNodes[4]);
-    tree.addRightChildNode(treeNodes[1], treeNodes[5]);
-  
-  
-    tree.preorderTraversalRecursiveTree();
-    tree.inorderTraversalRecursiveTree();
-    tree.postorderTraversalRecursiveTree();
-  }
+  tree.preorderTraversalRecursiveTree();
+  tree.inorderTraversalRecursiveTree();
+  tree.postorderTraversalRecursiveTree();
+}
 ```
-  
-  **실행 결과**
-  
-  ```java
-  재귀 전위 순회
-  A
-  B
-  D
-  E
-  C
-  F
-  G
-  
-  재귀 중위 순회
-  D
-  B
-  E
-  A
-  F
-  C
-  G
-  
-  재귀 후위 순회
-  D
-  E
-  B
-  F
-  G
-  C
-  A
-  ```
-  
-  
+
+
+
+**실행 결과**
+
+```java
+재귀 전위 순회
+A
+B
+D
+E
+C
+F
+G
+
+재귀 중위 순회
+D
+B
+E
+A
+F
+C
+G
+
+재귀 후위 순회
+D
+E
+B
+F
+G
+C
+A
+```
+
+
 
