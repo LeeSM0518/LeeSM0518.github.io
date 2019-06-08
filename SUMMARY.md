@@ -20,3 +20,4 @@
 
 * Data communication (데이터 통신)
   * [Error detection and Correction](./datacommunication/Chapter10.ErrorDetectionAndCorrection.md)
+  * [Data Link Control](./datacommunication/Chapter11.DataLinkControl.md)
