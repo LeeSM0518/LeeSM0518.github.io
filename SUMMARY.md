@@ -7,6 +7,7 @@
   * [Process Management](./OS/ProcessManagement.md)
   * [Thread](./OS/Thread.md)
   * [Process Synchronization](./OS/ProcessSynchronization.md)
+  * [CPU Scheduling](./OS/CPUScheduling.md)
 
 * Data Structure (자료구조)
   * [01. Start of data structure](./datastructure/Chapter01_start_of_datastructure.md)
