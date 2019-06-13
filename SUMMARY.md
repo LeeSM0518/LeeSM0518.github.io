@@ -9,6 +9,10 @@
   * [Process Synchronization](./OS/ProcessSynchronization.md)
   * [CPU Scheduling](./OS/CPUScheduling.md)
   * [Memory Management](./OS/MemoryManagement.md)
+  * [Virtual Memory](./OS/VirtualMemory.md)
+  * [Storage Management](./OS/StorageManagement.md)
+  * [File System Interface](./OS/FileSystemInterface.md)
+  * [File System Implementation](./OS/FileSystemImplementation.md)
 
 * Data Structure (자료구조)
   * [01. Start of data structure](./datastructure/Chapter01_start_of_datastructure.md)
