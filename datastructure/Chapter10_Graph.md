@@ -701,3 +701,31 @@ private void recursiveTraversalDFS(int startNodeIndex, int[] visit) {
 
 <img src="../capture/스크린샷 2019-06-27 오후 2.23.23.png">
 
+* **코드**
+
+```java
+public void traversalBFS(int startNodeIndex) {
+  // 현재 방문 노드를 저장할 큐
+  Queue<Integer> queue = new LinkedList<>();
+  // 노드 방문 여부를 위한 배열
+  int[] visit = new int[getNodeCount()];
+
+	// 시작 노드 방문
+  visit[startNodeIndex] = 1;
+  queue.add(startNodeIndex);
+
+  // 큐가 공백상태가 될때까지 반복
+  while (!queue.isEmpty()) {
+    // 큐에서 디큐 연산을 수행하여 꺼낸 노드 방문 정보 출력
+    int node = queue.poll();
+    System.out.println("노드-[" + node + "] 방문");
+    // 디큐한 노드에 인접한 노드들에 대해서 처리
+    for (int i = 0; i < getNodeCount(); i++) {
+      if (i != node && getEdge(node, i) != 0 && visit[i] == 0) {
+        visit[i] = 1;
+        queue.add(i);
+      }
+    }
+  }
+}
+```
