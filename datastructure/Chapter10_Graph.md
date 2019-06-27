@@ -119,7 +119,7 @@
 
 ### 1.3.1. 인접
 
-두 개의 노드를 연결하는 간선이 존해나는 경우 두 노드는 **인접(adjacent)** 되었다고 한다.
+두 개의 노드를 연결하는 간선이 존재하는 경우 두 노드는 **인접(adjacent)** 되었다고 한다.
 
 <img src="../capture/스크린샷 2019-06-27 오후 1.52.53.png">
 
@@ -159,7 +159,7 @@
 * 경로의 시작 노드와 마지막 노드가 같은 경로를 **사이클(cycle) 혹은 순환** 이라고 한다.
 * 그래프 내의 모든 노드 사이에 경로가 있을 때 그래프가 **연결되었다(connected)** 고 한다.
 
-
+/;. 
 
 ### 1.3.5. 그래프의 동일성
 
@@ -192,7 +192,160 @@
 
 
 
-# 그래프 탐색
+# 2. 그래프의 추상 자료형
+
+| 기능        | 이름          | Input                | Output | 설명                                               |
+| ----------- | ------------- | -------------------- | ------ | -------------------------------------------------- |
+| 그래프 생성 | createGraph() | 최대 노드 개수       | 그래프 | n 개의 노드를 가지는 빈 그래프 생성                |
+| 그래프 삭제 | deleteGraph() | 그래프               | N/A    | 그래프 모든 간선과 노드 제거                       |
+| 간선 추가   | addEdge()     | 그래프, 노드A, 노드B | N/A    | 그래프 노드 A와 노드 B를 연결하는 새로운 간선 추가 |
+| 간선 제거   | removeEdge()  | 그래프, 노드A, 노드B | N/A    | 그래프 간선 (A,B) or <A,B> 제거                    |
+
+
+
+# 3. 인접 행렬로 구현한 그래프
+
+2차원 배열은 그래프의 간선 정보를 가장 쉽게 저장하는 방법 중 하나이다. 
+
+그래프의 구현에서 사용하는 2차원 배열을 **인접 행렬(adjacency matrix)** 라고 한다.
+
+
+
+## 3.1. 인접 행렬이란?
+
+**인접 행렬이란** 노드들 사이의 연결 정보를 저장하는 행렬을 말한다. 노드의 연결 정보란 결국 **간선의 정보를** 말한다.
+
+<img src="../capture/스크린샷 2019-06-27 오후 2.53.25.png">
+
+> **행(Row)은** 시작 노드를 의미하고 **열(Column)이** 종료 노드를 뜻한다.
+
+
+
+## 3.2. 인접 행렬의 구조
+
+인접 행렬을 이용해 방향 그래프 구현
+
+```java
+package chapter11_graph;
+
+public class DirectArrayGraph {
+  
+  int nodeCount;		// 노드 개수
+  int[][] edge;			// 간선 저장을 위한 2차원 배열
+  
+}
+```
+
+
+
+## 3.3. 그래프의 생성
+
+```java
+public DirectArrayGraph(int nodeCount) {
+  this.nodeCount = nodeCount;										// 노드 개수 저장
+  this.edge = new int[nodeCount][nodeCount];		// 2차원 배열 생성
+}
+```
+
+
+
+## 3.4. 간선의 추가
+
+```java
+public void addEdge(int fromNode, int toNode) {
+  // 시작 노드와 종료 노드가 유효한지 점검 후 2차원 배열에 간선 저장
+  if (checkVertexValid(fromNode) && checkVertexValid(toNode)) edge[fromNode][toNode] = 1;
+}
+
+public boolean checkVertexValid(int node) {
+  // 유효 점검
+  return node < nodeCount && node >= 0;
+}
+```
+
+
+
+## 3.5. 간선의 제거
+
+```java
+public void removeEdge(int fromNode, int toNode) {
+  // 시작 노드와 종료 노드가 유효한지 점검 후 2차원 배열에서 간선 제거
+  if (checkVertexValid(fromNode) && checkVertexValid(toNode)) edge[fromNode][toNode] = 0;
+}
+```
+
+
+
+## 3.6. 간선 얻기와 기타
+
+* **간선 얻기**
+
+  ```java
+  public int getEdge(int fromNode, int toNode) {
+    // 유효성 검사 후 유효하면 간선 반환 아니면 0 반환
+    return (checkVertexValid(fromNode) && checkVertexValid(toNode)) ?
+      edge[fromNode][toNode] : 0;
+  }
+  ```
+
+* **간선 출력**
+
+  ```java
+  public void displayGraph() {
+    for (int i = 0; i < nodeCount; i++) {
+      for (int j = 0; j < nodeCount; j++) {
+        System.out.print(edges[i][j] + " ");
+      }
+      System.out.println();
+    }
+    System.out.println();
+  }
+  ```
+
+* **main**
+
+  ```java
+  public static void main(String[] args) {
+    DirectArrayGraph graph = new DirectArrayGraph(6);
+  
+    graph.addEdge(0, 1);
+    graph.addEdge(1, 2);
+    graph.addEdge(2, 0);
+    graph.addEdge(2, 3);
+    graph.addEdge(3, 2);
+    graph.addEdge(3, 4);
+    graph.addEdge(4, 5);
+    graph.addEdge(5, 3);
+  
+    graph.displayGraph();
+  
+    graph.removeEdge(0, 1);
+  
+    graph.displayGraph();
+  }
+  ```
+
+* **실행 결과**
+
+  ```
+  0 1 0 0 0 0 
+  0 0 1 0 0 0 
+  1 0 0 1 0 0 
+  0 0 1 0 1 0 
+  0 0 0 0 0 1 
+  0 0 0 1 0 0 
+  
+  0 0 0 0 0 0 
+  0 0 1 0 0 0 
+  1 0 0 1 0 0 
+  0 0 1 0 1 0 
+  0 0 0 0 0 1 
+  0 0 0 1 0 0
+  ```
+
+  
+
+# 6. 그래프 탐색
 
 그래프 탐색(traversal 혹은 search)은 그래프 상의 모든 노드를 한 번식 방문하는 것을 말한다.
 
@@ -223,6 +376,4 @@
 넓이-우선 탐색은 다음 방문할 노드를 선택할 때 현재 방문한 노드가 아니라 **이전에 방문했던 노드와 연결된 노드를 먼저 선택하는 방법이다.** 즉, 이전 방문 노드와 직접 연결된 모든 노드가 먼저 방문되어야 한다.
 
 <img src="../capture/스크린샷 2019-06-27 오후 2.23.23.png">
-
-
 
