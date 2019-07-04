@@ -15,9 +15,11 @@
 * [다리를 지나는 트럭](https://github.com/LeeSM0518/Coding_Test/tree/master/src/truck)
 * [기능개발](https://github.com/LeeSM0518/Coding_Test/tree/master/src/function_development)
 * [프린터](https://github.com/LeeSM0518/Coding_Test/tree/master/src/printer)
-
+* [더 맵게](https://github.com/LeeSM0518/Coding_Test/tree/master/src/more_spicy)
+* [이중 우선순위 큐](https://github.com/LeeSM0518/Coding_Test/tree/master/src/dual_priority_queue)
 
 # Contributors
 
 * Name : **이상민**
-* imail : **nalsm98@naver.com**
+* imail : **nalsm0518@gmail.com**
+* GitHub : [https://github.com/LeeSM0518](https://github.com/LeeSM0518)
