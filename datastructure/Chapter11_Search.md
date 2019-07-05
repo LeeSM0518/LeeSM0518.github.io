@@ -548,6 +548,26 @@ public static void main(String[] args) {
 ### 4.6.2. 이진 검색 트리에서의 검색 연산
 
 ```java
+public Node search(int key) {
+  Node node;
+
+  node = rootNode;
+
+  while (node != null) {					// 종료 조건 : 더 남은 노드가 없을때
+    if (key == node.key) break;		// 검색 키로 자료를 찾은 경우
+    else if (key < node.key) node = node.leftChild;		// 검색 키가 현재 키보다 작은 경우
+    else node = node.rightChild;	// 검색 키가 현재 키보다 큰 경우
+  }
+
+  return node;
+}
+```
+
+
+
+### 4.6.3. 이진 검색 트리에서의 추가 연산
+
+```java
 
 ```
 
