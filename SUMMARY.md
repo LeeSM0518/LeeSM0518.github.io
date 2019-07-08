@@ -25,6 +25,7 @@
   * [08. Tree](./datastructure/Chapter08_Tree.md)
   * [09. Heap](./datastructure/Chapter09_Heap.md)
   * [10. Graph](./datastructure/Chapter10_Graph.md)
+  * [11. Search](./datastructure/Chapter11_Search.md)
 
 * Data communication (데이터 통신)
   * [Error detection and Correction](./datacommunication/Chapter10.ErrorDetectionAndCorrection.md)
