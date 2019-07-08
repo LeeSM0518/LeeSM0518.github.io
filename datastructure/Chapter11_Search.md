@@ -568,6 +568,221 @@ public Node search(int key) {
 ### 4.6.3. 이진 검색 트리에서의 추가 연산
 
 ```java
+// 적절한 삽입 위치를 찾기 위한 함수
+private Node getParentNode(int key) {
+  Node parentNode = null;
+  Node currentNode = rootNode;
 
+  while (currentNode != null) {
+    if (key == currentNode.key) return null;    // 추가하려는 키 값이 존재하면 null 반환
+    else if (key < currentNode.key) {						// 추가하려는 키 값이 현재 값 보다 작을 때
+      parentNode = currentNode;
+      currentNode = currentNode.leftChild;			// 왼쪽 트리로 이동
+    } else {																		// 추가하려는 키 값이 현재 값 보다 클 때
+      parentNode = currentNode;
+      currentNode = currentNode.rightChild;			// 오른쪽 트리로 이동
+    }
+  }
+
+  return parentNode;
+}
+
+public void insert(int key, char value) {
+  // 적절한 삽입 위치 찾기: 부모 노드 찾기
+  Node parentNode = getParentNode(key);
+  
+  // 추가하려는 첫 번째 노드이거나 부모 노드가 존재할 때
+  if (rootNode == null || parentNode != null) 
+    insertNewNode(new Node(key, value), parentNode);
+}
+
+private void insertNewNode(Node newNode, Node parentNode) {
+  // 루트 노드가 존재하지 않으면 루트 노드에 저장
+  if (rootNode == null) rootNode = newNode;
+  // 루트 노드가 존재할 때는 찾은 부모 노드의 왼쪽이나 오른쪽에 삽입
+  else {
+    if (newNode.key < parentNode.key) parentNode.leftChild = newNode;
+    else parentNode.rightChild = newNode;
+  }
+}
+```
+
+
+
+### 4.6.4. 이진 검색 트리에서의 제거 연산
+
+```java
+public void remove(int key) {
+  Node parentNode = getParentNode(key);  // 제거할 키 값의 부모 노드를 찾는다
+  Node deleteNode = search(key);				 // 제거할 키 값을 찾는다.
+
+  // 삭제할 값이 존재할 때
+  if (deleteNode != null && rootNode != null && parentNode != null) {
+  } 
+  // 제거 대상 노드의 자식이 없을 때
+  else if (deleteNode.leftChild == null && deleteNode.rightChild == null) {
+    deleteNodeNoChild(parentNode, deleteNode);
+  } 
+  // 제거 대상 노드의 자식이 1개 있을 때
+  else if (deleteNode.leftChild != null && deleteNode.rightChild != null) {
+    deleteNodeOneChild(parentNode, deleteNode);
+  } 
+  // 제거 대상 노드의 자식이 2 있을 때
+  else {
+    deleteNodeTwoChildren(parentNode, deleteNode);
+  }
+}
+
+// 제거 노드의 자식이 없을 때
+private void deleteNodeNoChild(Node parentNode, Node deleteNode) {
+  // 부모 노드가 존재할 때
+  if (parentNode != null) {
+    // 자식을 가리키고 있는 방향에 null을 저장
+    if (parentNode.leftChild == deleteNode) {
+      parentNode.leftChild = null;
+    } else {
+      parentNode.rightChild = null;
+    }
+  } else {
+    rootNode = null;
+  }
+}
+
+// 제거 노드의 자식이 1개 있을 때
+private void deleteNodeOneChild(Node parentNode, Node deleteNode) {
+  Node childNode;
+
+  // 제거할 노드의 자식이 왼쪽인지 오른쪽인지 찾는다
+  if (deleteNode.leftChild != null) {
+    childNode = deleteNode.leftChild;
+  } else {
+    childNode = deleteNode.rightChild;
+  }
+
+  // 부모 노드가 존재
+  if (parentNode != null) {
+    // 부모 노드의 왼쪽 자식이 삭제 노드일때 삭제 노드의 자식 노드로 저장
+    if (parentNode.leftChild == deleteNode) {
+      parentNode.leftChild = childNode;
+    } else {
+      parentNode.rightChild = childNode;
+    }
+  } else {
+    rootNode = childNode;
+  }
+}
+
+// 제거 노드의 자식이 2개 있을 때
+private void deleteNodeTwoChildren(Node parentNode, Node deleteNode) {
+  Node predecessor = deleteNode;
+  Node successor = deleteNode.leftChild;
+
+  // 왼쪽 서브트리에서 가장 큰 키 값을 가지는 노드 찾기
+  while (successor.rightChild != null) {
+    predecessor = successor;
+    successor = successor.rightChild;
+  }
+
+  // 대체 노드의 자식 노드를 전임 노드의 자식 노드로 변경
+  predecessor.rightChild = successor.leftChild;
+  
+  // 제거 노드의 자식 노드를 대체 노드의 자식 노드로 변경
+  successor.leftChild = deleteNode.leftChild;
+  successor.rightChild = deleteNode.rightChild;
+
+  // 대체 노드를 부모 노드의 새로운 자식 노드로 결정
+  if (parentNode != null) {
+    if (parentNode.leftChild == deleteNode) {
+      parentNode.leftChild = successor;
+    } else {
+      parentNode.rightChild = successor;
+    }
+  } 
+
+// 부모 노드가 null이면 루트 노드가 제거 되었다는 의미이기 때문에 대체 노드를 이진 탐색 트리의 새로운 루트 노드로 설정
+  else {
+    rootNode = successor;
+  }
+}
+```
+
+
+
+### 4.6.5. 기타
+
+**순회 메소드**
+
+```java
+public void display() {
+  displayTree(rootNode, 0, '-');
+}
+
+private void displayTree(Node node, int level, char type) {
+  if (node != null) {
+    for (int i = 0; i < level; i++) {
+      System.out.print(" ");
+    }
+
+    System.out.println("-(" + type + ") - key: " + node.key + ", value: " + node.value);
+
+    displayTree(node.leftChild, level + 1, 'L');
+    displayTree(node.rightChild, level + 1, 'R');
+  }
+}
+```
+
+
+
+**main 메소드**
+
+```java
+public static void main(String[] args) {
+  BinarySearchTree binarySearchTree = new BinarySearchTree();
+
+  binarySearchTree.insert(70, 'A');
+  binarySearchTree.insert(40, 'B');
+  binarySearchTree.insert(90, 'C');
+  binarySearchTree.insert(20, 'D');
+  binarySearchTree.insert(60, 'E');
+  binarySearchTree.insert(80, 'F');
+  binarySearchTree.insert(100, 'G');
+  binarySearchTree.insert(10, 'H');
+  binarySearchTree.insert(30, 'I');
+  binarySearchTree.insert(50, 'J');
+
+  binarySearchTree.display();
+
+  System.out.println("키 30 검색 : " + binarySearchTree.search(30).key + ", " + binarySearchTree.search(30).value);
+  System.out.println("키 70 검색 : " + binarySearchTree.search(70).key + ", " + binarySearchTree.search(70).value);
+
+  binarySearchTree.remove(70);
+
+  binarySearchTree.display();
+}
+```
+
+**실행 결과**
+
+```java
+-(-) - key: 70, value: A
+ -(L) - key: 40, value: B
+  -(L) - key: 20, value: D
+   -(L) - key: 10, value: H
+   -(R) - key: 30, value: I
+  -(R) - key: 60, value: E
+   -(L) - key: 50, value: J
+ -(R) - key: 90, value: C
+  -(L) - key: 80, value: F
+  -(R) - key: 100, value: G
+
+키 30 검색 : 30, I
+키 70 검색 : 70, A
+
+-(-) - key: 40, value: B
+ -(L) - key: 20, value: D
+  -(L) - key: 10, value: H
+  -(R) - key: 30, value: I
+ -(R) - key: 60, value: E
+  -(L) - key: 50, value: J
 ```
 
