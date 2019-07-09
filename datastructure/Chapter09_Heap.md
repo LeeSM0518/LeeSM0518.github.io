@@ -1,4 +1,4 @@
-# Chapter 9. 히프
+# Chapter 09. 히프
 
 **히프(heap)**
 

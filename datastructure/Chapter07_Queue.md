@@ -1,4 +1,4 @@
-# Chapter 06. 큐
+# Chapter 07. 큐
 
 * **큐의 특징**
   * **FIFO(First-In-First-Out)** : 선입선출이라고 하며, 가장 먼저 들어간 자료가 가장 먼저 나온다.
