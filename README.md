@@ -32,6 +32,7 @@
 * [가운데 글자 가져오기](https://github.com/LeeSM0518/Coding_Test/tree/master/src/Import_middle_letters)
 * [문자열 다루기 기본](https://github.com/LeeSM0518/Coding_Test/tree/master/src/string_basic)
 * [소수 찾기](https://github.com/LeeSM0518/Coding_Test/tree/master/src/decimal_number)
+* [베스트 앨범](https://github.com/LeeSM0518/Coding_Test/tree/master/src/best_album)
 
 # Contributors
 
