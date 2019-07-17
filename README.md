@@ -1,7 +1,7 @@
 # Today I Learned Blog
 ![img](./capture/introduction.jpeg)
 
-# Data Structure (자료구조)
+# Data Structure (자료구조) 코드 저장소
 * [배열 리스트](https://github.com/LeeSM0518/TIL/tree/master/Data_Structure/JavaDataStructure/src/chapter02_array_list)
 * [연결 리스트](https://github.com/LeeSM0518/TIL/tree/master/Data_Structure/JavaDataStructure/src/chapter03_linked_list)
 * [연결 리스트 확장](https://github.com/LeeSM0518/TIL/tree/master/Data_Structure/JavaDataStructure/src/chapter04_expansion_of_linked_list)
@@ -13,6 +13,7 @@
 * [그래프](https://github.com/LeeSM0518/TIL/tree/master/Data_Structure/JavaDataStructure/src/chapter11_graph)
 * [검색](https://github.com/LeeSM0518/TIL/tree/master/Data_Structure/JavaDataStructure/src/chapter12_search)
 * [해싱](https://github.com/LeeSM0518/TIL/tree/master/Data_Structure/JavaDataStructure/src/chapter13_hashing)
+* [정렬](https://github.com/LeeSM0518/TIL/tree/master/Data_Structure/JavaDataStructure/src/chapter14_sorting)
 
 # Solved Algorithm problems (알고리즘 풀이)
 - [올바른 괄호](https://github.com/LeeSM0518/Coding_Test/tree/master/src/correct_parenthesis)
