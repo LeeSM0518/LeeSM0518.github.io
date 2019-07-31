@@ -14,7 +14,7 @@
   * [File System Interface](./OS/FileSystemInterface.md)
   * [File System Implementation](./OS/FileSystemImplementation.md)
 
-* Data Structure (자료구조)
+* Data structure (자료구조)
   * [01. Start of data structure](./datastructure/Chapter01_start_of_datastructure.md)
   * [02. Recursion](./datastructure/Chapter02_Recursion.md)
   * [03. Array List](./datastructure/Chapter03_Array_List.md)
@@ -33,3 +33,7 @@
   * [Error detection and Correction](./datacommunication/Chapter10.ErrorDetectionAndCorrection.md)
   * [Data Link Control](./datacommunication/Chapter11.DataLinkControl.md)
   * [Media Access Control](./datacommunication/Chapter12.MediaAccessControl.md)
+
+* Object oriented design pattern (객체 지향 디자인 패턴) 
+  * [Object oriented modeling](./designpattern/objectorientedmodeling.md)
+  * [Object oriented principle](./designpattern/objectorientedprinciple.md)
