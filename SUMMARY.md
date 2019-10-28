@@ -40,3 +40,6 @@
 
 * Mobile communication protocol (이동 통신 프로토콜)
   * [Wireless PAN and Zigbee](./mobilecommunicationprotocol/wirelesspan.md)
+
+* Python Basic (파이썬)
+  * [Python Basic](./python/pythonbasic.md)
