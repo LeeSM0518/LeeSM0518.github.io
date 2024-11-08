@@ -76,4 +76,4 @@ _2020.01 ~ 2020.09_
 
 #### 사용 기술
 
-Java, Spring, MyBatis, PostgreSQL, JavaScript, Vue 
+Java, Spring, MyBatis, PostgreSQL, Python, Flask, Keras, JavaScript, Vue 
