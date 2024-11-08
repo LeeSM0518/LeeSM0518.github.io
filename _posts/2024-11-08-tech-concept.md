@@ -59,6 +59,14 @@ description: 다양한 기술들의 개념을 간단하게 정리
 
 ## DB
 
+### ACID
+
+데이터베이스 트랜잭션의 **신뢰성을 보장**하는 속성으로, **원자성(Atomicity), 일관성(Consistency), 고립성(Isolation), 지속성(Durability)**을 의미한다.
+- **원자성(Atomicity)** : 트랜잭션은 완전히 수행되거나 전혀 수행되지 않아야 한다.
+- **일관성(Consistency)** : 트랜잭션 전후에 데이터베이스에는 항상 일관된 상태여야 한다.
+- **고립성(Isolation)** : 각 트랜잭션은 독립적으로 실행되어야 하며, 다른 트랜잭션의 영향을 받지 않아야 한다.
+- **지속성(Durability)** : 트랜잭션이 성공적으로 완료되면 그 결과는 영구적으로 저장되어야 한다.
+
 ### RDBMS (Relational Database Management System)
 
 데이터를 테이블 형태로 저장하고 관계를 통해 관리하는 데이터베이스 관리 시스템
@@ -81,7 +89,6 @@ description: 다양한 기술들의 개념을 간단하게 정리
 단점
 : 복잡한 쿼리와 대규모 데이터 처리 기능이 제한적
 
-
 #### PostgreSQL
 
 장점
@@ -90,4 +97,11 @@ description: 다양한 기술들의 개념을 간단하게 정리
 단점
 : 관리가 다소 복잡하고, 특정 상황(단순 조회나 작은 데이터 세트에 대한 읽기)에서 MySQL보다 느릴 수 있음
 
+#### PostgreSQL과 MySQL 중 하나를 선택하는 방법[^postgres-and-mysql]
 
+PostgreSQL은 쓰기 작업이 빈번하고 쿼리가 복잡한 엔터프라이즈급 애플리케이션에 더 적합하다.
+하지만 프로토타입을 만들거나, 사용자 수가 적은 내부 애플리케이션을 만들거나, 읽기 횟수가 많고 데이터 업데이트가 자주 이루어지지 않는다면 MySQL이 적합하다.
+
+<br/>
+
+[^postgres-and-mysql]: [MySQL과 PostgreSQL의 차이점은 무엇인가요?](https://aws.amazon.com/ko/compare/the-difference-between-mysql-vs-postgresql/)
