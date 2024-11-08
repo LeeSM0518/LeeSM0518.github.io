@@ -120,9 +120,9 @@ comments:
   # Giscus options › https://giscus.app
   giscus:
     repo: LeeSM0518/LeeSM0518.github.io # <gh-username>/<repo>
-    repo_id: R_kgDONLmpNw
+    repo_id: R_kgDONMGElA
     category: Announcements
-    category_id: DIC_kwDONLmpN84CkD54
+    category_id: DIC_kwDONMGElM4CkE6Y
     mapping: pathname # optional, default to 'pathname'
     strict: 0 # optional, default to '0'
     input_position: bottom # optional, default to 'bottom'
