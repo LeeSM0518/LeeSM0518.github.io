@@ -4,7 +4,7 @@ date: 2024-11-09 11:48:00 +0900
 categories: interview
 tags:
   - interview
-description: 여러 기술의 개념을 정리
+description: 여러 기술 개념 정리
 ---
 
 ## Architecture
@@ -28,3 +28,5 @@ description: 여러 기술의 개념을 정리
 
 단점
 : 서비스 간 통신이 복잡하고, 모니터링 및 관리가 어려우며, 배포와 테스트가 더 복잡해진다.
+
+### CQRS (Command Query )
