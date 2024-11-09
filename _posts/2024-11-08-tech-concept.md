@@ -39,6 +39,27 @@ description: 다양한 기술들의 개념을 정리
 단점
 : 서비스 간 통신이 복잡하고, 모니터링 및 관리가 어려우며, 배포와 테스트가 더 복잡해진다.
 
+#### MSA 적용 가이드
+
+MSA를 적용하기 위해 필요한 요소들은 다음과 같다.[^microservices]
+
+1. 서비스 분리와 도메인 설계
+   : 독립적인 서비스가 특정 도메인을 책임지도록 설계한다.
+2. API 게이트웨이
+   : 단일 진입점으로 서비스를 통제하며 보안, 인증, 라우팅을 제공한다.
+3. 독립된 데이터베이스
+   : 서비스별 독립된 데이터베이스로 데이터 일관성과 독립성을 유지한다.
+4. 서비스 간 통신
+   : gRPC, REST API, 메시지 큐(Kafka, RabbitMQ 등)로 동기/비동기 통신 방식을 설정한다.
+5. 모니터링과 분산 트레이싱
+   : Prometheue, Grafana, Zipkin으로 성능과 호출 경로를 추적한다.
+6. 오케스트레이션 도구
+   : Kubernetes로 컨테이너화된 서비스 배포, 확장 및 관리를 자동화한다.
+7. CI/CD 파이프라인
+   : Jenkins, Github Actions 등으로 지속적 통합과 배포를 설정하여 신속한 배포를 지원한다.
+8. 중앙 로그 관리
+   : ELK Stack(Elasticsearch, Logstash, Kibana)으로 서비스별 로그를 수집하고 중앙에서 관리한다.
+
 <br/>
 
 ### Hexagonal Architecture
@@ -77,9 +98,9 @@ description: 다양한 기술들의 개념을 정리
 
 <br/>
 
-### REST (Representational State Transfer)[^rest]
+### REST (Representational State Transfer)
 
-분산 하이퍼미디어 시스템을 위한 아키텍처 스타일이다. **HTTP 프로토콜을 기반으로 자원을 CRUD 방식으로 접근**하며, **URL과 HTTP 메서드(GET, POST, PUT, DELETE 등)를 활용**해 클라이언트와 서버 간 통신을 간편하게 한다.
+분산 하이퍼미디어 시스템을 위한 아키텍처 스타일이다. **HTTP 프로토콜을 기반으로 자원을 CRUD 방식으로 접근**하며, **URL과 HTTP 메서드(GET, POST, PUT, DELETE 등)를 활용**해 클라이언트와 서버 간 통신을 간편하게 한다.[^rest]
 
 **REST API 설계 원칙**
 
@@ -89,6 +110,9 @@ description: 다양한 기술들의 개념을 정리
 4. 계층 구조 : 계층 구조로 설계하여 상호 작용하는 계층을 넘는 접근을 막는다.
 5. 일관된 인터페이스 : URI를 통해 자원을 명확히 식별하고, 표준 HTTP 메서드를 사용해 일관성 있는 인터페이스를 유지한다.
 6. 코드 온 디멘드 (선택) : 클라이언트가 스크립트 코드를 다운로드 받아서 확장할 수 있다.
+
+REST API 설계 시 중요 요소
+: 이해하기 쉽도록 명확하고 일관되게 API를 설계하는 것이 중요하다.
 
 <br/>
 
@@ -216,6 +240,12 @@ Kotlin은 suspend 함수를 사용해 비동기 작업을 일시 중지하고 �
 
 <br/>
 
+#### Kotlin과 Java의 차이점
+
+Kotlin은 더 간결한 구문과 널 안정성을 제공하고 함수형 프로그래밍을 지원하는 반면, Java는 상대적으로 장황한 구문을 가지고 있지만 오랜 기간 널리 사용된 안정적인 언어로 라이브러리와 툴 생태계가 매우 풍부하다.
+
+<br/>
+
 ### Java
 
 **객체 지향 프로그래밍 언어**로, 플랫폼 독립성, 강력한 라이브러리, 안정성과 확장성 덕분에 웹, 모바일, 엔터프라이즈 애플리케이션에서 널리 사용된다.
@@ -286,9 +316,48 @@ JVM은 여러 영역으로 나뉘어 각기 다른 역할을 담당한다.
 
 <br/>
 
-### Kotlin과 Java의 차이점
+### TypeScript
 
-Kotlin은 더 간결한 구문과 널 안정성을 제공하고 함수형 프로그래밍을 지원하는 반면, Java는 상대적으로 장황한 구문을 가지고 있지만 오랜 기간 널리 사용된 안정적인 언어로 라이브러리와 툴 생태계가 매우 풍부하다.
+JavaScript에 정적 타입 검사와 객체지향 기능을 추가하여 코드 안정성과 가독성을 높여주는 프로그래밍 언어이다.[^typescript]
+
+<br/>
+
+### JavaScript
+
+웹 페이지에 동적인 기능을 추가하기 위한 프로그래밍 언어로, 브라우저와 서버에서 모두 실행 가능하며, 인터랙티브한 사용자 경험을 제공한다.[^javascript]
+
+<br/>
+
+## OOP (Object-Oriented Programming)
+
+프로그램을 객체로 구성하고, 이 객체들이 상호작용하여 작업을 수행하는 프로그래밍 패러다임이다. 캡슐화, 상속, 추상화, 다형성의 네 가지 특징을 기반으로 하며, 코드 재사용성과 유지보수성을 높이고, 복잡한 문제를 객체 단위로 쉽게 관리할 수 있도록 한다.
+
+캡슐화 (Encapsulation)
+: 외부로부터 데이터에 직접 접근하지 못하도록 제한하여 데이터 무결성을 보호하는 원칙
+
+상속 (Inheritance)
+: 기존 클래스의 속성과 메서드를 새로운 클래스가 물려받아 코드 재사용성을 높이고, 계층 구조를 통해 유사한 클래스들을 조직화할 수 있게 한다.
+
+추상화 (Abstraction)
+: 시스템의 복잡성을 줄이기 위해 중요 속성과 동작만을 추려내어 모델링하고, 세부 사항을 감추어 간결하고 효율적인 설계를 가능하게 한다.
+
+다형성 (Polymorphism)
+: 동일한 메서드 호출이 객체의 타입에 따라 다르게 동작하도록 하여 코드의 유연성을 높이며, 다양한 객체를 동일한 인터페이스로 다룰 수 있게 한다.
+
+### SOLID
+
+객체 지향 설계의 5가지 기본 원칙으로, 코드의 유지보수성과 확장성을 높여준다.
+
+1. 단일 책임 원칙 (SRP, Single Responsibility Principle) 
+   : 클래스는 하나의 책임만 가져야 하며, 변경의 이유가 하나여야 한다.
+2. 개방-폐쇄 원칙 (OCP, Open-Closed Principle)
+   : 클래스는 확장에는 열려 있어야 하고, 수정에는 닫혀 있어야 한다.
+3. 리스코프 치환 원칙 (LSP, Liskov Substitution Principle)
+   : 서브클래스는 언제나 자신의 기반 클래스를 대체할 수 있어야 한다.
+4. 인터페이스 분리 원칙 (ISP, Interface Segregation Principle)
+   : 인터페이스는 클라이언트에 특화되도록 분리하여 설계해야 한다.
+5. 의존 역전 원칙 (DIP, Dependency Inversion Principle)
+   : 고수준 모듈은 저수준 모듈에 의존하지 않고, 추상화에 의존해야 한다.
 
 <br/>
 
@@ -357,11 +426,67 @@ Java 비동기, 논블로킹 마이크로서비스 서버 프레임워크로, HT
 
 ### JPA (Java Persistence API)
 
-자바 애플리케이션에서 관계형 데이터베이스와 객체 간 매핑(ORM)을 지원하는 API로, SQL 작성 없이 객체를 데이터베이스 테이블에 매핑하고 CRUD 작업을 수행할 수 있도록 한다.
+자바 애플리케이션에서 관계형 데이터베이스와 객체 간 매핑(ORM)을 지원하는 API로, SQL 작성 없이 객체를 데이터베이스 테이블에 매핑하고 CRUD 작업을 수행할 수 있도록 한다. 다음은 JPA의 주요 동작 원리이다.
+
+1. EntityManagerFactory 생성
+	1. Persistence.createEntityManagerFactory()를 호출하여 EntityManagerFactory를 생성한다.
+	2. 팩토리는 애플리케이션 전체에서 관리되며, EntityManager 생성을 담당한다.
+2. EntityManager 생성 및 관리
+	1. EntityManager는 엔티티와 데이터베이스 간의 CRUD 작업을 담당하며, 트랜잭션과 1차 캐시를 관리한다.
+	2. 데이터베이스와의 커넥션 역할을 수행하며, 애플리케이션의 각 트랜잭션 단위로 생성 및 사용된다.
+3. 트랜잭션 관리
+	1. EntityManager는 트랜잭션을 시작(beginTransaction()), 커밋(commit()), 롤백(rollback()) 할 수 있으며, 데이터 일관성을 보장한다.
+	2. JPA는 엔티티 상태를 자동으로 동기화해 트랜잭션 범위 내에서 데이터베이스와 객체의 변경을 반영한다.
+4. 1차 캐시와 영속성 컨텍스트
+	1. EntityManager는 1차 캐시 역할을 하며, 한 트랜잭션 동안 동일한 엔티티는 데이터베이스에 다시 조회하지 않고 캐시에서 반환한다.
+	2. JPA는 영속성 컨텍스트를 통해 엔티티 객체의 상태를 관리하고, 트랜잭션 종료 시 데이터베이스와 동기화하여 변경 사항을 반영한다.
+5. 데이터 변경 감지 (Dirty Checking)
+	1. JPA는 영속 상태의 엔티티에서 변경된 값을 자동으로 감지하여 트랜잭션 종료 시 변경된 데이터를 데이터베이스에 반영한다.
+	2. 데이터 변경 감지 메커니즘을 통해 엔티티가 수정되면, flush() 메서드를 호출해 트랜잭션 종료 시 데이터베이스와 자동으로 동기화한다.
+6. 지연 로딩 (Lazy Loading)
+	1. JPA는 연관 관계를 가진 엔티티를 필요할 때 로드하는 지연 로딩을 지원하여 성능 최적화를 돕는다. 지연 로딩이 설정된 엔티티는 실제로 접근할 때 로드된다.
+7. 2차 캐시
+	1. 애플리케이션 전역에서 사용 가능한 캐시로, 여러 EntityManager 또는 세션 간에 공유된다.
+	2. 애플리케이션 전체에서 유효하며, 한 번 로드된 엔티티는 애플리케이션 범위에서 재사용 가능하다.
+	3. 데이터베이스와의 접근을 줄여 성능을 항상시킬 수 있다.
+
+<br/>
 
 #### Hibernate
 
 JPA 구현체 중 하나로, 자바 객체와 데이터베이스 간 매핑을 자동으로 처리하는 ORM 프레임워크이다. 복잡한 SQL 쿼리를 작성할 필요 없이 객체지향적으로 데이터베이스 작업을 수행할 수 있도록 하며, 캐싱, 연관 관계 매핑, 지연 로딩 등의 기능을 제공한다.
+
+<br/>
+
+### R2DBC (Reactive Relational Database Connectivity)
+
+관계형 데이터베이스와의 비동기 논블로킹 연결을 지원하는 리액티브 프로그래밍을 위한 표준 API이다. 기존의 블로킹 방식인 JDBC와 달리 R2DBC는 비동기 스트링 방식으로 데이터를 처리하여 높은 성능과 확장성을 제공한다. R2DBC는 Spring WebFlux와 같은 리액티브 프레임워크와 함께 사용하기 적합하다.
+
+장점
+: 동시성을 높이고, 많은 요청을 효율적으로 처리 가능하다. 쿼리 결과를 스트리밍 방식으로 처리하여 메모리 효율성을 향상시킨다.
+
+단점
+: 성숙도가 낮아 드라이버 지원이 제한적이다. 학습 곡선이 있으며 동기 코드와 혼합 사용이 어렵다. 트랜잭션 관리가 복잡할 수 있으며, 블로킹 방식보다 디버깅이 어렵다.
+
+<br/>
+
+### MyBatis
+
+자바 객체와 SQL 데이터베이스 간의 매핑을 지원하는 퍼시스턴스 프레임워크로, SQL 쿼리를 XML이나 애노테이션으로 관리하며 복잡한 쿼리를 간편하게 실행할 수 있도록 돕는다.[^mybatis]
+
+<br/>
+
+## Security
+
+### OAuth (Open Authorization)
+
+사용자가 비밀번호를 제공하지 않고도 다른 웹사이트나 애플리케이션에 자신의 정보에 대한 접근 권할을 부여할 수 있는 개방형 표준 프로토콜이다.[^oauth]
+
+<br/>
+
+### JWT (JSON Web Token)
+
+두 시스템 간 정보를 안전하게 전송하기 위한 개방형 표준으로, 주로 사용자 인증과 권한 부여에 사용된다.[^jwt]
 
 <br/>
 
@@ -434,6 +559,10 @@ RabbitMQ는 신뢰성 있는 메시지 전송과 다양한 라우팅이 필요�
 
 컨테이너화된 애플리케이션의 배포, 확장, 관리 자동화를 위한 오픈 소스 플랫폼으로, 다양한 환경(온프레미스, 클라우드 등)에서 컨테이너 오케스트레이션을 지원하며, 서비스 복구, 로드 밸런싱, 자동 확장 등의 기능을 제공한다.
 
+#### Helm
+
+Kubernates 애플리케이션을 관리하기 위한 패키지 매니저로, 애플리케이션을 차트(chart)라는 패키지로 정의하고 배포, 업그레이드, 롤백 등을 쉽게 수행할 수 있도록 한다. 이를 통해 Kubernates 리소스의 복잡한 설정을 간소화하고 일관성 있는 배포 환경을 제공한다.
+
 <br/>
 
 ### AWS
@@ -441,6 +570,18 @@ RabbitMQ는 신뢰성 있는 메시지 전송과 다양한 라우팅이 필요�
 #### EKS (Amazon Elastic Kubernates Service)
 
 AWS에서 제공하는 Kubernetes 관리 서비스로, Kubernetes 클러스터를 손쉽게 설정, 운영 및 확장할 수 있도록 지원하며, 자동화된 클러스터 관리와 AWS 인프라 통합을 통해 고가용성과 보안을 제공한다.
+
+<br/>
+
+### Zipkin
+
+분산 트레이싱 시스템으로, 마이크로서비스 아키텍처에서 요청이 여러 서비스에 걸쳐 처리될 때 각 서비스 간의 호출 관계와 성능 병목을 추적한다. 이를 통해 서비스 간 요청의 흐름을 시각화하고 지연 시간 문제를 식별하며, 트랜잭션 경로의 병목 지점을 분석하여 성능 최적화에 도움을 준다.
+
+<br/>
+
+### Grafana
+
+다양한 데이터 소스(MySQL, Prometheus 등)에서 수집된 메트릭 데이터를 시각화하고 모니터링하는 오픈 소스 분석 및 대시보드 도구로, 실시간 모니터링과 경고 설정이 가능하다.[^grafana]
 
 <br/>
 
@@ -511,5 +652,12 @@ AWS에서 제공하는 Kubernetes 관리 서비스로, Kubernetes 클러스터�
 
 ## Reference
 
-[^rest]: [What is REST?](https://restfulapi.net/)
-[^postgres-and-mysql]: [MySQL과 PostgreSQL의 차이점은 무엇인가요?](https://aws.amazon.com/ko/compare/the-difference-between-mysql-vs-postgresql/)
+[^rest]: [Lokesh Gupta: What is REST?](https://restfulapi.net/)
+[^postgres-and-mysql]: [Amazon: MySQL과 PostgreSQL의 차이점은 무엇인가요?](https://aws.amazon.com/ko/compare/the-difference-between-mysql-vs-postgresql/)
+[^oauth]: [wiki: OAuth](https://ko.wikipedia.org/wiki/OAuth)
+[^grafana]: [wiki: Grafana](https://ko.wikipedia.org/wiki/Grafana)
+[^jwt]: [wiki: JSON Web Token](https://ko.wikipedia.org/wiki/JSON_%EC%9B%B9_%ED%86%A0%ED%81%B0)
+[^typescript]: [wiki: TypeScript](https://ko.wikipedia.org/wiki/TypeScript)
+[^javascript]: [wiki: JavaScript](https://ko.wikipedia.org/wiki/JavaScript)
+[^mybatis]: [wiki: MyBatis](https://ko.wikipedia.org/wiki/MyBatis)
+[^microservices]: [Microsoft Learn: 마이크로서비스 아키텍처 가이드](https://learn.microsoft.com/ko-kr/azure/architecture/guide/architecture-styles/microservices)
