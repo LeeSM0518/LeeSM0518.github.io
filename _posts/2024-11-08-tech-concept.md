@@ -13,7 +13,7 @@ description: 다양한 기술들의 개념을 정리
 
 ### Layered Architecture
 
-**애플리케이션을 독립적인 계층으로 분리**하여 각 계층이 특정 역할을 수행하는 구조로, 일반적으로 프레젠테이션, 비즈니스, 퍼시스턴스, 데이터베이스 계층으로 구성된다.
+**애플리케이션을 독립적인 계층으로 분리**하여 각 계층이 특정 역할을 수행하는 구조로, 일반적으로 프레젠테이션, 비즈니스, 퍼시스턴스, 데이터베이스 계층으로 구성된다.[^layerd-architecture]
 
 <br/>
 
@@ -52,7 +52,7 @@ MSA를 적용하기 위해 필요한 요소들은 다음과 같다.[^microservic
 4. 서비스 간 통신
    : gRPC, REST API, 메시지 큐(Kafka, RabbitMQ 등)로 동기/비동기 통신 방식을 설정한다.
 5. 모니터링과 분산 트레이싱
-   : Prometheue, Grafana, Zipkin으로 성능과 호출 경로를 추적한다.
+   : Prometheus, Grafana, Zipkin으로 성능과 호출 경로를 추적한다.
 6. 오케스트레이션 도구
    : Kubernetes로 컨테이너화된 서비스 배포, 확장 및 관리를 자동화한다.
 7. CI/CD 파이프라인
@@ -64,7 +64,7 @@ MSA를 적용하기 위해 필요한 요소들은 다음과 같다.[^microservic
 
 ### Hexagonal Architecture
 
-애플리케이션의 핵심 비즈니스 로직과 외부 시스템(데이터베이스, API 등) 간 의존성을 포트와 어댑터를 통해 분리하여, 핵심 로직이 외부 환경에 영향을 받지 않도록 하는 구조이다. 
+애플리케이션의 **핵심 비즈니스 로직과 외부 시스템(데이터베이스, API 등) 간 의존성을 포트와 어댑터를 통해 분리**하여, 핵심 로직이 외부 환경에 영향을 받지 않도록 하는 구조이다. 
 
 장점
 : 비즈니스 로직과 외부 의존성 분리로 테스트와 유지보수가 용이하며, 유연한 구조로 확장성과 모듈성이 높음
@@ -250,6 +250,40 @@ Kotlin은 더 간결한 구문과 널 안정성을 제공하고 함수형 프로
 
 **객체 지향 프로그래밍 언어**로, 플랫폼 독립성, 강력한 라이브러리, 안정성과 확장성 덕분에 웹, 모바일, 엔터프라이즈 애플리케이션에서 널리 사용된다.
 
+
+#### OOP (Object-Oriented Programming)
+
+프로그램을 객체로 구성하고, 이 객체들이 상호작용하여 작업을 수행하는 프로그래밍 패러다임이다. 캡슐화, 상속, 추상화, 다형성의 네 가지 특징을 기반으로 하며, 코드 재사용성과 유지보수성을 높이고, 복잡한 문제를 객체 단위로 쉽게 관리할 수 있도록 한다.
+
+캡슐화 (Encapsulation)
+: 외부로부터 데이터에 직접 접근하지 못하도록 제한하여 데이터 무결성을 보호하는 원칙
+
+상속 (Inheritance)
+: 기존 클래스의 속성과 메서드를 새로운 클래스가 물려받아 코드 재사용성을 높이고, 계층 구조를 통해 유사한 클래스들을 조직화할 수 있게 한다.
+
+추상화 (Abstraction)
+: 시스템의 복잡성을 줄이기 위해 중요 속성과 동작만을 추려내어 모델링하고, 세부 사항을 감추어 간결하고 효율적인 설계를 가능하게 한다.
+
+다형성 (Polymorphism)
+: 동일한 메서드 호출이 객체의 타입에 따라 다르게 동작하도록 하여 코드의 유연성을 높이며, 다양한 객체를 동일한 인터페이스로 다룰 수 있게 한다.
+
+<br/>
+
+객체 지향 설계의 5가지 기본 원칙으로, 코드의 유지보수성과 확장성을 높여준다.
+
+1. 단일 책임 원칙 (SRP, Single Responsibility Principle) 
+   : 클래스는 하나의 책임만 가져야 하며, 변경의 이유가 하나여야 한다.
+2. 개방-폐쇄 원칙 (OCP, Open-Closed Principle)
+   : 클래스는 확장에는 열려 있어야 하고, 수정에는 닫혀 있어야 한다.
+3. 리스코프 치환 원칙 (LSP, Liskov Substitution Principle)
+   : 서브클래스는 언제나 자신의 기반 클래스를 대체할 수 있어야 한다.
+4. 인터페이스 분리 원칙 (ISP, Interface Segregation Principle)
+   : 인터페이스는 클라이언트에 특화되도록 분리하여 설계해야 한다.
+5. 의존 역전 원칙 (DIP, Dependency Inversion Principle)
+   : 고수준 모듈은 저수준 모듈에 의존하지 않고, 추상화에 의존해야 한다.
+
+<br/>
+
 #### JVM (Java Virtual Machine)
 
 자바 애플리케이션을 **운영체제와 무관하게 실행할 수 있도록 바이트코드를 해석하고 실행**하는 가상 머신으로, 메모리 관리와 가비지 컬렉션 등의 기능을 제공한다.
@@ -325,39 +359,6 @@ JavaScript에 정적 타입 검사와 객체지향 기능을 추가하여 코드
 ### JavaScript
 
 웹 페이지에 동적인 기능을 추가하기 위한 프로그래밍 언어로, 브라우저와 서버에서 모두 실행 가능하며, 인터랙티브한 사용자 경험을 제공한다.[^javascript]
-
-<br/>
-
-## OOP (Object-Oriented Programming)
-
-프로그램을 객체로 구성하고, 이 객체들이 상호작용하여 작업을 수행하는 프로그래밍 패러다임이다. 캡슐화, 상속, 추상화, 다형성의 네 가지 특징을 기반으로 하며, 코드 재사용성과 유지보수성을 높이고, 복잡한 문제를 객체 단위로 쉽게 관리할 수 있도록 한다.
-
-캡슐화 (Encapsulation)
-: 외부로부터 데이터에 직접 접근하지 못하도록 제한하여 데이터 무결성을 보호하는 원칙
-
-상속 (Inheritance)
-: 기존 클래스의 속성과 메서드를 새로운 클래스가 물려받아 코드 재사용성을 높이고, 계층 구조를 통해 유사한 클래스들을 조직화할 수 있게 한다.
-
-추상화 (Abstraction)
-: 시스템의 복잡성을 줄이기 위해 중요 속성과 동작만을 추려내어 모델링하고, 세부 사항을 감추어 간결하고 효율적인 설계를 가능하게 한다.
-
-다형성 (Polymorphism)
-: 동일한 메서드 호출이 객체의 타입에 따라 다르게 동작하도록 하여 코드의 유연성을 높이며, 다양한 객체를 동일한 인터페이스로 다룰 수 있게 한다.
-
-### SOLID
-
-객체 지향 설계의 5가지 기본 원칙으로, 코드의 유지보수성과 확장성을 높여준다.
-
-1. 단일 책임 원칙 (SRP, Single Responsibility Principle) 
-   : 클래스는 하나의 책임만 가져야 하며, 변경의 이유가 하나여야 한다.
-2. 개방-폐쇄 원칙 (OCP, Open-Closed Principle)
-   : 클래스는 확장에는 열려 있어야 하고, 수정에는 닫혀 있어야 한다.
-3. 리스코프 치환 원칙 (LSP, Liskov Substitution Principle)
-   : 서브클래스는 언제나 자신의 기반 클래스를 대체할 수 있어야 한다.
-4. 인터페이스 분리 원칙 (ISP, Interface Segregation Principle)
-   : 인터페이스는 클라이언트에 특화되도록 분리하여 설계해야 한다.
-5. 의존 역전 원칙 (DIP, Dependency Inversion Principle)
-   : 고수준 모듈은 저수준 모듈에 의존하지 않고, 추상화에 의존해야 한다.
 
 <br/>
 
@@ -661,3 +662,4 @@ AWS에서 제공하는 Kubernetes 관리 서비스로, Kubernetes 클러스터�
 [^javascript]: [wiki: JavaScript](https://ko.wikipedia.org/wiki/JavaScript)
 [^mybatis]: [wiki: MyBatis](https://ko.wikipedia.org/wiki/MyBatis)
 [^microservices]: [Microsoft Learn: 마이크로서비스 아키텍처 가이드](https://learn.microsoft.com/ko-kr/azure/architecture/guide/architecture-styles/microservices)
+[^layerd-architecture]: [Oreilly: Layered Architecture](https://www.oreilly.com/library/view/software-architecture-patterns/9781491971437/ch01.html)
