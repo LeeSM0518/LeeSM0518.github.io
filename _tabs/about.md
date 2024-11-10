@@ -4,6 +4,10 @@ icon: fas fa-info-circle
 order: 4
 ---
 
+![hits](https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fleesm0518.github.io%2Fabout&count_bg=%23444444&title_bg=%231E1E1E&icon=&icon_color=%23717070&title=hits&edge_flat=false){: .left}
+
+<br/>
+
 ## 경력
 
 ### [SI Analytics](https://si-analytics.ai/)
