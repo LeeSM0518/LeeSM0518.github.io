@@ -67,7 +67,8 @@ FROM label_data ld,
 ```sql
 UPDATE label_data  
 SET status     = LabelStatus.TP.ordinal,  
-    is_checked = TRUEWHERE data_id IN (:dataIdList);
+    is_checked = TRUE
+WHERE data_id IN (:dataIdList);
 ```
 
 LabelReview 엔티티 목록을 순회하며 저장하던 로직을 **엔티티 목록을 한 번에 저장**하도록 수정했다.
@@ -101,7 +102,7 @@ CoroutineScope(Dispatchers.IO).launch {
 
 ## 1차 성능 측정
 
-1차 성능 개선 후 성능을 측정한 결과, 약 15초로 개선된 것을 확인했다. 즉, **1분 30초에서 15초로 약 6배 개선**하여 **버그 수정 작업을 완료했다.** 그러나 15초도 느리다고 판단되어, 아직 개선하지 못한 부분을 분석하여 추가 작업을 진행했다.
+1차 성능 개선 후 성능을 측정한 결과, 약 15초로 개선된 것을 확인했다. 즉, **1분 30초에서 15초로 약 6배 개선**하여 **버그 수정 작업을완료했다.** 그러나 15초도 느리다고 판단되어, 아직 개선하지 못한 부분을 분석하여 추가 작업을 진행했다.
 
 ## 2차 원인 분석
 
