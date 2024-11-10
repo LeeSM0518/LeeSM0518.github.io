@@ -1,5 +1,5 @@
 ---
-title: 검수 정보 저장 API 성능 개선
+title: 검수 저장 성능 개선
 date: 2024-11-10 08:00:00 +0900
 categories: troubleshooting
 tags:

@@ -1,5 +1,5 @@
 ---
-title: 위성영상 목록 삭제 API 성능 개선
+title: 위성영상 삭제 성능 개선
 date: 2024-11-10 03:00:00 +0900
 categories: troubleshooting
 tags:
