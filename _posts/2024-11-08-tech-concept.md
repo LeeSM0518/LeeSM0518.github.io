@@ -4,8 +4,6 @@ date: 2024-11-08 15:00:00
 categories: basic
 tags:
   - basic
-  - architecture
-  - db
 description: 다양한 기술들의 개념을 정리
 ---
 
