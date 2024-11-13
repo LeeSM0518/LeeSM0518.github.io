@@ -284,42 +284,6 @@ Kotlin은 `suspend` 함수를 사용해 **비동기 작업을 일시 중지하�
 
 **객체 지향 프로그래밍 언어**로, 플랫폼 독립성, 강력한 라이브러리, 안정성과 확장성 덕분에 웹, 모바일, 엔터프라이즈 애플리케이션에서 널리 사용된다.
 
-
-#### OOP (Object-Oriented Programming)
-
-**프로그램을 객체로 구성하고, 이 객체들이 상호작용하여 작업을 수행하는 프로그래밍 패러다임**이다. **캡슐화, 상속, 추상화, 다형성**의 네 가지 특징을 기반으로 하며, **코드 재사용성과 유지보수성을 높이고**, 복잡한 문제를 객체 단위로 쉽게 관리할 수 있도록 한다.
-
-캡슐화 (Encapsulation)
-: 외부로부터 데이터에 직접 접근하지 못하도록 제한하여 **데이터 무결성을 보호**하는 원칙
-
-상속 (Inheritance)
-: 기존 클래스의 속성과 메서드를 새로운 클래스가 물려받아 **코드 재사용성을 높이고**, 계층 구조를 통해 유사한 클래스들을 조직화할 수 있게 한다.
-
-추상화 (Abstraction)
-: 시스템의 복잡성을 줄이기 위해 **중요 속성과 동작만을 추려내어 모델링**하고, 세부 사항을 감추어 **간결하고 효율적인 설계**를 가능하게 한다.
-
-다형성 (Polymorphism)
-: 동일한 메서드 호출이 객체의 타입에 따라 다르게 동작하도록 하여 **코드의 유연성**을 높이며, **다양한 객체를 동일한 인터페이스로** 다룰 수 있게 한다.
-
-<br/>
-
-#### SOLID
-
-**객체 지향 설계의 5가지 기본 원칙**으로, 코드의 유지보수성과 확장성을 높여준다.
-
-1. **단일 책임 원칙 (SRP, Single Responsibility Principle)** 
-   : 클래스는 **하나의 책임**만 가져야 하며, 변경의 이유가 하나여야 한다.
-2. **개방-폐쇄 원칙 (OCP, Open-Closed Principle)**
-   : 클래스는 **확장에는 열려** 있어야 하고, **수정에는 닫혀** 있어야 한다.
-3. **리스코프 치환 원칙 (LSP, Liskov Substitution Principle)**
-   : **서브클래스는 언제나 상위 클래스**를 대체할 수 있어야 한다.
-4. **인터페이스 분리 원칙 (ISP, Interface Segregation Principle)**
-   : 인터페이스는 클라이언트에 특화되도록 **분리하여 설계**해야 한다.
-5. **의존 역전 원칙 (DIP, Dependency Inversion Principle)**
-   : 고수준 모듈은 저수준 모듈에 의존하지 않고, **추상화에 의존**해야 한다.
-
-<br/>
-
 #### JVM (Java Virtual Machine)
 
 자바 애플리케이션을 **운영체제와 무관하게 실행할 수 있도록 바이트코드를 해석하고 실행**하는 가상 머신으로, 메모리 관리와 가비지 컬렉션 등의 기능을 제공한다.
@@ -671,6 +635,655 @@ public class StringTemplateExample {
 
 <br/>
 
+## Code Quality
+
+### OOP (Object-Oriented Programming)
+
+**프로그램을 객체로 구성하고, 이 객체들이 상호작용하여 작업을 수행하는 프로그래밍 패러다임**이다. **캡슐화, 상속, 추상화, 다형성**의 네 가지 특징을 기반으로 하며, **코드 재사용성과 유지보수성을 높이고**, 복잡한 문제를 객체 단위로 쉽게 관리할 수 있도록 한다.
+
+캡슐화 (Encapsulation)
+: 외부로부터 데이터에 직접 접근하지 못하도록 제한하여 **데이터 무결성을 보호**하는 원칙
+
+상속 (Inheritance)
+: 기존 클래스의 속성과 메서드를 새로운 클래스가 물려받아 **코드 재사용성을 높이고**, 계층 구조를 통해 유사한 클래스들을 조직화할 수 있게 한다.
+
+추상화 (Abstraction)
+: 시스템의 복잡성을 줄이기 위해 **중요 속성과 동작만을 추려내어 모델링**하고, 세부 사항을 감추어 **간결하고 효율적인 설계**를 가능하게 한다.
+
+다형성 (Polymorphism)
+: 동일한 메서드 호출이 객체의 타입에 따라 다르게 동작하도록 하여 **코드의 유연성**을 높이며, **다양한 객체를 동일한 인터페이스로** 다룰 수 있게 한다.
+
+#### SOLID
+
+**객체 지향 설계의 5가지 기본 원칙**으로, 코드의 유지보수성과 확장성을 높여준다.
+
+1. **단일 책임 원칙 (SRP, Single Responsibility Principle)** 
+   : 클래스는 **하나의 책임**만 가져야 하며, 변경의 이유가 하나여야 한다.
+2. **개방-폐쇄 원칙 (OCP, Open-Closed Principle)**
+   : 클래스는 **확장에는 열려** 있어야 하고, **수정에는 닫혀** 있어야 한다.
+3. **리스코프 치환 원칙 (LSP, Liskov Substitution Principle)**
+   : **서브클래스는 언제나 상위 클래스**를 대체할 수 있어야 한다.
+4. **인터페이스 분리 원칙 (ISP, Interface Segregation Principle)**
+   : 인터페이스는 클라이언트에 특화되도록 **분리하여 설계**해야 한다.
+5. **의존 역전 원칙 (DIP, Dependency Inversion Principle)**
+   : 고수준 모듈은 저수준 모듈에 의존하지 않고, **추상화에 의존**해야 한다.
+
+#### Design Pattern
+
+소프트웨어 공학에서 자주 발생하는 문제들을 해결하기 위해 **재사용 가능한 솔루션을 제공하는 템플릿**이다.
+
+**생성 패턴**
+
+객체 생성과 관련된 패턴으로, **객체 생성 과정을 캡슐화**하여 시스템의 유연성과 재사용성을 높인다.
+
+- 싱글턴 패턴 : 클래스의 **인스턴스를 단 하나만** 생성하고, 전역적으로 접근할 수 있도록 한다.
+
+```java
+public class Singleton {
+    private static Singleton instance;
+
+    private Singleton() {
+        // 생성자를 private으로 설정하여 외부에서 인스턴스 생성을 방지
+    }
+
+    public static Singleton getInstance() {
+        if (instance == null) {
+            synchronized(Singleton.class) {
+                if (instance == null) {
+                    instance = new Singleton();
+                }
+            }
+        }
+        return instance;
+    }
+
+    public void showMessage(){
+        System.out.println("Hello Singleton!");
+    }
+}
+```
+
+- 팩토리 메서드 패턴 : 객체 생성의 인터페이스를 정의하고, **서브클래스가 어떤 클래스의 인스턴스를 생성할지**를 결정하게 한다.
+
+```java
+// 제품 인터페이스
+public interface Product {
+    void use();
+}
+
+// 구체적인 제품 클래스
+public class ConcreteProductA implements Product {
+    public void use() {
+        System.out.println("Using Product A");
+    }
+}
+
+// 팩토리 클래스
+public abstract class Creator {
+    public abstract Product factoryMethod();
+
+    public void someOperation() {
+        Product product = factoryMethod();
+        product.use();
+    }
+}
+
+// 구체적인 팩토리 클래스
+public class ConcreteCreatorA extends Creator {
+    public Product factoryMethod() {
+        return new ConcreteProductA();
+    }
+}
+```
+
+- 추상 팩토리 패턴 : 관련된 객체들을 생성하기 위한 인터페이스를 제공하여, 구체적인 클래스에 의존하지 않도록 한다.
+
+```java
+// 추상 제품 인터페이스
+public interface Button {
+    void render();
+}
+
+public interface Checkbox {
+    void render();
+}
+
+// 구체적인 제품 클래스
+public class WinButton implements Button {
+    public void render() {
+        System.out.println("Rendering Windows Button");
+    }
+}
+
+public class MacButton implements Button {
+    public void render() {
+        System.out.println("Rendering Mac Button");
+    }
+}
+
+public class WinCheckbox implements Checkbox {
+    public void render() {
+        System.out.println("Rendering Windows Checkbox");
+    }
+}
+
+public class MacCheckbox implements Checkbox {
+    public void render() {
+        System.out.println("Rendering Mac Checkbox");
+    }
+}
+
+// 추상 팩토리
+public interface GUIFactory {
+    Button createButton();
+    Checkbox createCheckbox();
+}
+
+// 구체적인 팩토리
+public class WinFactory implements GUIFactory {
+    public Button createButton() {
+        return new WinButton();
+    }
+    public Checkbox createCheckbox() {
+        return new WinCheckbox();
+    }
+}
+
+public class MacFactory implements GUIFactory {
+    public Button createButton() {
+        return new MacButton();
+    }
+    public Checkbox createCheckbox() {
+        return new MacCheckbox();
+    }
+}
+
+// 클라이언트 코드
+public class Application {
+    private Button button;
+    private Checkbox checkbox;
+
+    public Application(GUIFactory factory) {
+        button = factory.createButton();
+        checkbox = factory.createCheckbox();
+    }
+
+    public void render() {
+        button.render();
+        checkbox.render();
+    }
+}
+```
+
+<br/>
+
+**구조 패턴**
+
+클래스와 객체의 조합을 다루는 패턴으로, **복잡한 구조를 단순화**하고 유연성을 향상시킨다.
+
+- 어댑터 패턴 : 호환되지 않는 인터페이스를 가진 **클래스를 함께 작동할 수 있도록 변환**한다.
+
+```java
+// 기존 클래스
+public class Adaptee {
+    public void specificRequest() {
+        System.out.println("Specific request");
+    }
+}
+
+// 타겟 인터페이스
+public interface Target {
+    void request();
+}
+
+// 어댑터 클래스
+public class Adapter implements Target {
+    private Adaptee adaptee;
+
+    public Adapter(Adaptee adaptee) {
+        this.adaptee = adaptee;
+    }
+
+    public void request() {
+        adaptee.specificRequest();
+    }
+}
+
+// 클라이언트 코드
+public class Client {
+    public static void main(String[] args) {
+        Adaptee adaptee = new Adaptee();
+        Target target = new Adapter(adaptee);
+        target.request(); // "Specific request" 출력
+    }
+}
+```
+
+- 데코레이터 패턴 : 객체에 추가적인 **기능을 동적으로 추가**할 수 있도록 한다.
+
+```java
+// 컴포넌트 인터페이스
+public interface Coffee {
+    String getDescription();
+    double getCost();
+}
+
+// 구체적인 컴포넌트
+public class SimpleCoffee implements Coffee {
+    public String getDescription() {
+        return "Simple Coffee";
+    }
+    public double getCost() {
+        return 2.0;
+    }
+}
+
+// 추상 데코레이터
+public abstract class CoffeeDecorator implements Coffee {
+    protected Coffee decoratedCoffee;
+
+    public CoffeeDecorator(Coffee coffee) {
+        this.decoratedCoffee = coffee;
+    }
+
+    public String getDescription() {
+        return decoratedCoffee.getDescription();
+    }
+
+    public double getCost() {
+        return decoratedCoffee.getCost();
+    }
+}
+
+// 구체적인 데코레이터
+public class MilkDecorator extends CoffeeDecorator {
+    public MilkDecorator(Coffee coffee) {
+        super(coffee);
+    }
+
+    public String getDescription() {
+        return decoratedCoffee.getDescription() + ", Milk";
+    }
+
+    public double getCost() {
+        return decoratedCoffee.getCost() + 0.5;
+    }
+}
+
+public class SugarDecorator extends CoffeeDecorator {
+    public SugarDecorator(Coffee coffee) {
+        super(coffee);
+    }
+
+    public String getDescription() {
+        return decoratedCoffee.getDescription() + ", Sugar";
+    }
+
+    public double getCost() {
+        return decoratedCoffee.getCost() + 0.3;
+    }
+}
+
+// 클라이언트 코드
+public class Client {
+    public static void main(String[] args) {
+        Coffee coffee = new SimpleCoffee();
+        System.out.println(coffee.getDescription() + " $" + coffee.getCost());
+
+        coffee = new MilkDecorator(coffee);
+        System.out.println(coffee.getDescription() + " $" + coffee.getCost());
+
+        coffee = new SugarDecorator(coffee);
+        System.out.println(coffee.getDescription() + " $" + coffee.getCost());
+    }
+}
+```
+
+- 프록시 패턴 : 실제 객체에 대한 접근을 제어하기 위해 **대리 객체를 제공**한다.
+
+```java
+// 서비스 인터페이스
+public interface Image {
+    void display();
+}
+
+// 실제 서비스 클래스
+public class RealImage implements Image {
+    private String filename;
+
+    public RealImage(String filename) {
+        this.filename = filename;
+        loadFromDisk();
+    }
+
+    private void loadFromDisk() {
+        System.out.println("Loading " + filename);
+    }
+
+    public void display() {
+        System.out.println("Displaying " + filename);
+    }
+}
+
+// 프록시 클래스
+public class ProxyImage implements Image {
+    private RealImage realImage;
+    private String filename;
+
+    public ProxyImage(String filename) {
+        this.filename = filename;
+    }
+
+    public void display() {
+        if(realImage == null) {
+            realImage = new RealImage(filename);
+        }
+        realImage.display();
+    }
+}
+
+// 클라이언트 코드
+public class Client {
+    public static void main(String[] args) {
+        Image image = new ProxyImage("test_image.jpg");
+
+        // 이미지가 실제로 로드되는 시점은 display()가 호출될 때
+        image.display();
+        image.display();
+    }
+}
+```
+
+<br/>
+
+**행위 패턴**
+
+**객체 간의 상호작용과 책임 분담**을 다루는 패턴으로, 시스템의 동적인 행동을 관리한다.
+
+- 옵저버 패턴 : 객체의 상태 변화가 있을 때, 이를 의존하는 **다른 객체들에게 자동으로 알리는** 패턴
+
+```java
+import java.util.ArrayList;
+import java.util.List;
+
+// 옵저버 인터페이스
+public interface Observer {
+    void update(String message);
+}
+
+// 구체적인 옵저버
+public class ConcreteObserver implements Observer {
+    private String name;
+
+    public ConcreteObserver(String name) {
+        this.name = name;
+    }
+
+    public void update(String message) {
+        System.out.println(name + " received: " + message);
+    }
+}
+
+// 주제(Subject) 클래스
+public class Subject {
+    private List<Observer> observers = new ArrayList<>();
+
+    public void attach(Observer observer){
+        observers.add(observer);
+    }
+
+    public void detach(Observer observer){
+        observers.remove(observer);
+    }
+
+    public void notifyObservers(String message){
+        for(Observer observer : observers){
+            observer.update(message);
+        }
+    }
+}
+
+// 클라이언트 코드
+public class Client {
+    public static void main(String[] args) {
+        Subject subject = new Subject();
+
+        Observer observer1 = new ConcreteObserver("Observer1");
+        Observer observer2 = new ConcreteObserver("Observer2");
+
+        subject.attach(observer1);
+        subject.attach(observer2);
+
+        subject.notifyObservers("Hello Observers!");
+    }
+}
+```
+
+- 전략 패턴 : 알고리즘을 캡슐화하여, **실행 중에 알고리즘을 교체**할 수 있도록 한다.
+
+```java
+// 전략 인터페이스
+public interface Strategy {
+    int execute(int a, int b);
+}
+
+// 구체적인 전략 클래스
+public class AddStrategy implements Strategy {
+    public int execute(int a, int b) {
+        return a + b;
+    }
+}
+
+public class SubtractStrategy implements Strategy {
+    public int execute(int a, int b) {
+        return a - b;
+    }
+}
+
+public class MultiplyStrategy implements Strategy {
+    public int execute(int a, int b) {
+        return a * b;
+    }
+}
+
+// 컨텍스트 클래스
+public class Context {
+    private Strategy strategy;
+
+    public void setStrategy(Strategy strategy){
+        this.strategy = strategy;
+    }
+
+    public int executeStrategy(int a, int b){
+        return strategy.execute(a, b);
+    }
+}
+
+// 클라이언트 코드
+public class Client {
+    public static void main(String[] args) {
+        Context context = new Context();
+
+        // 덧셈 전략 사용
+        context.setStrategy(new AddStrategy());
+        System.out.println("10 + 5 = " + context.executeStrategy(10, 5));
+
+        // 뺄셈 전략 사용
+        context.setStrategy(new SubtractStrategy());
+        System.out.println("10 - 5 = " + context.executeStrategy(10, 5));
+
+        // 곱셈 전략 사용
+        context.setStrategy(new MultiplyStrategy());
+        System.out.println("10 * 5 = " + context.executeStrategy(10, 5));
+    }
+}
+```
+
+- 템플릿 메서드 패턴 : **알고리즘의 골격을 정의**하고, 일부 단계를 서브클래스에서 구현할 수 있도록 한다.
+
+```java
+// 추상 클래스
+public abstract class AbstractClass {
+    // 템플릿 메서드
+    public final void templateMethod() {
+        step1();
+        step2();
+        step3();
+    }
+
+    protected void step1() {
+        System.out.println("Step 1: Common step");
+    }
+
+    protected abstract void step2(); // 서브클래스에서 구현
+
+    protected void step3() {
+        System.out.println("Step 3: Common step");
+    }
+}
+
+// 구체적인 클래스
+public class ConcreteClass extends AbstractClass {
+    protected void step2() {
+        System.out.println("Step 2: Specific step");
+    }
+}
+
+// 클라이언트 코드
+public class Client {
+    public static void main(String[] args) {
+        AbstractClass instance = new ConcreteClass();
+        instance.templateMethod();
+    }
+}
+```
+
+- 커맨드 패턴 : **요청을 캡슐화**하여, 요청의 발신자와 수신자를 분리하고, 요청을 큐에 저장하거나 로그에 기록할 수 있게 한다.
+
+```java
+// 커맨드 인터페이스
+public interface Command {
+    void execute();
+}
+
+// 구체적인 커맨드 클래스
+public class LightOnCommand implements Command {
+    private Light light;
+
+    public LightOnCommand(Light light){
+        this.light = light;
+    }
+
+    public void execute() {
+        light.on();
+    }
+}
+
+public class LightOffCommand implements Command {
+    private Light light;
+
+    public LightOffCommand(Light light){
+        this.light = light;
+    }
+
+    public void execute() {
+        light.off();
+    }
+}
+
+// 수신자 클래스
+public class Light {
+    public void on(){
+        System.out.println("Light is ON");
+    }
+    public void off(){
+        System.out.println("Light is OFF");
+    }
+}
+
+// 호출자 클래스
+public class RemoteControl {
+    private Command command;
+
+    public void setCommand(Command command){
+        this.command = command;
+    }
+
+    public void pressButton(){
+        command.execute();
+    }
+}
+
+// 클라이언트 코드
+public class Client {
+    public static void main(String[] args) {
+        Light light = new Light();
+        Command lightOn = new LightOnCommand(light);
+        Command lightOff = new LightOffCommand(light);
+
+        RemoteControl remote = new RemoteControl();
+        
+        remote.setCommand(lightOn);
+        remote.pressButton(); // "Light is ON" 출력
+
+        remote.setCommand(lightOff);
+        remote.pressButton(); // "Light is OFF" 출력
+    }
+}
+```
+
+<br/>
+
+### Clean Code
+
+**읽기 쉽고, 이해하기 쉬우며, 유지보수가 용이한 소프트웨어 코드**를 작성하는 데 중점을 둔 소프트웨어 개발 철학이다. 클린 코드는 다음과 같은 특징을 갖는다.
+
+가독성
+: 코드를 읽는 사람이 쉽게 이해할 수 있도록 작성됨.
+
+명확성
+: 코드의 목적과 기능이 명확하게 드러남.
+
+간결성
+: 불필요한 복잡성을 제거하고, 필요한 기능만을 포함함.
+
+유지보수성
+: 코드 변경이나 확장이 용이하도록 구조화됨.
+
+<br/>
+
+**클린 코드의 주요 원칙**
+
+1. 의미 있는 이름 사용 : 명확하고 설명적이고 일관되게 이름을 사용함
+
+2. 함수의 단일 책임 원칙 : 함수는 하나의 기능만 수행함
+
+3. 작은 함수 : 짧고 간결함
+
+4. 주석의 사용 : 주석은 필요할 때만 사용, 코드 자체로 충분히 이해될 수 있도록 함
+
+5. 일관된 포맷팅 : 코드 스타일(들여쓰기, 공백, 중괄호 위치)을 일관되게 유지함
+
+6. 예외 처리 : 예외는 로직과 분리하며, 문제의 원인을 명확하게 설명해야 함
+
+<br/>
+
+### DDD (Domain Driven Design)
+
+복잡한 소프트웨어를 효과적으로 관리하고 개발하기 위한 소프트웨어 설계 접근 방식이다. DDD는 소프트웨어의 **핵심 비즈니스 로직을 도메인에 집중시키고**, 도메인 전문가와 개발자 간의 협력을 강화하여, **유지보수성과 확장성이 높은 소프트웨어를 구축**하는 데 중점을 둔다.
+
+<br/>
+
+### TDD (Test Driven Development)
+
+소프트웨어 개발 방법론 중 하나로, **코드를 작성하기 전에 테스트 케이스를 먼저 작성**하고, 그 테스트를 통과할 수 있는 **최소한의 코드를 구현**하는 방식이다. TDD는 소프트웨어의 품질을 향상시키고, 유지보수를 용이하게 하며, 개발 과정을 체계적으로 관리할 수 있도록 도와준다. TDD 개발 프로세스는 다음 순서를 따르는 방법론이다.
+
+1. **테스트 작성 (Red)** : 아직 구현되지 않은 기능에 대한 테스트 케이스를 작성
+2. **코드 작성 (Green)** : 테스트를 통과할 수 있도록 최소한의 코드 작성
+3. **리팩토링 (Refactor)** : 코드의 구조를 개선하여 가독성을 높이고, 중복을 제거하며, 성능을 향상시킴
+
+<br/>
+
 ## Framework & Library
 
 ### Spring
@@ -901,19 +1514,19 @@ Kubernates 애플리케이션을 관리하기 위한 패키지 매니저로, 애
 
 #### EKS (Amazon Elastic Kubernates Service)
 
-AWS에서 제공하는 Kubernetes 관리 서비스로, Kubernetes 클러스터를 손쉽게 설정, 운영 및 확장할 수 있도록 지원하며, 자동화된 클러스터 관리와 AWS 인프라 통합을 통해 고가용성과 보안을 제공한다.
+AWS에서 제공하는 **Kubernetes 관리 서비스**로, Kubernetes 클러스터를 손쉽게 설정, 운영 및 확장할 수 있도록 지원하며, 자동화된 클러스터 관리와 AWS 인프라 통합을 통해 고가용성과 보안을 제공한다.
 
 <br/>
 
 ### Zipkin
 
-분산 트레이싱 시스템으로, 마이크로서비스 아키텍처에서 요청이 여러 서비스에 걸쳐 처리될 때 각 서비스 간의 호출 관계와 성능 병목을 추적한다. 이를 통해 서비스 간 요청의 흐름을 시각화하고 지연 시간 문제를 식별하며, 트랜잭션 경로의 병목 지점을 분석하여 성능 최적화에 도움을 준다.
+**분산 트레이싱 시스템**으로, 마이크로서비스 아키텍처에서 요청이 여러 서비스에 걸쳐 처리될 때 각 서비스 간의 호출 관계와 성능 병목을 추적한다. 이를 통해 서비스 간 요청의 흐름을 시각화하고 지연 시간 문제를 식별하며, 트랜잭션 경로의 병목 지점을 분석하여 성능 최적화에 도움을 준다.
 
 <br/>
 
 ### Grafana
 
-다양한 데이터 소스(MySQL, Prometheus 등)에서 수집된 메트릭 데이터를 시각화하고 모니터링하는 오픈 소스 분석 및 대시보드 도구로, 실시간 모니터링과 경고 설정이 가능하다.[^grafana]
+다양한 데이터 소스(MySQL, Prometheus 등)에서 수집된 **메트릭 데이터를 시각화하고 모니터링하는 오픈 소스 분석 및 대시보드 도구**로, 실시간 모니터링과 경고 설정이 가능하다.[^grafana]
 
 <br/>
 
