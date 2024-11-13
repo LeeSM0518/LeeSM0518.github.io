@@ -13,11 +13,17 @@ description: 다양한 기술들의 개념을 정리
 
 **애플리케이션을 독립적인 계층으로 분리**하여 각 계층이 특정 역할을 수행하는 구조로, 일반적으로 프레젠테이션, 비즈니스, 퍼시스턴스, 데이터베이스 계층으로 구성된다.[^layerd-architecture]
 
+![layerd-architecture-image](/assets/img/2024-11-09-layerd-architecture.png)
+_Layered Architecture_
+
 <br/>
 
 ### Monolithic Architecture
 
 애플리케이션의 **모든 기능이 하나의 통합된 코드베이스로 구성된 단일 구조**로 배포되는 아키텍처이다.
+
+![monolithic-architecture](/assets/img/2024-11-13-monolithic-architecture.webp)
+_Monolithic Architecture[^monolithic-architecture]_
 
 장점
 : 개발과 배포가 단순하고, 테스트와 디버깅이 쉬우며, 초기에 빠른 개발이 가능하다.
@@ -30,6 +36,9 @@ description: 다양한 기술들의 개념을 정리
 ### Microservice Architecture
 
 애플리케이션을 **독립적으로 배포 및 확장할 수 있는 작은 서비스 단위로 분리**해 개발하는 아키텍처이다. 애플리케이션이 복잡해지고 팀이 커져 확장성과 독립적인 배포가 필요할 때 적용하는 것이 적절하다.
+
+![microservice-architecture](/assets/img/microservice-architecture-image.png)
+_Microservice Architecture[^microservice-architecture]_
 
 장점
 : 서비스별 독립 배포와 확장이 가능하며, 장애 격리가 용이하고, 다양한 기술 스택을 사용할 수 있다.
@@ -63,6 +72,15 @@ MSA를 적용하기 위해 필요한 요소들은 다음과 같다.[^microservic
 ### Hexagonal Architecture
 
 애플리케이션의 **핵심 비즈니스 로직과 외부 시스템(데이터베이스, API 등) 간 의존성을 포트와 어댑터로 분리**하여, 핵심 로직이 외부 환경에 영향을 받지 않도록 하는 구조이다. 
+
+![hexagonal-architecture1](/assets/img/hexagonal-architecture1.png)
+_비즈니스 로직, 포트, 어댑터, 외부 컴포넌트로 구성된 Hexagonal Architecture[^hexagonal-architecture]_
+
+![hexagonal-architecture2](/assets/img/hexagonal-architecture2.png)
+_UI와 사용자 어댑터를 통해 Port로 요청 전달[^hexagonal-architecture]_
+
+![hexagonal-architecture3](/assets/img/hexagonal-architecture3.png)
+_Port를 통해 데이터베이스로 요청 전달[^hexagonal-architecture]_
 
 장점
 : 비즈니스 로직과 외부 의존성 분리로 테스트와 유지보수가 용이하며, 유연한 구조로 확장성과 모듈성이 높음
@@ -1628,3 +1646,6 @@ AWS에서 제공하는 **Kubernetes 관리 서비스**로, Kubernetes 클러스�
 [^Redis]: [Redis](https://redis.io/)
 [^Memcached]: [Memcached](https://www.memcached.org/)
 [^kotlin]: [Kotlin](https://kotlinlang.org/)
+[^monolithic-architecture]: [Geeks: Monolithic Architecture](https://www.geeksforgeeks.org/monolithic-architecture-system-design/)
+[^microservice-architecture]: [Chris Richardson: Microservice Architecture pattern](https://microservices.io/patterns/microservices.html)
+[^hexagonal-architecture]: [happycoders: Hexagonal Architecture](https://www.happycoders.eu/software-craftsmanship/hexagonal-architecture/)
