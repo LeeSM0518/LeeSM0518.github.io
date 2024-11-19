@@ -7,26 +7,6 @@ tags:
   - logging
 description: Spring Boot 로깅 가이드
 ---
-
-## 0. Tip
-
-콘솔에 출력되는 로그가 레벨에 따라 구분하기 쉽도록 색상으로 나오도록 설정한다.
-
-다음과 같이 `application.yml` 파일을 설정할 경우 로그 레벨 별로 다른 색상으로 출력되는 것을 확인할 수 있다.
-
-```yaml
-spring:
-  output:
-    ansi:
-      enabled: always
-```
-{: file='src/main/resources/application.yml'}
-
-![spring-logger-ansi](/assets/img/spring-logger-ansi.png)
-_적용 이후 콘솔 출력 결과_
-
-<br/>
-
 ## 1. Overview
 
 Spring Boot에서 사용할 수 있는 주요 로깅 옵션에 대해 살펴보자.
