@@ -62,6 +62,7 @@ spring:
     user: test
     # Database Password
     password: test
+    baseline-on-migrate: true
 ```
 {: file='application.yaml'}
 
