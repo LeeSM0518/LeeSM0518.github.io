@@ -1,6 +1,6 @@
 ---
 title: Spring R2DBC Migrations Using Flyway
-date: 2024-11-19 02:00:00 +0900
+date: 2024-11-22 13:00:00 +0900
 categories: spring
 tags:
   - spring
