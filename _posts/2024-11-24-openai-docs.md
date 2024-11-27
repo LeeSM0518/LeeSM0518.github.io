@@ -910,6 +910,306 @@ curl "https://api.openai.com/v1/chat/completions" \
     }'
 ```
 
+<br/>
+
+## 7. 텍스트 음성 변환
+
+텍스트를 음성 오디오로 변환하는 방법을 알아보자.
+
+### 7.1. 개요
+
+오디오 API는 TTS(텍스트 음성 변환) 모델을 기반으로 한 음성 엔드포인트를 제공한다.
+
+> OpenAI의 이용 정책에 따라 최종 사용자에게 들리는 TTS 음성이 인간의 음성이 아니라 AI가 생성한 음성이라는 점을 명확하게 공개해야 한다.
+{: .prompt-warning }
+
+### 7.2. 빠른 시작
+
+음성 엔드포인트는 세 가지 입력을 받는다. 모델, 오디오로 변환해야 하는 텍스트, 오디오 생성에 사용할 음성이다. 요청은 다음과 같다.
+
+```bash
+curl https://api.openai.com/v1/audio/speech \
+  -H "Authorization: Bearer $OPENAI_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "tts-1",
+    "input": "Today is a wonderful day to build something people love!",
+    "voice": "alloy"
+  }' \
+  --output speech.mp3
+```
+{: file='텍스트 음성 변환 명령어'}
+
+#### 7.2.1. 오디오 품질
+
+실시간 애플리케이션의 경우 표준 tts-1 모델은 가장 낮은 지연 시간을 제공하지만 tts-1-hd 모델보다 품질은 낮다. 
+
+#### 7.2.2. 음성 옵션
+
+음성은 alloy(남성1), echo(남성2), fable(남성3), onyx(남성4), nova(여성1), shimmer(여성2)을 제공한다.
+
+#### 7.2.3. 출력 형식
+
+기본 응답 형식은 "mp3" 이지만 "opus", "aac", "flac", "pcm" 등 다른 형식도 사용할 수 있다.
+
+<br/>
+
+## 8. 음성을 텍스트로 변환
+
+오디오를 텍스트로 변환하는 방법을 알아보자.
+
+### 8.1. 빠른 시작
+
+파일 업로드는 현재 25MB로 제한되어 있으며 다음과 같은 입력 파일 유형이 지원된다.
+- mp3, mp4, mpeg, mpga, m4a, wav, webm
+
+#### 8.1.1. Transcriptions (변환)
+
+다음과 같이 변환하려는 오디오 파일과 출력 파일 형식을 입력으로 전달한다.
+
+```bash
+curl --request POST \  
+  --url https://api.openai.com/v1/audio/transcriptions \  
+  --header "Authorization: Bearer $OPENAI_API_KEY" \  
+  --form "file=@${파일경로}" \  
+  --form model=whisper-1
+```
+{: file='변환 명령어'}
+
+```json
+{
+  "text": "실시간 애플리케이션의 경우 표준 TTS1 모델은 가장 낮은 지연 시간을 제공하지만 TTS1 HD 모델보다 품질은 낮다."
+}
+```
+{: file='변환 결과'}
+
+<br/>
+
+## 9. 함수 호출
+
+함수 호출(Function calling)을 통해 개발자는 언어 모델을 외부 데이터 및 시스템에 연결할 수 있다.
+
+### 9.1. 개요
+
+애플리케이션에서 작업을 트리거하거나 외부 시스템과 상호 작용하기 위해 사용자 정의 함수를 호출하는 모델이 필요하다.
+
+모델에서 사용할 도구로 함수를 정의하는 방법은 다음과 같다.
+
+```javascript
+import { OpenAI } from "openai";
+const openai = new OpenAI();
+
+const tools = [
+    {
+        type: "function",
+        function: {
+            name: "get_weather",
+            parameters: {
+                type: "object",
+                properties: {
+                    location: { type: "string" },
+                    unit: { type: "string", enum: ["c", "f"] },
+                },
+                required: ["location", "unit"],
+                additionalProperties: false,
+            },
+        },
+    }
+];
+
+const response = await openai.chat.completions.create({
+    model: "gpt-4o",
+    messages: [{"role": "user", "content": "What's the weather like in Paris today?"}],
+    tools,
+});
+
+console.log(response.choices[0].message.tool_calls);
+```
+{: file='노드 기반 함수 호출 예시'}
+
+함수 호출이 쓰일 수 있는 예시는 다음과 같다.
+1. 데이터 가져오기 : 대화형 도우미가 사용자에게 응답하기 전에 내부 시스템에서 데이터를 검색할 수 있도록 한다.
+2. 조치 실행 : 비서가 대화에 따라 회의 일정을 잡거나 주문한 상품을 반품하는 등의 조치를 취할 수 있도록 한다.
+3. 워크플로우 구축 : 데이터 추출 파이프라인이나 콘텐츠 개인화와 같은 워크플로우를 실행할 수 있도록 한다.
+4. UI와 상호작용 : 지도에 핀을 렌더링하거나 웹사이트를 탐색하는 것처럼 사용자 입력을 기반으로 UI를 업데이트 할 수 있다.
+
+<br/>
+
+## 10. 구조화된 출력
+
+### 10.1. 소개
+
+모델이 JSON 스키마를 준수하는 응답을 생성하도록 보장하는 기능이므로 모델이 필수 키를 생략하거나 잘못된 열거형 값을 응답하는 것을 걱정할 필요없다.
+
+```javascript
+import OpenAI from "openai";
+import { zodResponseFormat } from "openai/helpers/zod";
+import { z } from "zod";
+
+const openai = new OpenAI();
+
+const CalendarEvent = z.object({
+  name: z.string(),
+  date: z.string(),
+  participants: z.array(z.string()),
+});
+
+const completion = await openai.beta.chat.completions.parse({
+  model: "gpt-4o-2024-08-06",
+  messages: [
+    { role: "system", content: "Extract the event information." },
+    { role: "user", content: "Alice and Bob are going to a science fair on Friday." },
+  ],
+  response_format: zodResponseFormat(CalendarEvent, "event"),
+});
+
+const event = completion.choices[0].message.parsed;
+```
+
+### 10.2. 예시
+
+#### 10.2.1. 단계적 설명
+
+사용자가 솔루션을 탐색할 수 있도록 안내하기 위해 모델에 체계적이고 단계별로 답변을 출력하도록 요청할 수 있다,
+
+```bash
+curl https://api.openai.com/v1/chat/completions \
+  -H "Authorization: Bearer $OPENAI_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-4o-2024-08-06",
+    "messages": [
+      {
+        "role": "system",
+        "content": "You are a helpful math tutor. Guide the user through the solution step by step."
+      },
+      {
+        "role": "user",
+        "content": "how can I solve 8x + 7 = -23"
+      }
+    ],
+    "response_format": {
+      "type": "json_schema",
+      "json_schema": {
+        "name": "math_reasoning",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "steps": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "explanation": { "type": "string" },
+                  "output": { "type": "string" }
+                },
+                "required": ["explanation", "output"],
+                "additionalProperties": false
+              }
+            },
+            "final_answer": { "type": "string" }
+          },
+          "required": ["steps", "final_answer"],
+          "additionalProperties": false
+        },
+        "strict": true
+      }
+    }
+  }'
+```
+{: file='단계적 설명 명령어'}
+
+```json
+{
+  "steps": [
+    {
+      "explanation": "Start with the equation 8x + 7 = -23.",
+      "output": "8x + 7 = -23"
+    },
+    {
+      "explanation": "Subtract 7 from both sides to isolate the term with the variable.",
+      "output": "8x = -23 - 7"
+    },
+    {
+      "explanation": "Simplify the right side of the equation.",
+      "output": "8x = -30"
+    },
+    {
+      "explanation": "Divide both sides by 8 to solve for x.",
+      "output": "x = -30 / 8"
+    },
+    {
+      "explanation": "Simplify the fraction.",
+      "output": "x = -15 / 4"
+    }
+  ],
+  "final_answer": "x = -15 / 4"
+}
+```
+{: file='단계적 설명 결과'}
+
+#### 10.2.2. 사용자 입력에 대한 검토
+
+여러 카테고리에 따라 입력을 분류할 수 있으며, 이는 검토를 수행하는 일반적인 방법이다.
+
+```bash
+curl https://api.openai.com/v1/chat/completions \
+  -H "Authorization: Bearer $OPENAI_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-4o-2024-08-06",
+    "messages": [
+      {
+        "role": "system",
+        "content": "Determine if the user input violates specific guidelines and explain if they do."
+      },
+      {
+        "role": "user",
+        "content": "How do I prepare for a job interview?"
+      }
+    ],
+    "response_format": {
+      "type": "json_schema",
+      "json_schema": {
+        "name": "content_compliance",
+        "description": "Determines if content is violating specific moderation rules",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "is_violating": {
+              "type": "boolean",
+              "description": "Indicates if the content is violating guidelines"
+            },
+            "category": {
+              "type": ["string", "null"],
+              "description": "Type of violation, if the content is violating guidelines. Null otherwise.",
+              "enum": ["violence", "sexual", "self_harm"]
+            },
+            "explanation_if_violating": {
+              "type": ["string", "null"],
+              "description": "Explanation of why the content is violating"
+            }
+          },
+          "required": ["is_violating", "category", "explanation_if_violating"],
+          "additionalProperties": false
+        },
+        "strict": true
+      }
+    }
+  }'
+```
+{: file='검토 명령어'}
+
+```json
+{
+  "is_violating": false,
+  "category": null,
+  "explanation_if_violating": null
+}
+```
+{: file='검토 결과'}
+
+
 ---
 
 ## Reference
