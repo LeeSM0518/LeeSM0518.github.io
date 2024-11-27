@@ -90,30 +90,29 @@ $ java -jar target/spring-boot-logging-0.0.1-SNAPSHOT.jar --trace
 Spring Boot는 환경 변수를 통해 보다 세부적인 로그 수준 설정 기능을 제공한다.
 
 1. VM 옵션을 사용해서 로깅 레벨을 설정할 수 있다.
-
-```
--Dlogging.level.org.springframework=TRACE
--Dlogging.level.com.baeldung=TRACE
-```
+	```
+	-Dlogging.level.org.springframework=TRACE
+	-Dlogging.level.com.baeldung=TRACE
+	```
 
 2. Gradle을 사용할 경우 명령어로 설정할 수 있다.
 
-```sh
-./gradlew bootRun -Pargs=--loging.level.org.springframework=TRACE,--logging.level.com.baeldung=TRACE
-```
+	```sh
+	./gradlew bootRun -Pargs=--loging.level.org.springframework=TRACE,--logging.level.com.baeldung=TRACE
+	```
 
 3. application.properties 파일로 설정할 수 있다.
 
-```
-logging.level.root=WARN
-```
+	```
+	logging.level.root=WARN
+	```
 
  4. 로깅 구성 파일로 설정할 수 있다.
 
-```xml
-<logger name="org.springframework" level="INFO" />
-<logger name="com.baeldung" level="INFO" />
-```
+	```xml
+	<logger name="org.springframework" level="INFO" />
+	<logger name="com.baeldung" level="INFO" />
+	```
 
 <br/>
 
