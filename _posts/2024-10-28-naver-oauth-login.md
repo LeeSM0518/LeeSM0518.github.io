@@ -177,8 +177,8 @@ API 요청 실패시에는 에러 코드와 에러 메시지가 전송된다.
 
 _**Callback 응답 정보**_
 
-- API 요청 성공시 : [http://콜백URL/redirect?code={code값}&state={state값}](http://xn--url-l50nw08e/redirect?code=%7Bcode%EA%B0%92%7D&state=%7Bstate%EA%B0%92%7D)
-- API 요청 실패시 : [http://콜백URL/redirect?state={state값}&error={에러코드값}&error_description={에러메시지}](http://xn--url-l50nw08e/redirect?state=%7Bstate%EA%B0%92%7D&error=%7B%EC%97%90%EB%9F%AC%EC%BD%94%EB%93%9C%EA%B0%92%7D&error_description=%7B%EC%97%90%EB%9F%AC%EB%A9%94%EC%8B%9C%EC%A7%80%7D)
+- API 요청 성공시 : [https://콜백URL/redirect?code={code값}&state={state값}](https://xn--url-l50nw08e/redirect?code=%7Bcode%EA%B0%92%7D&state=%7Bstate%EA%B0%92%7D)
+- API 요청 실패시 : [https://콜백URL/redirect?state={state값}&error={에러코드값}&error_description={에러메시지}](https://xn--url-l50nw08e/redirect?state=%7Bstate%EA%B0%92%7D&error=%7B%EC%97%90%EB%9F%AC%EC%BD%94%EB%93%9C%EA%B0%92%7D&error_description=%7B%EC%97%90%EB%9F%AC%EB%A9%94%EC%8B%9C%EC%A7%80%7D)
 
 |필드|타입|설명|
 |---|---|---|
