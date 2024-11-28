@@ -183,4 +183,4 @@ $1
 
 ---
 
-[Yes24: 이것이 레디스다](http://www.yes24.com/Product/Goods/16512938)
+[Yes24: 이것이 레디스다](https://www.yes24.com/Product/Goods/16512938)
