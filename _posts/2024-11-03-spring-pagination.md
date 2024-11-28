@@ -6,6 +6,7 @@ tags:
   - spring
   - pagination
   - webflux
+  - kotlin
 description: Pagination in Spring Webflux and Spring Data Reactive
 ---
 
