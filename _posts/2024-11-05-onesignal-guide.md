@@ -5,7 +5,7 @@ categories: onesignal
 tags:
   - onesignal
   - notification
-description: OneSignal을 활용하기 위한 가이드 문서 정리
+description: OneSignal으로 푸시 알림을 구현하기 위한 가이드 문서 정리
 ---
 
 ## 1. 빠른 시작 가이드
