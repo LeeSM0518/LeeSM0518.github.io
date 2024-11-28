@@ -1,5 +1,5 @@
 ---
-title: Spring Paginration
+title: Spring Pagination
 date: 2024-11-03 09:00:00 +0900
 categories: spring
 tags:
