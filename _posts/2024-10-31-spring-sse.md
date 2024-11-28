@@ -1,6 +1,6 @@
 ---
 title: Spring SSE(Server-Sent Events)
-date: 2024-11-01 08:59:00 +0900
+date: 2024-10-31 09:00:00 +0900
 categories: spring
 tags:
   - spring
