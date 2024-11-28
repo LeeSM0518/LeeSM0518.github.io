@@ -4,14 +4,8 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   {% for post in site.posts %}
   <url>
-    <loc>{{ site.url }}{{ post.url }}</loc>
-    <lastmod>
-      {% if post.last_modified_at == null %}
-      {{ post.date | date: "%Y-%m-%d" }}
-      {% else %}
-      {{ post.last_modified_at | date: "%Y-%m-%d" }}
-      {% endif %}
-    </lastmod>
+    <loc>{{ site.url }}{{ post.url | replace: '/$', '' }}</loc>
+    <lastmod>{% if post.last_modified_at == null %}{{ post.date | date: "%Y-%m-%d" }}{% else %}{{ post.last_modified_at | date: "%Y-%m-%d" }}{% endif %}</lastmod>
   </url>
   {% endfor %}
 </urlset>
