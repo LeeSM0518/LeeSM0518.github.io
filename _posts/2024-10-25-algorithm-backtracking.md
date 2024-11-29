@@ -4,7 +4,7 @@ date: 2024-10-25 09:00:00 +0900
 categories: algorithm
 tags:
   - algorithm
-description: 백트래킹 알고리즘에 대한 개념과 문제 풀이에 대해 살펴본다.
+description: 백트래킹 알고리즘에 대한 개념과 문제 풀이
 ---
 
 ## 1. 개념

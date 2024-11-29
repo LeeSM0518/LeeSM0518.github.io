@@ -4,7 +4,7 @@ date: 2024-10-24 09:00:00 +0900
 categories: algorithm
 tags:
   - algorithm
-description: 여러 정렬에 대한 개념과 문제 풀이에 대해 살펴본다.
+description: 여러 정렬에 대한 개념과 문제 풀이
 ---
 
 ## 1. 개념

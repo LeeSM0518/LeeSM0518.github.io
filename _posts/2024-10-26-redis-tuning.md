@@ -5,7 +5,7 @@ categories: redis
 tags:
   - redis
   - tuning
-description: 레디스 튜닝으로 성능을 향상시키는 방법에 대해 살펴본다.
+description: 레디스 튜닝으로 성능을 향상시키는 방법
 ---
 
 ## 1. 환경 설정 파일

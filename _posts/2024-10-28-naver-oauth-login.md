@@ -5,7 +5,7 @@ categories: oauth
 tags:
   - oauth
   - docs
-description: 네이버 OAuth 로그인을 연동하기 위해 가이드 문서 정리
+description: 네이버 OAuth 로그인을 연동하기 위한 가이드
 mermaid: "true"
 ---
 

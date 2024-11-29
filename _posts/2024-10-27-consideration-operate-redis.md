@@ -5,7 +5,7 @@ categories: redis
 tags:
   - redis
   - operation
-description: 레디스를 운영 시 고려해야 할 임계점, 메모리 설정, 기타 고려사항에 대해 살펴본다.
+description: 레디스를 운영 시 고려해야 할 임계점, 메모리 설정, 기타 고려사항
 ---
 
 ## 1. 임계점

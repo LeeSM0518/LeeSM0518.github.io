@@ -4,7 +4,7 @@ date: 2024-10-22 09:00:00 +0900
 categories: algorithm
 tags:
   - algorithm
-description: 동적 프로그래밍에 대한 개념과 문제 풀이를 살펴본다.
+description: 동적 프로그래밍에 대한 개념과 문제 풀이
 ---
 
 ## 1. 개념
