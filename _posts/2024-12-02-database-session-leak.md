@@ -4,7 +4,7 @@ date: 2024-12-02 00:00:00 +0900
 categories: troubleshooting
 tags:
   - troubleshooting
-description: 
+description: 누수 발생 지점을 찾아 해결하고, 세션 및 트랜잭션 관리를 추상화하여 서버 안정화와 코드 개선
 ---
 
 ## 개요
