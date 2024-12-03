@@ -16,10 +16,10 @@ _2022.08 ~ 재직중 (백엔드 개발자)_
 
 - 20개의 서버가 gRPC와 RabbitMQ로 통신하며 동작하는 **MSA 구조의 시스템을 개발 및 유지보수**
 - AI 기반 이상 탐지와 변화 탐지 기능의 **전반적인 프로세스 설계 및 구현**
-- 여러 **성능 개선 및 시스템 개선, CI/CD 개선**
-  - **성능 개선** : [검수 저장 성능 개선](https://leesm0518.github.io/posts/save-review-performance-tuning/), [위성 영상 삭제 성능 개선](https://leesm0518.github.io/posts/delete-scene-performance-tuning/), [위성 영상 저장 성능 개선](https://leesm0518.github.io/posts/save-scene-performance-tuning/)
-  - **시스템 개선** : 영상 입력 최적화 및 전처리 서버 통합
-  - **CI/CD 개선** : 병렬 테스트로 변경하여 CI/CD 속도 개선
+- **서버 안정화** : [DB 세션 누수 해결](https://leesm0518.github.io/posts/database-session-leak/)
+- **성능 개선** : [검수 저장 성능 개선](https://leesm0518.github.io/posts/save-review-performance-tuning/), [위성 영상 삭제 성능 개선](https://leesm0518.github.io/posts/delete-scene-performance-tuning/), [위성 영상 저장 성능 개선](https://leesm0518.github.io/posts/save-scene-performance-tuning/)
+- **시스템 개선** : 영상 입력 최적화 및 전처리 서버 통합
+- **CI/CD 개선** : 병렬 테스트로 변경하여 CI/CD 속도 개선
 - 온프레미스로 **k8s 환경 기반의 시스템을 구축**해 납품하거나, AWS의 **EKS를 활용해 배포 및 운영**
 - 문서 공유 활성화를 위해 **약 500건의 업무 및 기술 문서 작성 및 공유** <br/> _(전체 시스템 아키텍처 도식화 문서, 핵심 기능 프로세스 다이어그램 문서, ...)_
 
