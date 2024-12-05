@@ -40,7 +40,7 @@ SELECT 문이 오래 걸리는 것인가 해서 따로 실행해봤으나, **평
 SELECT * FROM pg_stat_activity;
 ```
 
-> **LWLock(Lightwight Lock)** : PostgreSQL에서 공유 메모리 구조에 대한 동시 접근을 제어하기 위해 사용되는 잠금 메커니즘이다. 이는 데이터베이스의 다중 프로세스 아키텍처에서 일관된 읽기 및 쓰기를 보장하기 위해 필수적이다.[^percona]
+> **LWLock(Lightweight Lock)** : PostgreSQL에서 공유 메모리 구조에 대한 동시 접근을 제어하기 위해 사용되는 잠금 메커니즘이다. 이는 데이터베이스의 다중 프로세스 아키텍처에서 일관된 읽기 및 쓰기를 보장하기 위해 필수적이다.[^percona]
 {: .prompt-info }
 
 <br/>
