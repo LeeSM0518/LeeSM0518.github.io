@@ -20,7 +20,7 @@ _2022.08 ~ 재직중 (백엔드 개발자)_
   - **서버 안정화** : [DB 세션 누수 해결](https://leesm0518.github.io/posts/database-session-leak/)
   - **성능 개선** : [검수 저장 성능 개선](https://leesm0518.github.io/posts/save-review-performance-tuning/), [위성 영상 삭제 성능 개선](https://leesm0518.github.io/posts/delete-scene-performance-tuning/), [위성 영상 저장 성능 개선](https://leesm0518.github.io/posts/save-scene-performance-tuning/)
   - **시스템 개선** : [위성 영상 전처리 서버 통합](https://leesm0518.github.io/posts/scene-preprocessing-servers-integration/)
-  - 고객 증가에 따른 **새로운 브랜치 전략 도입과 CI/CD 구축**
+  - 시스템을 납품할 고객사 증가에 따른 **새로운 브랜치 전략 도입과 CI/CD 구축**
   - **CI/CD 성능 개선**
 - 온프레미스로 **k8s 환경 기반의 시스템을 구축**해 납품하거나, AWS의 **EKS를 활용해 배포 및 운영**
 - 문서 공유 활성화를 위해 **약 500건의 업무 및 기술 문서 작성 및 공유** <br/> _(전체 시스템 아키텍처 도식화 문서, 핵심 기능 프로세스 다이어그램 문서, ...)_
