@@ -1,10 +1,10 @@
 ---
-title: 영상 전처리 서버 통합
+title: 위성 영상 전처리 서버 통합
 date: 2024-12-03 00:00:00 +0900
 categories: troubleshooting
 tags:
   - troubleshooting
-description: 내용
+description: 위성 영상 전처리를 최적화하고 불필요한 서버 리소스 사용을 줄임
 ---
 
 ## 개요
