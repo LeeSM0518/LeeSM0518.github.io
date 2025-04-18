@@ -205,8 +205,12 @@ user는 type, id, relation의 결합이며, 예시는 다음과 같다.
 ### Relation
 ---
 
+relation은 authorization model의 type definition으로 정의된 문자열이다. relations는 시스템의 object와 user 사이의 접근 가능한 관계를 정의한다. relation의 예시는 다음과 같다.
+- 사용자는 문서의 `reader` 가 될 수 있다.
+- 팀은 저장소의 `administer` 가 될 수 있다.
+- 사용자는 팀의 `member` 가 될 수 있다.
 
-
+<br/>
 
 ## Reference
 ---
