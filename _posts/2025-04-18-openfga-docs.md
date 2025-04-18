@@ -114,7 +114,101 @@ OpenFGA 서비스는 객체와 사용자 사이에 관계가 있는지 여부를
 
 <br/>
 
+### Type
+
+Type은 문자열이다. 이는 유사한 특성을 가진 객체의 클래스를 정의한다. 
+
+ex. `workspace` , `repository` , `organization` , `document` 
+
+<br/>
+
+### Type Definition
+
+Type Definition 사용자 또는 다른 객체가 이 type과 관련하여 가질 수 있는 모든 관계를 가진다.
+
+Type Definition 예시는 다음과 같다.
+
+```
+type document
+  relations
+    define viewer: [user]
+    define commenter: [user]
+    define editor: [user]
+    define owner: [user]
+```
+
+<br/>
+
+### Authorization Model
+
+Authorization Model은 하나 이상의 type definitions를 결합한 것이다. 시스템의 권한 모델을 정의하는 데 사용된다.
+
+Authorization Model 예시는 다음과 같다.
+
+```
+model
+  schema 1.1
+
+type document
+  relations
+    define viewer: [domain#member, user]
+    define commenter: [domain#member, user]
+    define editor: [domain#member, user]
+    define owner: [domain#member, user]
+
+type domain
+  relations
+    define member: [user]
+
+type user
+```
+- 인가 모델은 관계 튜플과 함께 사용자와 객체 간의 관계가 있는지 여부를 판별한다.
+- OpenFGA는 인가 모델을 정의하기 위해 JSON 이나 DSL을 사용한다.
+
+<br/>
+
+### Store
+
+Store는 인가 확인 데이터로 구성되는 OpenFGA 엔티티이다.
+
+각 저장소는 여러 버전의 인가 모델을 포함하고 다양한 관계 튜플을 포함할 수 있다. 저장소 데이터는 저장소끼리 공유할 수 없다. 관련되거나 인가 결과에 영향이 있는 모든 데이터들은 하나의 저장소에 저장하는 것을 권장한다. 별도의 인가 요구 사항이나 격리된 환경에 대해 별도의 저장소를 생성할 수도 있다.
+
+<br/>
+
+### Object
+
+Object는 시스템 내의 엔티티를 나타낸다. 사용자와 서비스의 관계는 관계 튜플과 인가 모델을 통해 정의된다.
+
+Object는 type과 id의 조합이며, 예시는 다음과 같다.
+- `workspace:fb83c013-3060-41f4-9590-d3233a67938f`
+- `repository:auth0/express-jwt`
+- `organization:org_ajUc9kJ`
+- `document:new-roadmap`
+
+user, relation, object는 relationship tuples의 구성 요소이다.
+
+<br/>
+
+### User
+---
+
+user는 object와 관련될 수 있는 시스템 내의 entity이다.
+
+user는 type, id, relation의 결합이며, 예시는 다음과 같다.
+- identifier 예시 : `user:anne` , `user:{UUID}`
+- object 예시 : `workspace:{UUID}` , `repository:auth0/express-jwt` , `organization:org_ajUc9kJ`
+- user의 그룹 예시 : `organization:org_ajUc9kJ#members` (org_ajUc9kJ와 관련된 member)
+- 모든 : `*`
+
+<br/>
+
+### Relation
+---
+
+
+
+
 ## Reference
 ---
 
-https://openfga.dev/docs/fga
+<https://openfga.dev/docs/fga>
