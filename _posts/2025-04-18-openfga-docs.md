@@ -212,6 +212,87 @@ relation은 authorization model의 type definition으로 정의된 문자열이�
 
 <br/>
 
+### Relation Definition
+---
+
+relation definition은 관계가 가능한 조건 또는 요구사항이 나열된다.
+
+예시는 다음과 같다.
+
+- `document` 타입에서 사용자와 객체 간의 가능한 관계를 설명하는 `editor` 는 다음을 허용한다.
+    - **사용자 식별자와 객체 간의 관계** : 사용자 타입의 사용자 ID `anne`  는  `document:roadmap` 과 `editor` 로 연관된다.
+    - **객체와 객체 간의 관계** : 객체 `application:iffft` 는 객체 `document:roadmap` 과 `editor` 로 연관된다.
+    - **사용자 집합과 객체 간의 관계** : 사용자 집합 `organization:auth0.com#member` 는 `document:roadmap` 과 `editor` 로 연관된다.
+        - `organization:auth0.com` 과 `member` 로 관련된 사용자들의 집합이 `document:roadmap` 과 `editor` 로 관련되어 있음을 나타낸다.
+        - 회사나 팀의 모든 멤버들이 문서를 공유하는 것과 같은 사용 사례에 대한 해결책을 제공한다.
+    - **모든 것과 객체 간의 관계** : 모든 것(`*`)은 `document:roadmap` 과 `editor` 와 연관된다.
+        - 이는 공개적으로 편집 가능한 문서를 모델링하는 방법이다.
+
+<br/>
+
+인가 모델은 다음과 같이 정의할 수 있다.
+
+```
+type document
+  relations
+    define viewer: [user]
+    define commenter: [user]
+    define editor: [user]
+    define owner: [user]
+
+type user
+```
+- `document` 타입 구성에 `viewer` , `commenter` , `editor` , `owner` 관계가 존재
+
+<br/>
+
+### Directly Related User Type
+---
+
+directly related user type은 관계에 직접적으로 연관된 사용자의 타입들을 정의한 배열이다.
+
+<br/>
+
+다음 모델의 경우 사용자 유형이 `user` 인 관계 튜플만 문서에 할당할 수 있다.
+
+```
+type document
+  relations
+    define viewer: [user]
+```
+
+<br/>
+
+사용자  `user:anne` 나 `user:3f7768e0-4fa7-4e93-8417-4da68ce1846c` 관계 튜플은 타입 `document` 와 관계 `viewer` 로 구성된 객체로 쓰일 수도 있으며, 다음과 같이 작성하면 된다. 
+
+```
+{
+  "user" : "user:anne",
+  "relation" : "viewer",
+  "object" : "document:roadmap"
+}
+```
+
+<br/>
+
+`document` 타입의 객체에 대한 `viewer` 관계에 대해 허용되지 않는 사용자 타입이 있는 관계 튜플이다. 예를 들어, `workspace:auth0` 나 `folder:planning#editor` 는 작성을 실패한다. 
+
+```
+{
+  "user" : "folder:product",
+  "relation" : "viewer",
+  "object" : "document:roadmap"
+}
+```
+- 입력 시 실패하는 데이터
+
+<br/>
+
+### Condition
+---
+
+<br/>
+
 ## Reference
 ---
 
