@@ -265,7 +265,7 @@ type document
 
 사용자  `user:anne` 나 `user:3f7768e0-4fa7-4e93-8417-4da68ce1846c` 관계 튜플은 타입 `document` 와 관계 `viewer` 로 구성된 객체로 쓰일 수도 있으며, 다음과 같이 작성하면 된다. 
 
-```
+```json
 {
   "user" : "user:anne",
   "relation" : "viewer",
@@ -277,7 +277,7 @@ type document
 
 `document` 타입의 객체에 대한 `viewer` 관계에 대해 허용되지 않는 사용자 타입이 있는 관계 튜플이다. 예를 들어, `workspace:auth0` 나 `folder:planning#editor` 는 작성을 실패한다. 
 
-```
+```json
 {
   "user" : "folder:product",
   "relation" : "viewer",
@@ -290,6 +290,144 @@ type document
 
 ### Condition
 ---
+
+condition은 하나 이상의 파라미터와 표현식들로 구성된 함수이다. 모든 condition은 boolean을 반환하며, 표현식은 구글의 Common Expression Language(CEL)로 정의된다.
+
+<br/>
+
+아래 보이는 `less_than_hundred` 는 boolean을 반환하는 condition을 정의한다. integer 타입의 `x` 파라미터는 `x < 100` boolean 표현식에 사용된다. condition은 true나 false를 반환한다.
+
+```
+condition less_than_hundred(x: int) {
+  x < 100
+}
+```
+
+<br/>
+
+### Relationship Tuple
+---
+
+relationship tuple은 사용자, 관계, 객체로 구성된 기본 튜플/트리플렛 이다. 튜플은 Conditional Relationship Tuple과 같이 선택적 조건을 추가할 수 있다. relationship tuple은 OpenFGA에 작성되어 저장된다. 
+
+<br/>
+
+relationship tuple은 다음과 같이 구성된다.
+- `user` : `user:anne` , `workspace:auth0` , `folder:planning#editor`
+- `relation` : `editor` , `member` , `parent_workspace`
+- `object` : `repo:auth0/express_jwt` , `domain:auth0.com` , `channel:marketing`
+- `condition` (optional) : `{"condition" : "in_allowed_ip_range", "context" : {...}}`
+
+<br/>
+
+authorization model은 relationship tuple와 함께 user와 object 간의 관계가 있는지 여부를 결정한다. relationship tuple은 다음과 같이 작성된다.
+
+```json
+[{
+  "user" : "user:anne",
+  "relation" : "editor",
+  "object" : "document:new-roadmap"
+}]
+```
+
+<br/>
+
+### Conditional Relationship Tuple
+---
+
+conditional relationship tuple은 condition의 결과에 따라 조건이 결정되는 relationship을 나타내는 relationship tuple 이다.
+
+relationship tuple 조건이 있는 경우, relationship tuple이 허용되려면 해당 조건이 true이여만 한다.
+
+<br/>
+
+다음 relationship tuple은 `less_than_hundred` 에 따라 조건이 정해지므로 conditional relationship tuple이다. `less_than_hundred` 표현식이 `x < 100` 으로 정의되면, relationship은 20 < 100 과 같이 true 값을 반환해야 허가된다.
+
+```json
+[{
+  "user" : "user:anne",
+  "relation" : "editor",
+  "object" : "document:new-roadmap",
+  "condition" : {
+    "name" : "less_than_hundred",
+    "content" : {
+      "x" : 20
+    }
+  }
+}]
+```
+
+<br/>
+
+### Relationship
+---
+
+relationship은 사용자와 객체 간의 관계가 실현되는 것을 말한다.
+
+<br/>
+
+authorization model은 relationship tuples와 함께 사용자와 객체 간의 relationship을 결정한다. relationship은 직접적이거나 묵시적일 수 있다.
+
+<br/>
+
+### Direct And Implied Relationships
+---
+
+user X와 object Y 간의 direct relationship은 relationship tuple (user=X, relation=R, object=Y)이 존재하, 해당 관계에 대한 OpenFGA authorization model은 direct relationship type 제한으로 인해 직접 관계를 허용한다는 의미이다.
+
+user X와 object Y 사이의 relationship(R)이 존재한다는 것은 사용자 X가 객체 Y와 직접적 또는 묵시적 관계에 있는 객체 Z와 관련되어 있고 OpenFGA 권한 부여 모델이 이를 허용하는 경우이다.
+
+user X가 object Y와 직접적 또는 암시적 관계에 있는 객체 Z와 관련이 있고 OpenFGA authorization model이 이를 허용하는 경우 user X와 object Y 사이에 암시적(또는 계산된) 관계(R)가 존재한다.
+
+<br/>
+
+`user:anne` 은 type definition에서 direct relationship type 제한으로 허용하고 다음 relationship tuple 중 하나가 존재하는 경우 `document:new-roadmap` 과 `viewer` 로서 직접 관계를 갖는다.
+
+<br/>
+
+
+```json
+[
+  {
+    "_description" : "Anne of type user is directly related to the document",
+    "user" : "user:anne",
+    "relation" : "viewer",
+    "object" : "document:new-roadmap"
+  }
+]
+```
+
+```json
+[
+  {
+    "_description" : "Everyone (`*`) of type user is directly related to the document",
+    "user" : "user:*",
+    "relation" : "viewer",
+    "object" : "document:new-roadmap"
+  }
+]
+```
+
+```json
+[
+  {
+    "_description" : "The userset is directly related to the document",
+    "user" : "team:product#member",
+    "relation" : "viewer",
+    "object" : "document:new-roadmap"
+  },
+  {
+    "_description" : "AND Anne of type user is a member of the userset team:product#member",
+    "user" : "user:anne",
+    "relation" : "member",
+    "object" : "team:product#member"
+  }
+]
+```
+
+<br/>
+
+`user:anne` 는 
 
 <br/>
 
