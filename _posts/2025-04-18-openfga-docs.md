@@ -588,6 +588,49 @@ OpenFGA에서 type bound public access(`<type>:*` 와 같은)는 관계 튜플�
 
 <br/>
 
+## Configuration Language
+---
+
+OpenFGA의 구성 언어는 시스템의 권한 모델을 표현하며, 이 표현은시스템에 존재하는 객체 타입과 그들 간의 관계를 OpenFGA에 알려준다. 구성 언어는 특정 타입의 객체에 대해 성립할 수 있는 관계를 설명하고, 그 객체와 관계를 맺게 되는 조건들을 나열한다.
+
+구성 언어는 DSL 이나 JSON 문법으로 표현될 수 있다. JSON 문법은 API에서 그대로 사용할 수 있으며, Zanzibar 논문에 나온 언어를 거의 그대로 따른다. DSL은 사용 편의를 위해 JSON 위에 문법적 편의를 추가하지만, OpenFGA의 API로 전송되기 전에 JSON으로 변환된다. JSON 문법은 직접 API를 호출하거나 SDK에 사용되며, DSL은 Playground, CLI, IDE의 확장 프로그램으로 OpenFGA와 상호작용 할 때 사용된다.
+
+<br/>
+
+### Configuration Language Guide
+---
+
+다음은 권한 모델 예시이다. 
+
+```
+model  
+  schema 1.1  
+  
+type user  
+  
+type domain  
+  relations  
+    define member: [user]  
+  
+type folder  
+  relations  
+    define can_share: writer  
+    define owner: [user, domain#member] or owner from parent_folder  
+    define parent_folder: [folder]  
+    define viewer: [user, domain#member] or writer or viewer from parent_folder  
+    define writer: [user, domain#member] or owner or writer from parent_folder  
+      
+type document  
+  relations  
+    define can_share: writer  
+    define owner: [user, domain#member] or owner from parent_folder  
+    define parent_folder: [folder]  
+    define viewer: [user, domain#member] or writer or viewer from parent_folder  
+    define writer: [user, domain#member] or owner or writer from parent_folder
+```
+
+<br/>
+
 ## Reference
 ---
 
