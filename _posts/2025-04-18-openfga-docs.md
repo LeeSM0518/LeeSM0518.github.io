@@ -427,7 +427,164 @@ user X가 object Y와 직접적 또는 암시적 관계에 있는 객체 Z와 �
 
 <br/>
 
-`user:anne` 는 
+`user:anne` 은 타입 정의에서 허용하고 관계를 만족하는 타입 튜플이 존재하는 경우 `viewer` 로서 `document:new-roadmap` 과 관계를 갖는다.
+
+<br/>
+
+예를 들어, 다음과 같은 타입 정의를 가정해보자.
+
+```
+type document
+  relations
+    define viewer: [user] or editor
+    define editor: [user]
+```
+
+<br/>
+
+시스템에 다음 관계 튜플이 존재하는 것을 가정해보자.
+
+```
+[{
+  "user" : "user:anne",
+  "relation" : "editor",
+  "object" : "document:new-roadmap"
+}]
+```
+
+<br/>
+
+이러한 경우에 `viewer` 로서의 `user:anne` 와 `document:new-roadmap` 간의 관계는 `user:anne` 이 동일한 문서와 맺는 직접적인 `editor` 관계에서 암시된다. 그러므로, 다음과 같은 `user:anne` 와 `document:new-roadmap` 간의 조회 권한이 존재함을 확인하는 `check` 요청은 `true` 를 반환한다.
+
+```java
+var options = new ClientCheckOptions()
+        .authorizationModelId("01HVMMBCMGZNT3SED4Z17ECXCA");
+
+var body = new ClientCheckRequest()
+        .user("user:anne")
+        .relation("viewer")
+        ._object("document:new-roadmap");
+
+var response = fgaClient.check(body, options).get();
+
+// response.getAllowed() = true 
+```
+
+<br/>
+
+### Check Request
+---
+
+check request는 사용자가 객체와 특정 관계를 맺고 있는지 여부를 반환하는 OpenFGA check endpoint에 대한 호출이다.
+
+<br/>
+
+check request는 curl을 사용하여 수동으로 확인 엔드포인트를 호출하거나 코드에서 OpenFGA SDK의 `check` 메서드를 사용한다. 이러한 check endpoint는 관계가 존재하면 `{"allowed" : true}` 를, 관계가 존재하지 않으면 `{"allowed" : false}` 를 응답한다.
+
+<br/>
+
+예를 들어, 다음은 user 타입의 `anne` 가 `document:new-roadmap` 에 `viewer` 관계를 갖고 있는지 확인한다.
+
+```kotlin
+val options = ClientCheckOptions().authorizationModelId("{modelId}")
+
+val body = ClientCheckRequest()
+            .user("user:anne")
+            .relation("viewer")
+            ._object("document:new-roadmap")
+
+val response = fgaClient.check(body, options).get()
+
+// response.allowed == true
+```
+
+<br/>
+
+### List Objects Request
+---
+
+list objects request는 사용자가 지정된 관계를 맺고 있는 지정된 타입의 모든 객체를 반환하는 OpenFGA 목록 객체 엔드포인트에 대한 호출이다.
+
+<br/>
+
+list objects 요청은 `listobjects` 메서드를 사용하면 된다. list objects 엔드포인트는 사용자가 특정 관계를 갖는 타입의 객체 목록을 응답한다. 예를 들어, 다음과 같이 `viewer` 관계를 갖는 사용자인 `anne` 의 document 유형의 모든 객체들을 응답한다.
+
+```java
+var options = new ClientListObjectsOptions()
+        .authorizationModelId("01HVMMBCMGZNT3SED4Z17ECXCA");
+
+var body = new ClientListObjectsRequest()
+        .user("user:anne")
+        .relation("viewer")
+        .type("document");
+
+var response = fgaClient.listObjects(body, options).get();
+
+// response.getObjects() = ["document:otherdoc", "document:planning"]
+```
+
+<br/>
+
+### List Users Request
+---
+
+list users request는 객체에 대한 특정 관계를 갖는 타입이 주어진 모든 사용자들을 반환하는 OpenFGA list users endpoint 요청이다. 이는 `ListUsers` 메서드를 사용하면 된다. 이는 객체에 대한 특정 관계가 있는 지정된 유형의 모든 사용자들을 반환한다.
+
+<br/>
+
+예를 들어, 다음과 같이 `document:planning` 에 대해 `viewer` 관계를 갖는 사용자 타입의 모든 사용자들을 반환한다.
+
+```java
+var options = new ClientListUsersOptions().authorizationModelId("{modelId}");
+
+var userFilters = new ArrayList<UserTypeFilter>() {
+    {
+        add(new UserTypeFilter().type("user"));
+    }
+};
+
+var body = new ClientListUsersRequest()
+                ._object(new FgaObject().type("document").id("planning"))
+                .relation("viewer")
+                .userFilters(userFilters);
+
+var response = fgaClient.listUsers(body, options).get();
+
+// response.getUsers() = [{"objects" : {"type" : "user", "id" : "anne"}}]
+```
+
+<br/>
+
+### Contextual Tuples
+---
+
+contextual tuple는 Check 요청, ListObjects 요청, ListUsers 요청, Expand 요청에 추가할 수 있는 튜플이다. 해당 특정 요청의 컨텍스트 내에서만 존재하며 데이터스토어에 유지되지 않는다. 
+
+<br/>
+
+관계 튜플과 같이 contextual tuple은 사용자, 관계, 객체로 구성된다. 관계 튜플과 다르게 스토어에 저장되지 않는다. 그러나 특정 check 요청의 컨텍스트에서 contextual tuple이 check 요청과 함께 전송되는 경우, 스토어에 저장된 것처럼 처리된다.
+
+<br/>
+
+### Type Bound Public Access
+---
+
+OpenFGA에서 type bound public access(`<type>:*` 와 같은)는 관계 튜플의 사용자로 호출될 때 "\[type]의 모든 객체" 를 의미하는 특수 OpenFGA 문법이다. 예를 들어, `user:*` 는 현재 시스템에 존재하지 않는 객체를 포함하여 `user` 타입의 모든 객체를 나타낸다.
+
+<br/>
+
+`document:new-roadmap` 이 공개적으로 쓰기 가능함을 나타내려면(즉, `user` 타입이 모두 편집자임을 나타내려면) 다음 관계 튜플을 추가하면 된다.
+
+```json
+[{
+    "user" : "user:*",
+    "relation" : "editor",
+    "object" : "document:new-roadmap"
+}]
+```
+
+- `<type>:*` 은 `relation` 이나 `object` 속성으로 사용될 수 없다.
+- 또한 `<type>:*` 은 튜플의 사용자 속성에서 사용자 집합의 일부로 사용할 수 없다.
 
 <br/>
 
