@@ -1056,6 +1056,226 @@ type drive
 
 <br/>
 
+#### 3. List Relations For Those Types
+---
+
+![openfga4](/assets/img/openfga-process4.png)
+
+{type}에 대한 관계는 다음과 같다.
+
+- 조건식에 존재하는 명사는 데이터베이스의 외래 키이다.
+- `~ 할 수 있는` 것은 타입에 대한 권한이다.
+- e.g. A user `can create a document in a drive` if they are the `owner of the drive`.
+	- Document
+		- parent, can_share, owner, editor, can_write, can_view, viewer, can_change_owner
+	- Folder
+		- can_create_document, owner, can_create_folder, can_view, viewer, parent
+	- Organization
+		- member
+	- Drive
+		- can_create_document
+		- owner
+		- can_create_folder
+
+<br/>
+
+이는 다음과 같이 OpenFGA 언어로 표현할 수 있다.
+
+```
+model
+  schema 1.1
+
+type user
+
+type document
+  relations
+    define parent:
+    define owner:
+    define editor:
+    define viewer:
+    define can_share:
+    define can_view:
+    define can_write:
+    define can_change_onwer:
+
+type folder
+  relations
+    define owner:
+    define parent:
+    define viewer:
+    define can_create_folder:
+    define can_create_document:
+    define can_view:
+
+type organization
+  relations
+    define member:
+
+type drive
+  relations
+    define owner:
+    define can_create_document:
+    define can_create_folder:
+```
+
+<br/>
+
+#### 4. Define Relations
+---
+
+![openfga5](/assets/img/openfga-process5.png)
+
+각 관계에 대해 정의해보자.
+
+<br/>
+
+**Type: Organization**
+
+Relation: Member
+
+```
+type organization
+  relations
+    define member: [user, organization#member]
+```
+- 조직에는 회원이 있으므로 `user` 가 포함된다.
+	- `{ user: "user:{user-id}", relation: "member", object: "organization:{id}" }`
+- 다음과 같은 관계를 표현할 수 있다.
+	- `{ user: "organization:A#member", relation: "member", object: "organization:B" }`
+
+<br/>
+
+**Type: Document**
+
+Relation: Owner
+
+```
+type document
+  relations
+    define owner: [user, organization#member]
+```
+- document는 한 명이나 그 이상의 owner 가 있을 수 있다.
+- document의 owner는 다음 형태의 튜플 생성을 통해 할당할 수 있다.
+	- `{ user: "{user_id}", relation: "owner", object: "document:{id}" }
+
+<br/>
+
+Relation: Editor
+
+```
+type document
+  relations
+    define editor: [user, organization#member]
+```
+
+- document는 editor가 있을 수 있다.
+- document의 editor는 다음 형태의 튜플 생성을 통해 할당할 수 있다.
+	- `{ user: "{user-id}", relation: "editor", object: "document:{id}" }`
+
+<br/>
+
+Relation: Viewer
+
+```
+type document
+  relations
+    define viewer: [user, organization#member]
+```
+
+<br/>
+
+Relation: Parent
+
+```
+type document
+  relations
+    define parent: [folder, drive]
+```
+
+- document는 parent가 있을 수 있다.
+	- `{ user: "forlder:{id}", relation: "parent", object: "document:{id}" }`
+	- `{ user: "drive:{id}", relation: "parent", object: "document:{id}" ]`
+
+<br/>
+
+Relation : can_share
+
+```
+type document
+  relations
+    define can_share: owner or editor or owner from parent
+```
+
+- 직접 할당할 수 없는 권한을 나타낸다.
+
+<br/>
+
+Relation : can_view
+
+```
+type document
+  relations
+    define can_view: viewer or editor or owner or viwer from parent or owner from parent
+```
+
+<br/>
+
+Relation : can_write
+
+```
+type document
+  relations
+    define can_write: editor or owner or owner from parent
+```
+
+<br/>
+
+Relation : can_change_owner
+
+```
+type document
+  relations
+    define can_change_owner: owner
+```
+
+<br/>
+
+**Complete Type Definition**
+
+```
+model
+  schema 1.1
+
+type user
+
+type organization
+  relations
+    define member: [user, organization#member]
+
+type document
+  relations
+    define owner: [user, organization#member]
+    define editor: [user, organization#member]
+    define viewer: [user, organization#member]
+    define parent: [folder]
+    define can_share: owner or editor or owner from parent
+    define can_view: viewer or editor or owner from parent or editor from parent or owner from parent
+    define can_write: editor or owner or owner from parent
+    define can_change_owner: owner
+```
+
+<br/>
+
+#### 5. Test The Model
+---
+
+![openfga6](/assets/img/openfga-process6.png)
+
+1. 튜플을 추가한다.
+2. Assertions를 통해 모델이 잘 동작하는지 검증한다.
+
+<br/>
+
 ## Reference
 ---
 
