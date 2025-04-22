@@ -960,6 +960,102 @@ type folder
 
 <br/>
 
+## Modeling Guildes
+---
+
+### Introduction To Modeling
+---
+
+OpenFGA는 빠르고 안정적으로 권한 확인을 수행하도록 설계되었다. 즉, 사용자 U가 객체 O에 대해 작업 A를 수행할 수 있는가? 라는 요청에 응답을 보낸다.
+
+ReBAC 시스템은 사용자와 객체의 관계에 따른 액세스를 결정한다.
+- 일반적인 인가 확인 : U가 O에 대해 A(Action)를 할 수 있는가?
+- OpenFGA 인가 확인 : U가 O에 대한 R(Relation)를 갖고 있는가?
+
+<br/>
+
+작업 A에 대한 권한을 의마흔 관계 R을 정의해야 한다.
+- 일반 : Jane 사용자는 Project SandCastle 객체를 볼 수 있는가?
+- OpenFGA : Jane 사용자는 Project SandCastle 객체를 볼 관계를 갖는가?
+
+<br/>
+
+### A Process For Defining Authorization Models
+---
+
+인가 모델을 정의하려면 시스템의 모든 사용 사례 또는 작업에 대해 "사용자 U가 객체 O에 대해 작업 A를 수행할 수 있는 이유는 무엇인가?" 라는 질문에 대한 답변을 체계화해야 한다.
+
+Google Drive와 같은 시스템을 예시로 인가 모델을 정의하는 과정에 대해 살펴보자.
+
+인가 모델을 정의하는 과정은 다음과 같다.
+
+1. 중요 기능을 선택한다.
+2. 객체 타입들을 나열한다.
+3. 해당 타입에 대한 관계를 나열한다.
+4. 관계들을 정의한다.
+5. 모델을 검증한다.
+6. 반복한다.
+
+![openfga1](/assets/img/openfga-process1.png)
+
+<br/>
+
+#### 1. Pick The Most Import Feature
+---
+
+![openfga2](/assets/img/openfga-process2.png)
+
+가장 중요한 기능을 선택하고 기능을 인가 모델로 묘사할 수 있도록 기능 설명을 정리한다. 기능 설명은 다음과 같이 시스템의 객체, 사용자, 사용자들의 집합을 포함해야 한다.
+
+```
+만약 {conditions} 할 경우에 사용자{user}는 {object types}에 대해 작업{action}을 수행할 수 있다.
+```
+- e.g. A user can create a document in a drive if they are the owner of the drive.
+
+<br/>
+
+#### 2. List The Object Types
+---
+
+![openfga3](/assets/img/openfga-process3.png)
+
+다음으로 시스템에 있는 객체 타입 목록을 작성한 후 정리된 기능 설명에서 해당 객체들을 찾는다.
+
+```
+A user {user} can perform action {action} to/on/in {object type} ... IF {conditions}
+```
+- e.g. Document, Folder, Organization
+- e.g. A user can create a `document` in a drive if they are the owner of the drive.
+
+<br/>
+
+그 다음으로 conditions에 나타나는 명사를 찾는다.
+- e.g. A user can create a `document` in a drive if they are the `owner of the drive`.
+
+객체 목록 유형에 없는 명사를 찾아서 추가해준다.
+- e.g. Document, Folder, Organization, User, Drive
+
+<br/>
+
+이제 객체 타입 목록이 있으므로 OpenFGA에 정의할 수 있다.
+
+```
+model
+  schema 1.1
+
+type user
+
+type document
+
+type folder
+
+type organization
+
+type drive
+```
+
+<br/>
+
 ## Reference
 ---
 
