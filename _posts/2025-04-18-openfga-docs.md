@@ -628,6 +628,246 @@ type document
     define viewer: [user, domain#member] or writer or viewer from parent_folder  
     define writer: [user, domain#member] or owner or writer from parent_folder
 ```
+- 해당 인가 모델은 `user` , `domain` , `folder` , `document` 객체들의 타입을 나타낸다.
+- `domain` 은 `member` 에 대한 직접적인 관계만 허용하는 단일 관계를 갖는다.
+- `folder` 와 `document` 는 `parent_folder` , `owner` , `writer` , `viewer` , `can_share` 관계들을 갖는다.
+
+<br/>
+
+### Direct Relationship Type Restrictions
+---
+
+관계 정의의 `[<string>, <string>, ...]` 은 지정된 타입의 객체에 의한 직접적인 관계를 허용한다. `<string>` 은 다음 세 개의 형태를 갖는다.
+
+- `<type>` : 해당 타입의 객체를 사용자로 연결하는 튜플을 나타낸다. 예를 들어, `group` 이 타입 제한되어 있는 경우 `group:marketing` 을 추가할 수 있다.
+- `<type:*>` : 해당 타입의 모든 객체를 연결하는 튜플을 나타낸다. 예를 들어, `user:*` 이 타입 제한되어 있는 경우 `user:*` 추가할 수 있다.
+- `<type>#<relation>` : 해당 특정 관계에 의해 해당 타입의 객체와 관련된 사용자 집합이 있는 튜플을 나타낸다. 예를 들어, `group#member` 가 타입 제한된 경우 `group:marketing#member` 를 추가할 수 있다.
+
+<br/>
+
+직접적인 관계 유형 제한이 지정되지 않으면 직접적인 관계가 허용되지 않으며, 이 특정 관계의 다른 객체를 이 타입의 객체와 관련시키는 튜플을 작성할 수 없다.
+
+<br/>
+
+다음은 `team` 타입의 구성이다.
+
+```
+type team
+  relations
+    define member: [user, uesr:*, team#member]
+```
+- 사용자가 `team` 타입의 객체와 가질 수 있는 모든 관계를 정의한다.
+- `[user, team#member]` 와 같이 직접적인 관계가 제한되었기 때문에 시스템 내 사용자는 `team` 타입의 `member` 로써 직접적 관계를 갖을 수 있다.
+	- `user` 타입
+	- 모든 접근에 대한 `user` 타입 (`user:*`)
+	- `team` 타입과 `member` 관계의 사용자 집합 (e.g. `team:product#member`)
+
+<br/>
+
+`anne` 은 다음 관계 튜플 집합 중 하나라도 존재하는 경우 `team:product` 의 `member` 이다.
+
+<br/>
+
+```json
+[
+  {
+    "user" : "user:anne",
+    "relation" : "member",
+    "object" : "team:product",
+    "_description" : "Anne is directly related to teh product team as a member"
+  }
+]
+```
+
+```json
+[
+  {
+    "user" : "user:*",
+    "relation" : "member",
+    "object" : "team:product",
+    "_description" : "Everyone (`*`) is directly related to the product team as a member"
+  }
+]
+```
+
+```json
+[
+  {
+    "user" : "team:contoso#member",
+    "relation" : "member",
+    "obejct" : "team:product",
+    "_description" : "Members of the contoso team are members of the prduct team"
+  },
+  {
+    "user" : "user:anne",
+    "relation" : "member",
+    "object" : "team:contoso",
+    "_description" : "Anne is a member of the contoso team"
+  }
+]
+```
+
+<br/>
+
+### Referencing Other Relations On The Same Object
+---
+
+같은 객체들이 다른 관계를 참조할 수도 있다. 다음은 간단한 `document` 타입 정의이다.
+
+```
+type document
+  relations
+    define editor: [user]
+    define viewer: [user] or editor
+    define can_rename: editor
+```
+
+- 사용자가 가질 수 있는 `document` 관련한 모든 관계들을 정의한다.
+- `viewer` 와 `can_rename` 관계 정의는 모두 동일한 타입의 또 다른 관계인 `editor` 를 참조한다.
+- `can_rename` 은 직접 관계 타입 제한을 참조하지 않는다. 즉, 사용자에게 이 관계를 직접 할당할 수 없으며 `editor` 관계가 할당될 때 상속되어야 한다.
+- `viewer` 관계는 직접적이거나 직접적이지 않는 관계 둘다 허용한다.
+
+<br/>
+
+다음 튜플 집합 중에 하나라도 존재할 경우, `anne` 은 `document:new-roadmap` 의 `viewer` 이다.
+
+```json
+[
+  {
+    "user" : "user:anne",
+    "relation" : "editor",
+    "object" : "document:new-roadmap",
+    "_description" : "Anne is an editor of the new-roadmap document"
+  }
+]
+```
+
+```json
+[
+  {
+    "user" : "user:anne",
+    "relation" : "viewer",
+    "object" : "document:new-roadmap",
+    "_description" : "Anne is a viewer of the new-roadmap document"
+  }
+]
+```
+
+<br/>
+
+`anne` 은 document에 대해 `editor` 관계를 갖고 있는 경우에만 `document:new-roadmap` 의 `can_rename` 관계를 갖는다.
+
+```json
+[
+  {
+    "user" : "user:anne",
+    "relation" : "editor",
+    "object" : "document:new-roadmap",
+    "_description" : "Anne is an editor of the new-roadmap document"    
+  }
+]
+```
+
+<br/>
+
+### Referencing Relations On Related Objects
+---
+
+간접적인 관계의 또 다른 집합은 다른 객체와의 관계를 참조함으로써 가능해진다.
+
+문법은 `X from Y` 이며, 다음이 요구된다.
+- 다른 객체는 현재 객체와 `Y` 로 관련된다.
+- 사용자는 `X` 로 다른 객체와 관련되어 있다.
+
+아래 인가 모델을 참조해라.
+
+```
+model
+  schema 1.1
+
+type user
+
+type folder
+  relations
+    define viewer: [user, folder#viewer]
+
+type document
+  relations
+    define parent_folder: [folder]
+    define viewer: [user] or viewer from parent_folder
+```
+
+<br/>
+
+아래 코드는 `viewer` 관계에 직접 할당된 모든 사용자와 `document` 의 `parent_folder` 를 볼 수 있는 모든 사용자라는 것을 나타낸다.
+
+```
+type document
+  relations
+    define viewer: [user] or viewer from parent_folder
+```
+
+<br/>
+
+다음과 같은 관계 튜플 중에 하나라도 존재할 경우, `user:anne` 은 `document:new-roadmap` 의 `viewer` 이다.
+
+```
+[
+  {
+    "user" : "folder:planning",
+    "relation" : "parent_folder",
+    "object" : "document:new-roadmap",
+    "_description" : "planning folder is the parent folder of the new-roadmap document"
+  },
+  {
+    "user" : "user:anne",
+    "relation" : "viewer",
+    "object" : "folder:planning",
+    "_description" : "anne is a viewer of the planning folder"
+  }
+]
+```
+
+<br/>
+
+관련 객체에 대한 참조 관계는 전이적인 암시적 관계를 정의한다. 사용자 A가 viewer 로서의 객체 B가 관련 되어 있고 객체 B가 parent 로서 객체 C와 관련되어 있으면, 사용자 A는 viewer로서 객체 C가 관련 되어 있다. 이는 폴더를 보는 사람이 폴더의 모든 문서를 보는 사람이라는 것을 나타낼 수 있다.
+
+<br/>
+
+OpenFGA는 참조된 관계가 다른 관계를 참조(`from`)하는 것을 허용하지 않으며 타입 제한에서 비구체적 타입(`<object_type>:*`) 또는 사용자 집합(`<object_type>#<relation>`)을 허용하지 않는다.
+
+<br/>
+
+### Union Operator
+---
+
+DSL에서 `or` 나 JSON에서의 `union` 은 사용자가 사용자 집합 중에 하나에 속하는 경우 관계가 존재함을 나타낸다.
+
+```
+type document
+  relations
+    define viewer: [user] or editor
+```
+
+<br/>
+
+`user:anne` 는 `document:new-roadmap` 의 `viewer` 이다.
+
+```
+[{
+  "user" : "user:anne",
+  "relation" : "editor",
+  "object" : "document:new-roadmap"
+}]
+```
+
+```
+[{
+  'user" : "user:anne",
+  "relation" : "viewer",
+  "object" : "document:new-roadmap"
+}]
+```
 
 <br/>
 
