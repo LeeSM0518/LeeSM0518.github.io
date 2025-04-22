@@ -811,7 +811,7 @@ type document
 
 다음과 같은 관계 튜플 중에 하나라도 존재할 경우, `user:anne` 은 `document:new-roadmap` 의 `viewer` 이다.
 
-```
+```json
 [
   {
     "user" : "folder:planning",
@@ -853,7 +853,7 @@ type document
 
 `user:anne` 는 `document:new-roadmap` 의 `viewer` 이다.
 
-```
+```json
 [{
   "user" : "user:anne",
   "relation" : "editor",
@@ -861,12 +861,101 @@ type document
 }]
 ```
 
-```
+```json
 [{
   'user" : "user:anne",
   "relation" : "viewer",
   "object" : "document:new-roadmap"
 }]
+```
+
+<br/>
+
+### Intersection Operator
+---
+
+DSL의 `and` 나 JSON의 `intersection` 은 사용자가 모든 사용자 집합에 포함되어 있는 경우 관계까 존재함을 나타낸다.
+
+```
+type document
+  relations
+    define viewer: authorized_user and editor
+```
+
+<br/>
+
+다음을 모두 만족할 경우 `user:anne` 은 `document-new-roadmap` 의 `viewer`  이다.
+
+```json
+[{
+  "user" : "user:anne",
+  "relation" : "editor",
+  "object" : "document:new_roadmap"
+}]
+```
+
+```json
+[{
+  "user" : "user:anne",
+  "relation" : "authorized_user",
+  "object" : "document:new-roadmap"
+}]
+```
+
+<br/>
+
+### Exclusion Operator
+---
+
+DSL에서 `but not` 이나 JSON에서 `difference` 는 사용자가 기본 사용자 집합에 있지만 제외도니 사용자 집합에 없는 경우 관계까 존재함을 나타낸다. 이 연산자는 제외 또는 차단 목록을 모델링할 때 특히 유용하다.
+
+```
+type document
+  relations
+    define viewer: [user] but not blocked
+```
+
+<br/>
+
+다음을 만족할 경우에만 `user:anne` 은 `document:new-roadmap` 의 `viewer` 이다.
+
+```json
+[{
+  "user" : "user:anne",
+  "relation" : "viewer",
+  "object" : "document:new-roadmap"
+}]
+```
+
+AND 아래 튜플이 존재하지 않을 경우
+
+```json
+[{
+  "user" : "user:anne",
+  "relation" : "blocked",
+  "object" : "document:new-roadmap"
+}]
+```
+
+<br/>
+
+### Grouping and nesting operators
+---
+
+괄호를 사용하여 연산자를 그룹화하고 중첩하면 복잡한 조건을 정의할 수 있다. 직접적인 관계는 괄호를 사용하여 표현식에 포함될 수 있다.
+
+```
+type user
+
+type organization
+  relations
+    define member: [user]
+
+type folder
+  relations
+    define organization: [organization]
+    define parent: [folder]
+    define viewer: ([user] or viewer from parent) and member from organization
 ```
 
 <br/>
