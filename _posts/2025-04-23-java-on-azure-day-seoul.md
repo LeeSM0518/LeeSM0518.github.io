@@ -9,6 +9,8 @@ tags:
 description: Java On Azure Day Seoul 행사
 ---
 
+![seminar1](/assets/img/java-on-azure-day-seoul.png)
+
 ## Empower Your Java Applications with Latest Microsoft Azure Technologies
 ---
 
