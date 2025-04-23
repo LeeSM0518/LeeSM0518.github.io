@@ -604,7 +604,7 @@ OpenFGA의 구성 언어는 시스템의 권한 모델을 표현하며, 이 표�
 
 ```
 model  
-  schema 1.1  
+  schema 1.1   
   
 type user  
   
