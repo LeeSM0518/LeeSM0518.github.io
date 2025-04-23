@@ -454,7 +454,7 @@ type document
 
 <br/>
 
-이러한 경우에 `viewer` 로서의 `user:anne` 와 `document:new-roadmap` 간의 관계는 `user:anne` 이 동일한 문서와 맺는 직접적인 `editor` 관계에서 암시된다. 그러므로, 다음과 같은 `user:anne` 와 `document:new-roadmap` 간의 조회 권한이 존재함을 확인하는 `check` 요청은 `true` 를 반환한다.
+이러한 경우에 `viewer` 로서의 `user:anne` 와 `document:new-roadmap` 간의 관계는 `ㄱ` 이 동일한 문서와 맺는 직접적인 `editor` 관계에서 암시된다. 그러므로, 다음과 같은 `user:anne` 와 `document:new-roadmap` 간의 조회 권한이 존재함을 확인하는 `check` 요청은 `true` 를 반환한다.
 
 ```java
 var options = new ClientCheckOptions()
@@ -863,7 +863,7 @@ type document
 
 ```json
 [{
-  'user" : "user:anne",
+  "user" : "user:anne",
   "relation" : "viewer",
   "object" : "document:new-roadmap"
 }]
@@ -1279,7 +1279,86 @@ type document
 ### Direct Access
 ---
 
+**Direct Access 모델링은 언제 사용하는지?**
 
+관계 튜플을 사용한 액세스 권한 부여는 OpenFGA의 핵심 부분이다. 관계 튜플이 존재하지 않으면 어떤 `checks` 요청이든 실패할 것이다. 다음과 같이 사용해야 한다.
+
+- 인가 모델을 사용하여 시스템에서 사용자와 객체 간에 가능한 관계를 나타낸다.
+- 관계 튜플을 사용하여 시스템에서 사용자와 객체 간의 관계에 대한 사실을 표현한다.
+
+<br/>
+
+#### 1. Create A Relationship Tuple
+---
+
+다음과 같이 `bob` 이 `document:meeting_notes.doc` 에 대한 `editor` 권한을 갖는다는 관계 튜플을 추가해보자.
+
+```java
+var options = new ClientWriteOptions()
+  .authorizationModelId("{modelId}");
+
+var body = new ClientWriteRequest()
+  .writes(List.of(
+    new ClientTupleKey()
+      .user("user:bob")
+      .relation("editor")
+      ._object("document:meeting_notes.doc")
+  ));
+
+var response = fgaClient.write(body, options).get();
+```
+
+<br/>
+
+#### 2. Check That The Relationship Exists
+---
+
+위와 같이 튜플을 추가한 후, `bob` 이 `document:meeting_notes.doc` 에 `editor` 인지에 대한 관계를 확인함으로써 관계가 유효한지 확인할 수 있다.
+
+```java
+var options = new ClientCheckOptions()
+  .authorizationModelId("{modelId}");
+
+var body = new ClientCheckRequest()
+  .user("user:bob")
+  .relation("editor")
+  ._object("document:meeting_notest.doc");
+
+var response = fgaClient.check(body, options).get();
+
+// response.getAllowed() = true
+```
+
+<br/>
+
+`bob` 이 `doucment:meeting_notest.doc` 의 `viewer` 가 인지 확인할 경우 `false` 가 응답된다. OpenFGA는 아직 해당 튜플을 알지 못 하기 때문이다.
+
+```java
+var options = new ClientCheckOptions()
+  .authorizationModelId("{modelId}")
+
+var body = new ClientCheckRequest()
+  .user("user:bob")
+  .relation("viewer")
+  ._object("document:meeting_notes.doc");
+
+var response = fgaClient.check(body, options).get();
+```
+
+OpenFGA에서 관계 튜플을 생성할 때, 각 객체와 사용자의 식별자는 고유한 것을 사용해라. 위에서 사용하는 이름들과 식별자는 쉬운 예시를 위한 것이다.
+
+<br/>
+
+### User Groups
+---
+
+User Groups 모델링이란 사용자를 그룹에 추가하고 객체에 그룹 접근 권한을 부여하는 방법이다.
+
+<br/>
+
+**User Groups 모델링을 언제 사용하는지?**
+
+관계 튜플들은 객체와 관계를 갖는 모든 그룹이 명시될 수 있으므로, 객체와 동일한 관계를 가진 사용자 집합을 포함하고자 할 때 유용하다. 예시는 다음과 같다.
 
 <br/>
 
