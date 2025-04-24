@@ -1434,6 +1434,31 @@ var body = new ClientWriteRequest()
 // response 생략
 ```
 
+- `alice` 는 `team:writers` 의 `member` 이다.
+- `team:writers` 의 `members` 는 `document:meeting_notes` 의 `editor` 이다.
+- 그러므로, `alice` 는 `document:meeting_notes` 의 `editor` 이다.
+
+<br/>
+
+### Roles and Permissions
+---
+
+- 역할은 사용자나 사용자 그룹으로 할당된다. 사용자는 `editor` 나 `owner` 와 같은 하나 이상의 역할을 가질 수 있다.
+- 권한은 사용자가 `device_renamer` 나 `channel_archiver` 같은 특정 역할에 따라 특정 객체들에 접근할 수 있도록 허가한다.
+
+예를 들어, `trip` 의 `viewer` 역할은 예약을 볼 수 있는 권한이 있고 `owners` 역할은 예약을 추가하거나 볼 수 있는 권한이 있을 수 있다.
+
+<br/>
+
+**Roles and Permissions model은 언제 사용하는가?**
+
+이 모델은 직접 사용자에게 역할을 부여하거나 사용자가 다른 관계에서 다운스트림으로 받는 관계를 통해 권한을 할당할 수 있다. 예시는 다음과 같다.
+
+- `document` 를 수정하고 읽을 수 있는 `admin` 역할을 누군가에게 부여한다.
+- `device` 에서 `live_video_viewer`  할 수 있는 `security_guard` 역할을 누군가에게 부여한다.
+- `shop` 에서 `view_products` 할 수 있는 `viewer` 역할을 누군가에게 부여한다.
+
+역할 및 권한 모델을 구현하면 기존 역할에 더 세분화된 권한을 부여할 수 있으므로 애플리케이션에서 특정 사용자 역할을 명시적으로 확인하지 않고도 특정 객체에 대한 접근 권한이 있는지 여부를 확인할 수 있다. 또한, 애플리케이션 동작에 영향을 주지 않고 새 역할/권한을 추가하거나 역할을 통합할 수 있다. 예를 들어, 앱의 `check` 가 `check('bob', 'owner', 'trip:Europe')` 대신 `check('bob', 'booking_addr', 'trip:Europe')` 과 같이 세부 권한에 대한 것인데 나중에 `onwers` 가 더 이상 `trip` 에 예약을 추가할 수 없다고 결정하면, 앱에서 코드 수정 없이 `trip` 에 대한 관계를 제거할 경우 모든 권한이 자동으로 변경 사항을 반영하게 된다.
 
 <br/>
 
