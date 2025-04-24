@@ -1369,6 +1369,74 @@ User Groups 모델링이란 사용자를 그룹에 추가하고 객체에 그룹
 
 <br/>
 
+#### 01. Introduce the concept of a team to the authorization model
+---
+
+먼저 인가 모델에 `team` 객체를 정의한다. `team` 은 `member` 들을 가질 수 있으며, 다음과 같이 인가 모델을 작성하면 된다.
+
+```
+model
+  schema 1.1
+
+type user
+
+type document
+  relations
+    define editor: [team#member]
+
+type team
+  relations
+    define member: [user]
+```
+
+<br/>
+
+#### 02. Add users as members to the team
+---
+
+이제 `team` 의 `member` 인 user를 할당할 수 있다. `user:alice` 가 `team:writers` 의 member 임을 나타내는 관계 튜플을 생성해보자.
+
+```java
+var options = new ClientWriteOptions()
+        .authorizationModelId("{modelId}");
+
+var body = new ClientWriteRequest()
+        .writes(List.of(
+            new ClientTupleKey()
+                    .user("user:alice")
+                    .relation("member")
+                    ._object("team:writers")
+        ));
+
+var response = fgaClient.write(body, options).get();
+```
+
+<br/>
+
+#### 03. Assign the team members a relation to an object
+---
+
+그룹을 표현하려면 `type:object_id#relation` 포맷을 사용하면 된다. 이는 사용자 집합이 `type:object_id` 에 관계가 있음을 나타낸다. 예를 들어, `team:writers#members` 는 `members` 로써 `team:writers` 객체에 관계가 있는 사용자 집합을 나타낸다.
+
+`team` 의 `members` 에 `document` 에 대한 관계를 할당하기 위해, 다음과 같이 `team:writers` 의 members가 `document:meeting_notes.doc` 의 `editor` 임을 나타내는 관계 튜플을 생성해라.
+
+```java
+// options 생략
+
+var body = new ClientWriteRequest()
+        .writes(List.of(
+                new ClientTupleKey()
+                        .user("team:writers#member")
+                        .relation("editor")
+                        ._object("document:meeting_notes.doc")
+        ));
+
+// response 생략
+```
+
+
+<br/>
+
 ## Reference
 ---
 
