@@ -1360,6 +1360,13 @@ User Groups 모델링이란 사용자를 그룹에 추가하고 객체에 그룹
 
 관계 튜플들은 객체와 관계를 갖는 모든 그룹이 명시될 수 있으므로, 객체와 동일한 관계를 가진 사용자 집합을 포함하고자 할 때 유용하다. 예시는 다음과 같다.
 
+- `roadmap.doc` 에서 `engineers` 그룹에  `viewer` 접근 권한 부여
+- `document` 에 접근할 수 없는 `members` 의 `block_list` 생성
+- `team` 과 `document` 를 공유
+- `followers` 에게만 `photo` 에 대한 `viewer` 접근 권한 부여
+- `organization` 에 속한 모든 `users` 가 `file` 을 볼 수 있도록 함
+- 특정 `locale` 의 `user` 에 대한 접근 제한
+
 <br/>
 
 ## Reference
