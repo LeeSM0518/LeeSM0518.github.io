@@ -1462,6 +1462,40 @@ var body = new ClientWriteRequest()
 
 <br/>
 
+아래의 Roles and Permission 예시는 `owners` 및/또는 `viewer` 가 있는 여행 예약 시스템으로, 둘 다 여행에 예약을 추가하거나 여행의 예약을 조회하는 등 보다 세분화된 권한을 가질 수 있다. 이를 OpenFGA 환경에 구성하려면 다음과 같이 수행해야 한다.
+
+1. 여행 예약 시스템에서 역할이 직접적인 관계와 어떻게 연관되어 있는지 이해한다.
+2. 기존 인가 모델에 암시적 관계를 추가하여 예약에 대한 권한을 정의한다.
+3. 직접적이고 암시적인 관계에 대해 관계 튜플을 기반으로 사용자 역할과 권한을 확인한다.
+
+<br/>
+
+#### 01. Understand how roles work within the trip booking system
+---
+
+역할은 사용자에게 직접적으로 할당된 관계이다. 아래에서 특정 사용자에게 할당할 수 있는 명시된 역할은 `owner` 와 `viewer` 이다.
+
+```
+model
+  schema 1.1
+
+type user
+
+type trip
+  relations
+    define owner: [user]
+    define viewer: [user]
+```
+
+<br/>
+
+#### 02. Add permission for bookings
+---
+
+권한은 사용자가 다른 관계를 통해 얻을 수 있는 관계이다. 권한을 표현할 때 인가 모델의 관계에 직접적인 관계 타입 제한을 추가하는 것을 피하기 위해, 대신 다른 관계를 통해 해당 관계를 정의한다. 이는 다른 관계로부터 부여되고 암시되는 권한임을 나타낸다.
+
+<br/>
+
 ## Reference
 ---
 
