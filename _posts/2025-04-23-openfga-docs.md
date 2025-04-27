@@ -1494,6 +1494,77 @@ type trip
 
 권한은 사용자가 다른 관계를 통해 얻을 수 있는 관계이다. 권한을 표현할 때 인가 모델의 관계에 직접적인 관계 타입 제한을 추가하는 것을 피하기 위해, 대신 다른 관계를 통해 해당 관계를 정의한다. 이는 다른 관계로부터 부여되고 암시되는 권한임을 나타낸다.
 
+예약과 관련된 권한을 추가하려면, `trip` 객체 타입에 사용자가 `trips` 에 대해 수행할 수 있는 다양한 동작(ex. 조회, 수정, 삭제, 이름 변경)을 나타내는 새로운 관계를 추가해라.
+
+예약을 조회할 권한을 가진 `trip` 의 `viewer` 와 예약을 추가/조회할 권한을 가진 `owners` 를 허가하려면 다음 타입을 변경해라.
+
+`trip` 의 `viewer` 가 예약을 조회할 수 있는 권한을 갖고, `owner` 가 예약을 추가하고 조회할 수 있는 권한을 갖도록 하려면, 타입을 수정해야 한다.
+
+<br/>
+
+```
+model
+  schema 1.1
+
+type user
+
+type trip
+  relations
+    define owner: [user]
+    define viewer: [user]
+    define booking_adder: owner
+    define booking_viewer: viewer or owner
+```
+
+- `booking_viewer` 와 `booking_adder` 둘 다 직접적인 관계 타입 제한이 없으며, 이로 인해 해당 관계는 역할을 통해서만 할당되고 직접 할당될 수 없도록 보장된다.
+
+<br/>
+
+#### 03. Check user roles and their permissions
+---
+
+타입 정의는 예약을 어떻게 조회하거나 추가할 수 있는지에 대한 역할과 권한을 반영한다. 따라서 관계 튜플을 생성하여 사용자에게 역할을 할당하고, 사용자가 적절한 권한을 가지고 있는지 확인할 수 있다.
+
+<br/>
+
+두 관계 튜플을 생성하라
+1. `bob` 에게 유렵에 대한 `trip` 의 `viewer` 역할을 준다.
+2. `alice` 에게 유럽에 대한 `trip` 의 `owner` 역할을 준다.
+
+```java
+// options 생략
+
+var body = new ClientWriteRequest()
+        .writes(List.of(
+                new ClientTupleKey()
+                        .user("user:bob")
+                        .relation("viewer")
+                        ._object("trip:Europe"),
+                new ClientTupleKey()
+                        .user("user:alice")
+                        .relation("owner")
+                        ._object("trip:Europe")
+        ));
+
+// response 생략
+```
+
+<br/>
+
+`bob`이 유럽에 대한 `trip` 예약을 조회할 수 있는지 확인해라.
+
+```java
+// options 생략
+
+var body = new ClientCheckRequest()
+        .user("user:bob")
+        .relation("booking_viewer")
+        ._object("trip:Europe");
+
+// response 생략
+// response.getAllowed() = true
+```
+
 <br/>
 
 ## Reference
