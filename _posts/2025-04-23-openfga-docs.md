@@ -1628,6 +1628,30 @@ var response = fgaClient.check(body, options).get();
 3. `trip:Europe` 객체에 `onwer` 로 연결된 모든 사용자는 `booking_adder` 로도 연결된다.
 4. 그러므로, 특정 `trip` 에 대한 모든 `owners` 는 해당 `trip` 에 대한 `booking_viewers` 이면서 `booking_adders` 이다.
 
+<br/>
+
+### Parent-Child Objects
+---
+
+사용자가 하나의 객체와 맺는 관계가 다른 객체와읭 관계에도 영향을 미칠 수 있다. 예를 들어, `folder` 의 `editor` 는 해당 `folder` 가 `parent` 인 모든 `documents` 의 `editor` 가 될 수 있다.
+
+<br/>
+
+**Parent-Child 모델링은 언제 사용하는가?**
+
+객체 간의 관계는 구성된 권한 모델과 결합되어, 사용자가 하나의 객체와 맺은 관계가 다른 객체와의 관계에도 영향을 미칠 수 있음을 나타낼 수 있다. 또한, 사용자 그룹을 이용해 객체 간의 관계를 수정할 필요성을 없앨 수도 있다.
+
+다음은 객체 간의 관계에 대한 간단한 예시이다.
+
+- `employee` 의 `managers` 는 `employee` 가 제출한 요청들을 `approve` 할 수 있는 권한을 갖는다.
+- 조직 내에서 저장소 관리자 역할(`repo_admin`)을 가진 사용자는 그 조직에 있는 모든 저장소들에 대해 자동으로 `admin` 접근 권한을 갖는다.
+- `plan` 을 `subscribed` 한 사용자는 `plan` 의 모든 `features` 에 대해 접근 권한을 갖는다.
+
+<br/>
+
+다음 예시에서는 문서들을 포함하는 폴더(a)와 특정 폴더에 접근 권한을 가진 사용자(b)가 해당 폴더 내 모든 문서에 대해서도 편집자 접근 권한을 갖는 경우를 모델링한다.
+
+
 
 <br/>
 
