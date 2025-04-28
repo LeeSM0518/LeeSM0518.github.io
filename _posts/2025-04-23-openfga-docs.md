@@ -1561,9 +1561,73 @@ var body = new ClientCheckRequest()
         .relation("booking_viewer")
         ._object("trip:Europe");
 
-// response 생략
+var response = fgaClient.check(body, options).get();
+
 // response.getAllowed() = true
 ```
+
+`bob` 은 `booking_viewer` 이며, 이유는 다음과 같다.
+
+1. `bob` 은 유럽에 대한 `trip` 의 `viewer` 이다.
+2. `trip:Europe` 객체에 `viewer` 로 연결된 모든 사용자는 `booking_viewer` 로도 연결된다.
+3. 그러므로, 특정 `trip`  모든 `viewer` 는 `booking_viewers` 가 된다.
+
+<br/>
+
+`bob` 이 `trip:Europe` 을 추가할 수 없는지 확인하려면 다음과 같이 요청하면 된다.
+
+```java
+// option 생략
+
+var body = new ClientCheckRequest()
+        .user("user:bob")
+        .relation("booking_adder")
+        ._object("trip:Europe");
+
+var response = fgaClient.check(body, options).get();
+
+// response.getAllowed() = false
+```
+
+<br/>
+
+`alice` 가 예약을 조회하고 추가할 수 있는지 확인하려면 다음과 같이 요청하면 된다.
+
+```java
+// options 생략
+
+var body = new ClientCheckRequest()
+        .user("user:alice")
+        .relation("booking_viewer")
+        ._object("trip:Europe");
+
+var response = fgaClient.check(body, options).get();
+
+// response.getAllowed() = true
+```
+
+```java
+// options 생략
+
+var body = new ClientCheckRequest()
+        .user("user:alice")
+        .relation("booking_adder")
+        ._object("trip:Europe");
+
+var response = fgaClient.check(body, options).get();
+
+// response.getAllowed() = true
+```
+
+<br/>
+
+`alice` 는 `booking_viewer` 이고 `booking_adder` 이다. 이유는 다음과 같다.
+
+1. `alice` 는 `trip:Europe` 에 대한 `owner` 이다.
+2. `trip:Europe` 객체에 `onwer` 로 연결된 모든 사용자는 `booking_viewer` 로도 연결된다.
+3. `trip:Europe` 객체에 `onwer` 로 연결된 모든 사용자는 `booking_adder` 로도 연결된다.
+4. 그러므로, 특정 `trip` 에 대한 모든 `owners` 는 해당 `trip` 에 대한 `booking_viewers` 이면서 `booking_adders` 이다.
+
 
 <br/>
 
