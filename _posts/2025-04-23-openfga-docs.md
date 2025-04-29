@@ -1651,6 +1651,134 @@ var response = fgaClient.check(body, options).get();
 
 다음 예시에서는 문서들을 포함하는 폴더(a)와 특정 폴더에 접근 권한을 가진 사용자(b)가 해당 폴더 내 모든 문서에 대해서도 편집자 접근 권한을 갖는 경우를 모델링한다.
 
+`folder` 의 `editor` 가 포함된 `document` 의 `editors` 가 되도록 하려면, 다음 작업을 수행해야 한다.
+
+1. `folder` 와 `document` 사이의 `parent` 관계를 허용하도록 인가 모델을 수정해라.
+2. `folder` 로부터 권한이 연속되도록 `document` 타입 정의의 `editor` 관계를 수정해라.
+
+<br/>
+
+다음 세 단계는 `bob` 이 `folder:notes` 의 `editor` 이므로 `bob` 이 `document:meeting_notes.doc` 의 `editor` 이라는 것을 나타내고 검증한다.
+
+3. `bob` 이 `folder:notes` 의 `editor` 를 나타내는 관계 튜플을 생성한다.
+4. `folder:nots` 가 `document:meeting_notes.doc` 의 `parent` 인 것을 나타내는 관계 튜플을 생성한다.
+5. `bob` 이 `document:meeting_notes.doc` 의 `editor` 인지 확인한다.
+
+<br/>
+
+#### 1. Update the Authorization Model to allow a parent relationship between folder and document
+---
+
+다음 권한 모델 업데이트는 `folder` 와 `document` 간의 `parent` 관계를 허용한다.
+
+```
+model
+  schema 1.1
+
+type user
+
+type folder
+  relations
+    define editor: [user]
+
+type document
+  relations
+    define parent: [folder]
+    define editor: [user]
+```
+
+- `document` 가 `parent` 관계를 갖는 것은 다른 객체들이 `document` 의 `parent` 가 될 수 있음을 나타낸다.
+
+<br/>
+
+#### 2. Update the editor relation in the document type definition to support cascading from folder
+---
+
+`folder` 와 `document` 간의 연속적인 관계를 허용하도록 인가 모델을 수정해라.
+
+```
+model
+  schema 1.1
+
+type user
+
+type folder
+  relations
+    define editor: [user]
+
+type document
+  relations
+    define parent: [folder]
+    define editor: [user] or editor from parent
+```
+
+- `document` 의 `editor` 는 다음과 같이 될 수 있다.
+    - 직접 `editor` 로 할당된 사용자들
+    - `document` 의 `parent` 객체 중 하나에 `editor` 로 연결된 사용자들
+
+이처럼 변경한 후, `editor` 로서 `document` 의 `parent` 인 `folder` 와 연관된 것은 `document` 의 `editor` 이다.
+
+<br/>
+
+#### 3. Create a new relationship tuple to indicate that `bob` is an `editor` of `folder:notes`
+---
+
+새로운 연속 관계를 활용하기 위해, `bob` 이 `folder:notes` 의 `editor` 를 나타내는 관계 튜플을 생성해라.
+
+```java
+// option 생략
+
+var body = new ClientWriteRequest()
+        .writes(List.of(
+                new ClientTupleKey()
+                        .user("user:bob")
+                        .relation("editor")
+                        ._object("folder:notes")
+        ));
+
+var response = fgaClient.write(body, options).get();
+```
+
+<br/>
+
+#### 4. Create a new relationship tuple to indicate that `folder:notes` is a `parent` of `document:meeting_notes.doc`
+---
+
+현재는 `bob` 이 `folder:notes` 의 `editor` 이며, `folder:notes` 가 `document:meeting_notes.doc` 의 `parent` 를 나타내도록 해보자.
+
+```java
+// options 생략
+
+var body = new ClientWriteRequest()
+        .writes(List.of(
+                new ClientTupleKey()
+                        .user("folder:notes")
+                        .relation("parent")
+                        ._object("document:meeting_notes.doc")
+        ));
+
+var response = fgaClient.write(body, options).get();
+```
+
+<br/>
+
+#### 5. Check if `bob` is an `editor` of `document:meeting_notes.doc`
+---
+
+인가 모델을 변경하고 두 관계 튜플을 추가한 이후, 다음과 같이 `bob` 이 `document:meeting_notes.doc` 의 `editor` 인지 확인하여 설정한 것이 올바른지 검증해라.
+
+```java
+// options 생략
+
+var body = new ClientCheckRequest()
+        .user("user:bob")
+        .relation("editor")
+        ._object("document:meeting_notest.doc");
+
+var response = fgaClient.check(body, options).get();
+
+// response.getAllowed() = true
+```
 
 
 <br/>
