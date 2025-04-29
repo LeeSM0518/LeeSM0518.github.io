@@ -1780,7 +1780,6 @@ var response = fgaClient.check(body, options).get();
 // response.getAllowed() = true
 ```
 
-
 <br/>
 
 ## Reference
