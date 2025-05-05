@@ -583,7 +583,135 @@ export default SectionListBasics;
 
 <br/>
 
+## Basic: Platform-Specific Code
+---
 
+경우에 따라 플랫폼별로 코드를 다르게 구현하는 것이 적합할 때도 있다. 예를 들어, Android와 iOS에서 각각 다른 UI 컴포넌트를 구현하고 싶을 수 있다.
+
+React Native는 플랫폼별 코드를 분리할 수 있도록 두 가지 방법을 제공한다.
+1. `Platform` 모듈 사용하기
+2. 플랫폼 전용 파일 확장자 사용하기
+
+일부 컴포넌트의 속성은 특정 플랫폼에서만 작동할 수 있으며, 이런 속성들은 공식 문서에서 `@platform` 주석이 달려 있다.
+
+<br/>
+
+### Platform module
+---
+
+React Native는 어떤 앱에서 실행 중인지 확인할 수 있는 모듈을 제공한다. 이를 활용해서 플랫폼 특화된 코드를 구현할 수 있다.
+
+{% raw %}
+```tsx
+import {Platform, Text, View} from "react-native";  
+  
+export default function PlatformSpecificCode() {  
+  let platform = Platform.OS === "ios" ? "iOS" : "Android";  
+  return (  
+    <View style={{  
+      flex: 1,  
+      justifyContent: 'center',  
+      alignItems: 'center',  
+    }}>  
+      <Text>{platform}</Text>  
+    </View>  
+    )  
+}
+```
+{% endraw %}
+
+- `Platform.IO` 는 `ios` 이거나 `android` 가 될 수 있다.
+
+<br/>
+
+`Platform.select` 메서드를 사용해 구현할 수도 있다. 이 메서드는 `'ios' | 'android' | 'native' | 'default'` 중에 하나의 키가 될 수 있는 객체를 전달하면 실행 중인 플랫폼에 맞는 값을 받는다. 모바일 기기에서 실행 중이라면 `ios` 또는 `android` 키로 적용되고, 그 둘이 없을 경우 `native` 키가 사용되며, 그것도 없으면 `default` 키가 적용된다.
+
+{% raw %}
+```tsx
+import {Platform, StyleSheet, Text, View} from "react-native";  
+  
+export default function PlatformSpecificCode() {  
+  let platform = Platform.OS === "ios" ? "iOS" : "Android";  
+  return (  
+    <View style={styles.container}>  
+      <Text>{platform}</Text>  
+    </View>  
+    )  
+}  
+  
+const styles = StyleSheet.create({  
+  container: {  
+    flex: 1,  
+    justifyContent: 'center',  
+    alignItems: 'center',  
+    ...Platform.select({  
+      ios: {  
+        backgroundColor: 'blue',  
+      },  
+      android: {  
+        backgroundColor: 'green',  
+      },  
+      default: {  
+        backgroundColor: 'red',  
+      }  
+    })  
+  }  
+})
+```
+{% endraw %}
+
+<br/>
+
+플랫폼 특화된 컴포넌트를 사용하려면 다음과 같이 사용하면 된다.
+
+{% raw %}
+```tsx
+const Component = Platform.select({  
+ios: () => require('ComponentIOS'),  
+android: () => require('ComponentAndroid'),  
+})();  
+  
+<Component />;
+```
+{% endraw %}
+
+<br/>
+
+#### Detecting the Android version
+---
+
+{% raw %}
+```tsx
+import {Platform} from 'react-native';
+
+if (Platform.Version === 25) {
+  console.log('Running on Nougat!');
+}
+```
+{% endraw %}
+
+<br/>
+
+#### Detecting the iOS version
+---
+
+{% raw %}
+```tsx
+import {Platform} from 'react-native';
+
+const majorVersionIOS = parseInt(Platform.Version, 10);
+if (majorVersionIOS <= 9) {
+  console.log('Work around a change in behavior');
+}
+```
+{% endraw %}
+
+<br/>
+
+### Platform-specific extensions
+---
+
+플랫폼별 코드가 복잡하다면 코드를 여러 파일로 나누는 것이 좋다. React Native는 파일 이름에 `.ios` 나 `.android` 확장자가 포함되어 있으면 자동으로 이를 감지하여, 다른 컴포넌트에서 해당 플랫폼에 맞는 파일을 불러온다.
 
 <br/>
 
