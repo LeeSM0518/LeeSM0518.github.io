@@ -400,6 +400,189 @@ export default PizzaTranslator;
 ```
 {% endraw %}
 
+<br/>
+
+## Basic: Using a ScrollView
+---
+
+ScrollView는 여러 컴포넌트와 뷰를 포함할 수 있는 범용 스크롤 컨테이너이다. 스크롤 가능한 항목들은 서로 다른 형태일 수 있으며, horizontal 속성을 설정하면 세로뿐만 아니라 가로로도 스크롤할 수 있다.
+
+{% raw %}
+```tsx
+import React from 'react';
+import {Image, ScrollView, Text} from 'react-native';
+
+const logo = {
+  uri: 'https://reactnative.dev/img/tiny_logo.png',
+  width: 64,
+  height: 64,
+};
+
+const App = () => (
+  <ScrollView>
+    <Text style={{fontSize: 96}}>Scroll me plz</Text>
+    <Image source={logo} />
+    <Image source={logo} />
+    <Image source={logo} />
+    <Image source={logo} />
+    <Image source={logo} />
+    <Text style={{fontSize: 96}}>If you like</Text>
+    <Image source={logo} />
+    <Image source={logo} />
+    <Image source={logo} />
+    <Image source={logo} />
+    <Image source={logo} />
+    <Text style={{fontSize: 96}}>Scrolling down</Text>
+    <Image source={logo} />
+    <Image source={logo} />
+    <Image source={logo} />
+    <Image source={logo} />
+    <Image source={logo} />
+    <Text style={{fontSize: 96}}>What's the best</Text>
+    <Image source={logo} />
+    <Image source={logo} />
+    <Image source={logo} />
+    <Image source={logo} />
+    <Image source={logo} />
+    <Text style={{fontSize: 96}}>Framework around?</Text>
+    <Image source={logo} />
+    <Image source={logo} />
+    <Image source={logo} />
+    <Image source={logo} />
+    <Image source={logo} />
+    <Text style={{fontSize: 80}}>React Native</Text>
+  </ScrollView>
+);
+
+export default App;
+```
+{% endraw %}
+
+<br/>
+
+ScrollView는 pagingEnabled props를 사용하여 스와이프 제스처로 뷰를 페이지 단위로 넘기도록 설정할 수 있다.
+
+ScrollView는 크기가 제한된 항목을 표시할 때 가장 적합하다. 화면에 보이지 않더라도 ScrollView에 포함된 모든 요소와 뷰는 한 번에 렌더링된다. 따라서 화면에 다 담기지 않는 긴 목록을 표시해야 할 경우에는 `FlatList` 를 사용하는 것이 좋다.
+
+<br/>
+
+## Basic: Using List Views
+---
+
+React Native는 데이터 목록을 보여주는 다양한 컴포넌트를 제공한다. 일반적으로 `FlatList` 나 `SectionList` 중 하나를 사용한다.
+
+`FlatList` 컴포넌트는 변화하지만 구조가 유사한 데이터를 스크롤 가능한 리스트 형태로 보여준다. `FlatList` 는 항목 수가 시간이 지나면 바뀔 수 있는 긴 데이터 리스트에 적합하다. `ScrollView` 와 달리, `FlatList` 는 화면에 현재 표시되는 항목만 렌더링하여 전체 항목을 한꺼번에 렌더링하지 않는다.
+
+`FlatList` 컴포넌트를 사용하려면 `data` 와 `renderItem` 두 props가 필수이다. `data` 는 리스트의 데이터 원본이며, `renderItem` 은 데이터 원본에서 하나의 아이템을 받아 화면에 렌더링할 형식의 컴포넌트를 반환하는 함수이다.
+
+{% raw %}
+```tsx
+import React from 'react';
+import {FlatList, StyleSheet, Text, View} from 'react-native';
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    paddingTop: 22,
+  },
+  item: {
+    padding: 10,
+    fontSize: 18,
+    height: 44,
+  },
+});
+
+const FlatListBasics = () => {
+  return (
+    <View style={styles.container}>
+      <FlatList
+        data={[
+          {key: 'Devin'},
+          {key: 'Dan'},
+          {key: 'Dominic'},
+          {key: 'Jackson'},
+          {key: 'James'},
+          {key: 'Joel'},
+          {key: 'John'},
+          {key: 'Jillian'},
+          {key: 'Jimmy'},
+          {key: 'Julie'},
+        ]}
+        renderItem={({item}) => <Text style={styles.item}>{item.key}</Text>}
+      />
+    </View>
+  );
+};
+
+export default FlatListBasics;
+```
+{% endraw %}
+
+<br/>
+
+데이터를 논리적인 섹션으로 나눠서, 각 섹션에 헤더를 표시하는 방식으로 렌더링하고 싶다면 `SectionList` 를 사용하는 것이 적절하다.
+
+{% raw %}
+```tsx
+import React from 'react';
+import {SectionList, StyleSheet, Text, View} from 'react-native';
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    paddingTop: 22,
+  },
+  sectionHeader: {
+    paddingTop: 2,
+    paddingLeft: 10,
+    paddingRight: 10,
+    paddingBottom: 2,
+    fontSize: 14,
+    fontWeight: 'bold',
+    backgroundColor: 'rgba(247,247,247,1.0)',
+  },
+  item: {
+    padding: 10,
+    fontSize: 18,
+    height: 44,
+  },
+});
+
+const SectionListBasics = () => {
+  return (
+    <View style={styles.container}>
+      <SectionList
+        sections={[
+          {title: 'D', data: ['Devin', 'Dan', 'Dominic']},
+          {
+            title: 'J',
+            data: [
+              'Jackson',
+              'James',
+              'Jillian',
+              'Jimmy',
+              'Joel',
+              'John',
+              'Julie',
+            ],
+          },
+        ]}
+        renderItem={({item}) => <Text style={styles.item}>{item}</Text>}
+        renderSectionHeader={({section}) => (
+          <Text style={styles.sectionHeader}>{section.title}</Text>
+        )}
+        keyExtractor={item => `basicListEntry-${item}`}
+      />
+    </View>
+  );
+};
+
+export default SectionListBasics;
+```
+{% endraw %}
+
+<br/>
+
 
 
 <br/>
