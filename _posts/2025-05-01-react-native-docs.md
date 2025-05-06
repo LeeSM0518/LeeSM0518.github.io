@@ -1565,6 +1565,900 @@ export default AlignSelfLayout;
 
 <br/>
 
+### Align Content
+---
+
+`alignContent` 는 줄(line)이 교차 축(cross axis)을 따라 어떻게 배치될지를 정의한다. 이 속성은 자식 요소들이 여러 줄로 감싸질 때(`flexWrap`)에만 효과가 있다.
+
+|**값**|**설명**|
+|---|---|
+|**flex-start** _(기본값)_|여러 줄을 **교차 축의 시작 지점**에 정렬합니다.|
+|**flex-end**|여러 줄을 **교차 축의 끝 지점**에 정렬합니다.|
+|**center**|여러 줄을 **교차 축의 중앙**에 정렬합니다.|
+|**stretch** _(웹에서 Yoga 사용 시 기본값)_|줄들을 교차 축 방향으로 **컨테이너 크기에 맞게 늘립니다.**|
+|**space-between**|줄들 사이에 **남은 공간을 균등하게 배분**하되, 처음과 마지막 줄 사이에는 여백이 없습니다.|
+|**space-around**|줄들 사이와 바깥쪽에 **균등한 여백을 배분**합니다. 양 끝 줄 외부에는 내부보다 **절반 크기만큼 공간**이 생깁니다.|
+|**space-evenly**|줄 사이, 시작과 끝 모두에 **동일한 크기의 공간**을 균등하게 배분합니다.|
+
+{% raw %}
+```tsx
+import React, {useState} from 'react';
+import {View, TouchableOpacity, Text, StyleSheet} from 'react-native';
+import type {PropsWithChildren} from 'react';
+
+const AlignContentLayout = () => {
+  const [alignContent, setAlignContent] = useState('flex-start');
+
+  return (
+    <PreviewLayout
+      label="alignContent"
+      selectedValue={alignContent}
+      values={[
+        'flex-start',
+        'flex-end',
+        'stretch',
+        'center',
+        'space-between',
+        'space-around',
+      ]}
+      setSelectedValue={setAlignContent}>
+      <View style={[styles.box, {backgroundColor: 'orangered'}]} />
+      <View style={[styles.box, {backgroundColor: 'orange'}]} />
+      <View style={[styles.box, {backgroundColor: 'mediumseagreen'}]} />
+      <View style={[styles.box, {backgroundColor: 'deepskyblue'}]} />
+      <View style={[styles.box, {backgroundColor: 'mediumturquoise'}]} />
+      <View style={[styles.box, {backgroundColor: 'mediumslateblue'}]} />
+      <View style={[styles.box, {backgroundColor: 'purple'}]} />
+    </PreviewLayout>
+  );
+};
+
+type PreviewLayoutProps = PropsWithChildren<{
+  label: string;
+  values: string[];
+  selectedValue: string;
+  setSelectedValue: (value: string) => void;
+}>;
+
+const PreviewLayout = ({
+  label,
+  children,
+  values,
+  selectedValue,
+  setSelectedValue,
+}: PreviewLayoutProps) => (
+  <View style={{padding: 10, flex: 1}}>
+    <Text style={styles.label}>{label}</Text>
+    <View style={styles.row}>
+      {values.map(value => (
+        <TouchableOpacity
+          key={value}
+          onPress={() => setSelectedValue(value)}
+          style={[styles.button, selectedValue === value && styles.selected]}>
+          <Text
+            style={[
+              styles.buttonLabel,
+              selectedValue === value && styles.selectedLabel,
+            ]}>
+            {value}
+          </Text>
+        </TouchableOpacity>
+      ))}
+    </View>
+    <View style={[styles.container, {[label]: selectedValue}]}>{children}</View>
+  </View>
+);
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    flexWrap: 'wrap',
+    marginTop: 8,
+    backgroundColor: 'aliceblue',
+    maxHeight: 400,
+  },
+  box: {
+    width: 50,
+    height: 80,
+  },
+  row: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  button: {
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 4,
+    backgroundColor: 'oldlace',
+    alignSelf: 'flex-start',
+    marginHorizontal: '1%',
+    marginBottom: 6,
+    minWidth: '48%',
+    textAlign: 'center',
+  },
+  selected: {
+    backgroundColor: 'coral',
+    borderWidth: 0,
+  },
+  buttonLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: 'coral',
+  },
+  selectedLabel: {
+    color: 'white',
+  },
+  label: {
+    textAlign: 'center',
+    marginBottom: 10,
+    fontSize: 24,
+  },
+});
+
+export default AlignContentLayout;
+```
+{% endraw %}
+
+<br/>
+
+### Flex Wrap
+---
+
+`flexWrap` 속성은 컨테이너에 설정되며, 자식 요소들이 주 축(main axis)을 따라 컨테이너의 크기를 넘칠 대 어떻게 처리할지를 제어한다. 기본적으로 모든 자식 요소가 한 줄에 강제로 배치되며, 이로 인해 요소가 축소될 수 있다. 그러나 wrap이 설정되면, 공간이 부족할 경우 자식 요소들이 여러 줄로 자동 줄바꿈되어 배치된다.
+
+줄바꿈이 발생하면, `alignContent` 속성을 사용하여 각 줄이 컨테이너 내에서 어떻게 정렬될지를 지정할 수 있다.
+
+{% raw %}
+```tsx
+import React, {useState} from 'react';
+import {View, TouchableOpacity, Text, StyleSheet} from 'react-native';
+import type {PropsWithChildren} from 'react';
+
+const FlexWrapLayout = () => {
+  const [flexWrap, setFlexWrap] = useState('wrap');
+
+  return (
+    <PreviewLayout
+      label="flexWrap"
+      selectedValue={flexWrap}
+      values={['wrap', 'nowrap']}
+      setSelectedValue={setFlexWrap}>
+      <View style={[styles.box, {backgroundColor: 'orangered'}]} />
+      <View style={[styles.box, {backgroundColor: 'orange'}]} />
+      <View style={[styles.box, {backgroundColor: 'mediumseagreen'}]} />
+      <View style={[styles.box, {backgroundColor: 'deepskyblue'}]} />
+      <View style={[styles.box, {backgroundColor: 'mediumturquoise'}]} />
+      <View style={[styles.box, {backgroundColor: 'mediumslateblue'}]} />
+      <View style={[styles.box, {backgroundColor: 'purple'}]} />
+    </PreviewLayout>
+  );
+};
+
+type PreviewLayoutProps = PropsWithChildren<{
+  label: string;
+  values: string[];
+  selectedValue: string;
+  setSelectedValue: (value: string) => void;
+}>;
+
+const PreviewLayout = ({
+  label,
+  children,
+  values,
+  selectedValue,
+  setSelectedValue,
+}: PreviewLayoutProps) => (
+  <View style={{padding: 10, flex: 1}}>
+    <Text style={styles.label}>{label}</Text>
+    <View style={styles.row}>
+      {values.map(value => (
+        <TouchableOpacity
+          key={value}
+          onPress={() => setSelectedValue(value)}
+          style={[styles.button, selectedValue === value && styles.selected]}>
+          <Text
+            style={[
+              styles.buttonLabel,
+              selectedValue === value && styles.selectedLabel,
+            ]}>
+            {value}
+          </Text>
+        </TouchableOpacity>
+      ))}
+    </View>
+    <View style={[styles.container, {[label]: selectedValue}]}>{children}</View>
+  </View>
+);
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    marginTop: 8,
+    backgroundColor: 'aliceblue',
+    maxHeight: 400,
+  },
+  box: {
+    width: 50,
+    height: 80,
+  },
+  row: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  button: {
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 4,
+    backgroundColor: 'oldlace',
+    marginHorizontal: '1%',
+    marginBottom: 6,
+    minWidth: '48%',
+    textAlign: 'center',
+  },
+  selected: {
+    backgroundColor: 'coral',
+    borderWidth: 0,
+  },
+  buttonLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: 'coral',
+  },
+  selectedLabel: {
+    color: 'white',
+  },
+  label: {
+    textAlign: 'center',
+    marginBottom: 10,
+    fontSize: 24,
+  },
+});
+
+export default FlexWrapLayout;
+```
+{% endraw %}
+
+<br/>
+
+### Flex Basis, Grow, and Shrink
+---
+
+`flexBasis` , `flexGrow` , `flexShrink` 는 Flexbox 레이아웃에서 요소의 크기와 공간 배분을 제어하는 핵심 속성이다.
+
+- `flexBasis` : 기본 크기 지정
+    - 주 축(main axis)을 기준으로 자식 요소의 기본 크기를 정한다.
+    - 기준
+        - `flexDirection : row` -> `flexBasis` 는 `width` 처럼 작동
+        - `flexDirection : column` -> `flexBasis` 는 `height` 처럼 작동
+    - `flexGrow` , `flexShrink` 계산 이전에 적용되는 기준 크기이다.
+- `flexGrow` : 남은 공간을 얼마나 늘릴지
+    - 컨테이너에 남는 공간이 있을 때, 자식 요소가 얼마만큼 더 차지할지 비율로 지정
+    - 기본 값 : 0
+- `flexShrink` : 공간 부족 시 얼마나 줄일지
+    - 컨테이너보다 자식 요소들의 총 크기가 클 경우, 얼마만큼 줄일지 비율로 지정
+    - 기본 값 : 0
+    - `flexGrow` 와 마찬가지로 비율에 따라 공간 부족 시 줄어드는 정도를 설정
+
+{% raw %}
+```tsx
+import React, {useState} from 'react';
+import {View, Text, TextInput, StyleSheet} from 'react-native';
+import type {ViewStyle} from 'react-native';
+
+const App = () => {
+  const [powderblue, setPowderblue] = useState<ViewStyle>({
+    flexGrow: 0,
+    flexShrink: 1,
+    flexBasis: 'auto',
+  });
+  const [skyblue, setSkyblue] = useState<ViewStyle>({
+    flexGrow: 1,
+    flexShrink: 0,
+    flexBasis: 100,
+  });
+  const [steelblue, setSteelblue] = useState<ViewStyle>({
+    flexGrow: 0,
+    flexShrink: 1,
+    flexBasis: 200,
+  });
+  return (
+    <View style={styles.container}>
+      <View
+        style={[
+          styles.container,
+          {
+            flexDirection: 'row',
+            alignContent: 'space-between',
+          },
+        ]}>
+        <BoxInfo color="powderblue" {...powderblue} setStyle={setPowderblue} />
+        <BoxInfo color="skyblue" {...skyblue} setStyle={setSkyblue} />
+        <BoxInfo color="steelblue" {...steelblue} setStyle={setSteelblue} />
+      </View>
+      <View style={styles.previewContainer}>
+        <View
+          style={[
+            styles.box,
+            {
+              flexBasis: powderblue.flexBasis,
+              flexGrow: powderblue.flexGrow,
+              flexShrink: powderblue.flexShrink,
+              backgroundColor: 'powderblue',
+            },
+          ]}
+        />
+        <View
+          style={[
+            styles.box,
+            {
+              flexBasis: skyblue.flexBasis,
+              flexGrow: skyblue.flexGrow,
+              flexShrink: skyblue.flexShrink,
+              backgroundColor: 'skyblue',
+            },
+          ]}
+        />
+        <View
+          style={[
+            styles.box,
+            {
+              flexBasis: steelblue.flexBasis,
+              flexGrow: steelblue.flexGrow,
+              flexShrink: steelblue.flexShrink,
+              backgroundColor: 'steelblue',
+            },
+          ]}
+        />
+      </View>
+    </View>
+  );
+};
+
+type BoxInfoProps = ViewStyle & {
+  color: string;
+  setStyle: React.Dispatch<React.SetStateAction<ViewStyle>>;
+};
+
+const BoxInfo = ({
+  color,
+  flexBasis,
+  flexShrink,
+  setStyle,
+  flexGrow,
+}: BoxInfoProps) => (
+  <View style={[styles.row, {flexDirection: 'column'}]}>
+    <View
+      style={[
+        styles.boxLabel,
+        {
+          backgroundColor: color,
+        },
+      ]}>
+      <Text
+        style={{
+          color: '#fff',
+          fontWeight: '500',
+          textAlign: 'center',
+        }}>
+        Box
+      </Text>
+    </View>
+    <Text style={styles.label}>flexBasis</Text>
+    <TextInput
+      value={String(flexBasis)}
+      style={styles.input}
+      onChangeText={fB =>
+        setStyle(value => ({
+          ...value,
+          flexBasis: isNaN(parseInt(fB, 10)) ? 'auto' : parseInt(fB, 10),
+        }))
+      }
+    />
+    <Text style={styles.label}>flexShrink</Text>
+    <TextInput
+      value={String(flexShrink)}
+      style={styles.input}
+      onChangeText={fS =>
+        setStyle(value => ({
+          ...value,
+          flexShrink: isNaN(parseInt(fS, 10)) ? undefined : parseInt(fS, 10),
+        }))
+      }
+    />
+    <Text style={styles.label}>flexGrow</Text>
+    <TextInput
+      value={String(flexGrow)}
+      style={styles.input}
+      onChangeText={fG =>
+        setStyle(value => ({
+          ...value,
+          flexGrow: isNaN(parseInt(fG, 10)) ? undefined : parseInt(fG, 10),
+        }))
+      }
+    />
+  </View>
+);
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    paddingHorizontal: 10,
+  },
+  box: {
+    flex: 1,
+    height: 50,
+    width: 50,
+  },
+  boxLabel: {
+    minWidth: 80,
+    padding: 8,
+    borderRadius: 4,
+    marginTop: 8,
+  },
+  label: {
+    marginTop: 6,
+    fontSize: 16,
+    fontWeight: '100',
+  },
+  previewContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    backgroundColor: 'aliceblue',
+  },
+  row: {
+    flex: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  input: {
+    borderBottomWidth: 1,
+    paddingVertical: 3,
+    width: 50,
+    textAlign: 'center',
+  },
+});
+
+export default App;
+```
+{% endraw %}
+
+<br/>
+
+### Row Gap, Column Gap and Gap
+---
+
+`rowGap` , `columnGap` , `gap` 속성은 요소들 사이에 일정한 간격(gutter)를 설정하는데 사용된다.
+
+- `rowGap` : 행(row) 사이의 간격을 설정한다.
+- `columnGap` : 열(column) 사이의 간격을 설정한다.
+- `gap` : `rowGap` 과 `columnGap` 을 동시에 설정하는 축약형이다.
+
+또한, `flexWrap` 과 `alignContent` 와 함께 사용하면 줄바꿈이 있는 레이아웃에서도 항목 사이에 일관된 간격을 만들 수 있다.
+
+{% raw %}
+```tsx
+import React, {useState} from 'react';
+import {View, Text, StyleSheet, TextInput} from 'react-native';
+import type {PropsWithChildren} from 'react';
+
+const RowGapAndColumnGap = () => {
+  const [rowGap, setRowGap] = useState(10);
+  const [columnGap, setColumnGap] = useState(10);
+
+  return (
+    <PreviewLayout
+      columnGap={columnGap}
+      handleColumnGapChange={setColumnGap}
+      rowGap={rowGap}
+      handleRowGapChange={setRowGap}>
+      <View style={[styles.box, styles.box1]} />
+      <View style={[styles.box, styles.box2]} />
+      <View style={[styles.box, styles.box3]} />
+      <View style={[styles.box, styles.box4]} />
+      <View style={[styles.box, styles.box5]} />
+    </PreviewLayout>
+  );
+};
+
+type PreviewLayoutProps = PropsWithChildren<{
+  columnGap: number;
+  handleColumnGapChange: (gap: number) => void;
+  rowGap: number;
+  handleRowGapChange: (gap: number) => void;
+}>;
+
+const PreviewLayout = ({
+  children,
+  handleColumnGapChange,
+  handleRowGapChange,
+  rowGap,
+  columnGap,
+}: PreviewLayoutProps) => (
+  <View style={styles.previewContainer}>
+    <View style={styles.inputContainer}>
+      <View style={styles.itemsCenter}>
+        <Text>Row Gap</Text>
+        <TextInput
+          style={styles.input}
+          value={String(rowGap)}
+          onChangeText={v => handleRowGapChange(Number(v))}
+        />
+      </View>
+      <View style={styles.itemsCenter}>
+        <Text>Column Gap</Text>
+        <TextInput
+          style={styles.input}
+          value={String(columnGap)}
+          onChangeText={v => handleColumnGapChange(Number(v))}
+        />
+      </View>
+    </View>
+    <View style={[styles.container, {rowGap, columnGap}]}>{children}</View>
+  </View>
+);
+
+const styles = StyleSheet.create({
+  itemsCenter: {alignItems: 'center'},
+  inputContainer: {
+    gap: 4,
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  previewContainer: {padding: 10, flex: 1},
+  input: {
+    borderBottomWidth: 1,
+    paddingVertical: 3,
+    width: 50,
+    textAlign: 'center',
+  },
+  container: {
+    flex: 1,
+    marginTop: 8,
+    backgroundColor: 'aliceblue',
+    maxHeight: 400,
+    flexWrap: 'wrap',
+    alignContent: 'flex-start',
+  },
+  box: {
+    width: 50,
+    height: 80,
+  },
+  box1: {
+    backgroundColor: 'orangered',
+  },
+  box2: {
+    backgroundColor: 'orange',
+  },
+  box3: {
+    backgroundColor: 'mediumseagreen',
+  },
+  box4: {
+    backgroundColor: 'deepskyblue',
+  },
+  box5: {
+    backgroundColor: 'mediumturquoise',
+  },
+});
+
+export default RowGapAndColumnGap;
+```
+{% endraw %}
+
+<br/>
+
+### Width and Height
+---
+
+`width` 속성은 요소의 콘텐츠 영역 너비, `height` 속성은 콘텐츠 영역 높이를 지정한다. 이 둘은 다음과 같은 값들을 사용할 수 있다.
+
+|**값**|**설명**|
+|---|---|
+|**auto** _(기본값)_|요소의 **내용(텍스트, 이미지, 자식 요소 등)에 따라 자동으로 크기를 계산**합니다.|
+|**픽셀 수 (예: width: 200)**|**절대 픽셀 단위**로 지정합니다. 다른 스타일 속성(예: padding, border 등)에 따라 실제 크기는 달라질 수 있습니다.|
+|**백분율 (예: width: '50%')**|부모 요소의 크기에 대해 **비율(%)로 크기를 지정**합니다. 예: 부모가 300px이면 50% → 150px|
+
+{% raw %}
+```tsx
+import React, {useState, PropsWithChildren} from 'react';
+import {View, TouchableOpacity, Text, StyleSheet} from 'react-native';
+import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
+
+type Dimension = 'auto' | `${number}%` | number;
+
+const WidthHeightBasics = () => {
+  const [widthType, setWidthType] = useState<Dimension>('auto');
+  const [heightType, setHeightType] = useState<Dimension>('auto');
+
+  return (
+    <PreviewLayout
+      widthType={widthType}
+      heightType={heightType}
+      widthValues={['auto', 300, '80%']}
+      heightValues={['auto', 200, '60%']}
+      setWidthType={setWidthType}
+      setHeightType={setHeightType}>
+      <View
+        style={{
+          alignSelf: 'flex-start',
+          backgroundColor: 'aliceblue',
+          height: heightType,
+          width: widthType,
+          padding: 15,
+        }}>
+        <View style={[styles.box, {backgroundColor: 'powderblue'}]} />
+        <View style={[styles.box, {backgroundColor: 'skyblue'}]} />
+        <View style={[styles.box, {backgroundColor: 'steelblue'}]} />
+      </View>
+    </PreviewLayout>
+  );
+};
+
+type PreviewLayoutProps = PropsWithChildren<{
+  widthType: Dimension;
+  heightType: Dimension;
+  widthValues: Dimension[];
+  heightValues: Dimension[];
+  setWidthType: (value: Dimension) => void;
+  setHeightType: (value: Dimension) => void;
+}>;
+
+const PreviewLayout = ({
+  children,
+  widthType,
+  heightType,
+  widthValues,
+  heightValues,
+  setWidthType,
+  setHeightType,
+}: PreviewLayoutProps) => (
+  <SafeAreaProvider>
+    <SafeAreaView style={{flex: 1, padding: 10}}>
+      <View style={styles.row}>
+        <Text style={styles.label}>width </Text>
+        {widthValues.map(value => (
+          <TouchableOpacity
+            key={value}
+            onPress={() => setWidthType(value)}
+            style={[styles.button, widthType === value && styles.selected]}>
+            <Text
+              style={[
+                styles.buttonLabel,
+                widthType === value && styles.selectedLabel,
+              ]}>
+              {value}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+      <View style={styles.row}>
+        <Text style={styles.label}>height </Text>
+        {heightValues.map(value => (
+          <TouchableOpacity
+            key={value}
+            onPress={() => setHeightType(value)}
+            style={[styles.button, heightType === value && styles.selected]}>
+            <Text
+              style={[
+                styles.buttonLabel,
+                heightType === value && styles.selectedLabel,
+              ]}>
+              {value}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+      {children}
+    </SafeAreaView>
+  </SafeAreaProvider>
+);
+
+const styles = StyleSheet.create({
+  box: {
+    width: 50,
+    height: 50,
+  },
+  row: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  button: {
+    padding: 8,
+    borderRadius: 4,
+    backgroundColor: 'oldlace',
+    alignSelf: 'flex-start',
+    marginRight: 10,
+    marginBottom: 10,
+  },
+  selected: {
+    backgroundColor: 'coral',
+    shadowOpacity: 0,
+    borderWidth: 0,
+  },
+  buttonLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: 'coral',
+  },
+  selectedLabel: {
+    color: 'white',
+  },
+  label: {
+    textAlign: 'center',
+    marginBottom: 10,
+    fontSize: 24,
+  },
+});
+
+export default WidthHeightBasics;
+```
+{% endraw %}
+
+<br/>
+
+### Position
+---
+
+요소의 `position` 속성은 해당 요소가 자신, 부모, 또는 포함 블록(containing block)에 대해 어떤 방식으로 배치될지를 정의한다.
+
+|**값**|**설명**|
+|---|---|
+|**relative** _(기본값)_|요소는 **정상적인 레이아웃 흐름(normal flow)**에 따라 배치된 후, top, right, bottom, left 값에 따라 **상대적으로 위치를 이동**합니다. 이동은 **형제나 부모 요소에 영향을 주지 않습니다.**|
+|**absolute**|요소는 **레이아웃 흐름에서 제외**되며, 형제 요소들과 **독립적으로 위치**합니다. 위치는 top, right, bottom, left 값 기준으로 **포함 블록(containing block)**에 대해 결정됩니다.|
+|**static** _(New Architecture에서만 사용 가능)_|**기본적인 레이아웃 흐름에 따르며** top, right, bottom, left 값은 무시됩니다. 또한 이 요소는 **absolute 자식의 기준 블록이 되지 않습니다.** 다만 transform 같은 다른 스타일 속성이 있다면 예외일 수 있습니다. 이 기능은 **New Architecture에서만 사용 가능**합니다.|
+
+{% raw %}
+```tsx
+import React, {useState} from 'react';
+import {View, TouchableOpacity, Text, StyleSheet} from 'react-native';
+import type {PropsWithChildren} from 'react';
+
+const PositionLayout = () => {
+  const [position, setPosition] = useState<'relative' | 'absolute' | 'static'>(
+    'relative',
+  );
+
+  return (
+    <PreviewLayout
+      label="position"
+      selectedValue={position}
+      values={['relative', 'absolute', 'static']}
+      setSelectedValue={setPosition}>
+      <View
+        style={[
+          styles.box,
+          {
+            top: 25,
+            left: 25,
+            position,
+            backgroundColor: 'powderblue',
+          },
+        ]}
+      />
+      <View
+        style={[
+          styles.box,
+          {
+            top: 50,
+            left: 50,
+            position,
+            backgroundColor: 'skyblue',
+          },
+        ]}
+      />
+      <View
+        style={[
+          styles.box,
+          {
+            top: 75,
+            left: 75,
+            position,
+            backgroundColor: 'steelblue',
+          },
+        ]}
+      />
+    </PreviewLayout>
+  );
+};
+
+type PreviewLayoutProps = PropsWithChildren<{
+  label: string;
+  values: Array<'relative' | 'absolute' | 'static'>;
+  selectedValue: string;
+  setSelectedValue: (value: 'relative' | 'absolute' | 'static') => void;
+}>;
+
+const PreviewLayout = ({
+  label,
+  children,
+  values,
+  selectedValue,
+  setSelectedValue,
+}: PreviewLayoutProps) => (
+  <View style={{padding: 10, flex: 1}}>
+    <Text style={styles.label}>{label}</Text>
+    <View style={styles.row}>
+      {values.map(value => (
+        <TouchableOpacity
+          key={value}
+          onPress={() => setSelectedValue(value)}
+          style={[styles.button, selectedValue === value && styles.selected]}>
+          <Text
+            style={[
+              styles.buttonLabel,
+              selectedValue === value && styles.selectedLabel,
+            ]}>
+            {value}
+          </Text>
+        </TouchableOpacity>
+      ))}
+    </View>
+    <View style={styles.container}>{children}</View>
+  </View>
+);
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    marginTop: 8,
+    backgroundColor: 'aliceblue',
+    minHeight: 200,
+  },
+  box: {
+    width: 50,
+    height: 50,
+  },
+  row: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  button: {
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 4,
+    backgroundColor: 'oldlace',
+    alignSelf: 'flex-start',
+    marginHorizontal: '1%',
+    marginBottom: 6,
+    minWidth: '48%',
+    textAlign: 'center',
+  },
+  selected: {
+    backgroundColor: 'coral',
+    borderWidth: 0,
+  },
+  buttonLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: 'coral',
+  },
+  selectedLabel: {
+    color: 'white',
+  },
+  label: {
+    textAlign: 'center',
+    marginBottom: 10,
+    fontSize: 24,
+  },
+});
+
+export default PositionLayout;
+```
+{% endraw %}
+
+<br/>
+
+### The Containing Block
+---
+
+요소의 `containing block` 은 해당 요소의 `position` 와 `size` 를 결정하는 상위 요소이다.
+
+- `top` , `right` , `bottom` , `left` 값은 `containing block` 을 기준으로 상대적이다.
+- `width: '50%'` 와 같은 퍼센트 길이도 `containing block` 의 크기를 기준으로 계산된다.
+
+<br/>
+
 ## Reference
 ---
 
