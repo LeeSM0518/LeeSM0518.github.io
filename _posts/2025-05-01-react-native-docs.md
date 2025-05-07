@@ -2459,6 +2459,99 @@ export default PositionLayout;
 
 <br/>
 
+## UI: Images
+---
+
+## Static Image Resources
+---
+
+React Native는 Android와 iOS 앱 모두에서 이미지들과 다른 미디어 에셋들을 하나의 방법으로 관리할 수 있도록 지원한다. 앱에 정적 이미지를 추가하려면, 해당 이미지를 디렉터리 내부에 넣고 다음과 같이 참조하면 된다.
+
+{% raw %}
+```tsx
+<Image source={require('./my-icon.png')} />
+```
+{% endraw %}
+
+<br/>
+
+화면 해상도에 따라 적합한 이미지를 표시하려면, 파일 이름에 `@2x` 와 `@3x` 접미사를 사용해 여러 해상도 버전을 제공할 수 있다.
+
+<br/>
+
+예를 들어, 다음과 같은 파일 구조가 있다고 가정해 보자.
+
+```
+.  
+├── button.js  
+└── img  
+├── check.png  
+├── check@2x.png  
+└── check@3x.png
+```
+
+<br/>
+
+이렇게 구성한 후, 코드에서는 다음과 같이 참조하면 된다.
+
+{% raw %}
+```tsx
+<Image source={require('./img/check.png')}
+```
+{% endraw %}
+
+<br/>
+
+### Static Non-Image Resource
+---
+
+위에서 설명한 `require` 구문은 오디오, 비디오 또는 문서 파일을 프로젝트에 정적으로 포함시키는 데에도 사용할 수 있다(ex. `.mp3` , `.wav` , `.mpr4` , `.mov` , `.html` , `.pdf` ).
+
+<br/>
+
+### Network Images
+---
+
+앱에서 표시할 많은 이미지들은 컴파일 시점에 존재하지 않거나, 바이너리 크기를 줄이기 위해 동적으로 로드해야 할 수 있다. 정적 리소스와는 달리, 이러한 이미지는 크기를 수동으로 지정해주어야 한다.
+
+또한 iOS의 App Transport Security 요건을 충족하기 위해 https를 사용하는 것이 강력히 권장된다.
+
+{% raw %}
+```tsx
+// GOOD
+<Image source={{uri: 'https://reactjs.org/logo-og.png'}}
+       styles={{width: 400, height: 400}} />
+
+// BAD
+<Image source={{uri: 'https://reactjs.org/logo-og.png'}} />
+```
+{% endraw %}
+
+<br/>
+
+#### Network Requests for Images
+---
+
+이미지 요청 시 HTTP 메서드, 헤더, 바디와 같은 속성을 설정하고 싶다면, `source` 객체에 해당 속성들을 정의하여 설정할 수 있다.
+
+{% raw %}
+```tsx
+<Image
+  source={{
+    uri: 'https://reactjs.org/logo-og.png',
+    method: 'POST',
+    headers: {
+      Pragma: 'no-cache',
+    },
+    body: 'Your Body goes here',
+  }}
+  style={{width: 400, height: 400}}
+/>
+```
+{% endraw %}
+
+<br/>
+
 ## Reference
 ---
 
