@@ -2552,6 +2552,68 @@ React Native는 Android와 iOS 앱 모두에서 이미지들과 다른 미디어
 
 <br/>
 
+### URI Data Images
+---
+
+REST API 호출로 인코딩된 이미지를 받아오는 경우가 있을 수 있다. 이러한 이미지들을 표시하기 위해 `'data:` URI 스키마를 사용하면 된다. 네트워크 리소스와 동일하게 이미지 크기는 수동으로 설정해줘야 한다.
+
+{% raw %}
+```tsx
+<Image  
+style={{  
+width: 51,  
+height: 51,  
+resizeMode: 'contain',  
+}}  
+source={{  
+uri: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADMAAAAzCAYAAAA6oTAqAAAAEXRFWHRTb2Z0d2FyZQBwbmdjcnVzaEB1SfMAAABQSURBVGje7dSxCQBACARB+2/ab8BEeQNhFi6WSYzYLYudDQYGBgYGBgYGBgYGBgYGBgZmcvDqYGBgmhivGQYGBgYGBgYGBgYGBgYGBgbmQw+P/eMrC5UTVAAAAABJRU5ErkJggg==',  
+}}  
+/>
+```
+{% endraw %}
+
+<br/>
+
+#### Cache Control
+---
+
+로컬 캐시에 이미지가 있을 대만 표시하고 싳을 수 있다. 예를 들어, 고해상도 이미지가 로드되기 전까지는 저해상도 플레이스홀더를 보여주고 싶거나, 오래된 이미지라도 대역폭을 절약하기 위해 그대로 표시하고 싶을 수 있다.
+
+이런 경우 `cache` 속성을 통해 네트워크 계층이 캐시와 상호작용하는 방식을 제어할 수 있다.
+
+- `default` : 기본 플랫폼의 캐시 전략을 사용한다.
+- `reload` : 항상 원본 소스에서 데이터를 불러온다. 기존 캐시 데이터는 무시된다.
+- `force-cache` : 캐시된 데이터가 있으면 그것을 사용한다. 캐시가 없을 경우에만 네트워크 요청을 보낸다.
+- `only-if-cached` : 캐시된 데이터가 있을 때만 사용하며, 없으면 네트워크 요청 없이 로드를 실패로 처리한다.
+
+{% raw %}
+```tsx
+<Image
+  source={{
+    uri: 'https://reactjs.org/logo-og.png',
+    cache: 'only-if-cached',
+  }}
+  style={{width: 400, height: 400}}
+/>
+```
+{% endraw %}
+
+<br/>
+
+### Local Filesystem Images
+---
+
+`Images.xcassets` 외부에 있는 로컬 리소스를 사용하는 예시는 [CameraRoll](https://github.com/react-native-community/react-native-cameraroll)을 참고해라.
+
+<br/>
+
+### Background Image via Nesting
+---
+
+`<ImageBackground>` 컴포넌트는 `<Image>` 와 동일한 props를 가지며 원하는 자식 요소를 자유롭게 추가할 수 있다.
+
+<br/>
+
 ## Reference
 ---
 
