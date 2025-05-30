@@ -37,12 +37,6 @@ Apache Kafka에서의 리스너 컨테이너는 Kafka 메시지를 소비하는 
 implementation("org.springframework.kafka:spring-kafka")
 ```
 
-<br/>
-
-## 4. Producing Messages
----
-
-
 
 <br/>
 
