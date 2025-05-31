@@ -1,6 +1,6 @@
 ---
 title: React Native Docs
-date: 2025-05-01 00:00:00 +0900
+date: 2025-05-31 00:00:00 +0900
 categories: react-native
 tags:
   - react-native
@@ -2462,7 +2462,7 @@ export default PositionLayout;
 ## UI: Images
 ---
 
-## Static Image Resources
+### Static Image Resources
 ---
 
 React Native는 Android와 iOS 앱 모두에서 이미지들과 다른 미디어 에셋들을 하나의 방법으로 관리할 수 있도록 지원한다. 앱에 정적 이미지를 추가하려면, 해당 이미지를 디렉터리 내부에 넣고 다음과 같이 참조하면 된다.
@@ -2611,6 +2611,128 @@ uri: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADMAAAAzCAYAAAA6oTAqAAAAEXRF
 ---
 
 `<ImageBackground>` 컴포넌트는 `<Image>` 와 동일한 props를 가지며 원하는 자식 요소를 자유롭게 추가할 수 있다.
+
+{% raw %}
+```tsx
+<ImageBackground source={...} style={{width: '100%', height: '100%'}}>
+  <Text>Inside</Text>
+</ImageBackground>
+```
+{% endraw %}
+
+<br/>
+
+## UI: Color Reference
+---
+
+React Native의 컴포넌트는 자바스크립트를 사용하여 스타일을 지정한다. 색상 속성은 일반적으로 웹에서 CSS가 작동하는 방식과 일치한다. 
+
+<br/>
+
+### Color APIs
+---
+
+React Native에는 플랫폼의 디자인과 사용자 기본 설정을 최대한 활용할 수 있도록 설계된 여러 가지 색상 API가 있다.
+
+- `PlatformColor` 를 사용하면 플랫폼의 색상 시스템을 참조할 수 있다.
+- `DynamicColorIOS` 는 iOS 전용이며 밝은 모드 또는 어두운 모드에서 어떤 색상을 사용할지 지정할 수 있다.
+
+<br/>
+
+## Interaction: Handling Touches
+---
+
+React Native는 모든 종류의 일반적인 제스처를 처리하는 컴포넌트와 고급 제스처 인식을 위한 포괄적인 제스처 응답 시스템을 제공하지만 가장 관심을 가질만한 컴포넌트는 기본 버튼이다.
+
+<br/>
+
+### Displaying a basic button
+---
+
+버튼은 모든 플랫폼에서 렌더링되는 기본 버튼 컴포넌트를 제공한다. 다음과 같이 버튼을 표시할 수 있다.
+
+{% raw %}
+```tsx
+<Button
+  onPress=(() => {
+    console.log('You tapped the button!');
+  })
+  title="Press Me"
+/>
+```
+{% endraw %}
+
+<br/>
+
+아래 예시를 통해 버튼 컴포넌트를 사용해보자.
+
+{% raw %}
+```tsx
+import {Alert, Button, StyleSheet, View} from "react-native";  
+  
+export default function ButtonBasics() {  
+  const onPress = () => {  
+    Alert.alert("You tapped the button!");  
+  }  
+  
+  return (  
+    <View style={styles.container}>  
+      <View style={styles.buttonContainer}>  
+        <Button title="Press Me" onPress={onPress} />  
+      </View>      
+      <View style={styles.buttonContainer}>  
+        <Button title="Press Me" onPress={onPress} color="white" />  
+      </View>      
+      <View style={styles.alternativeLayoutButtonContainer}> 
+        <Button title="This looks great!" onPress={onPress} />
+        <Button title="OK!" onPress={onPress} color="#841584" />  
+      </View>   
+   </View>  
+   )  
+}  
+  
+const styles = StyleSheet.create({  
+  container: {  
+    flex: 1,  
+    justifyContent: 'center',  
+  },  
+  buttonContainer: {  
+    margin: 20,  
+    backgroundColor: '#2196F3',  
+  },  
+  alternativeLayoutButtonContainer: {  
+    margin: 20,  
+    flexDirection: 'row',  
+    justifyContent: 'space-between'  
+  }  
+})
+```
+{% endraw %}
+
+<br/>
+
+### Touchables
+---
+
+React Native에서 제공하는 `Touchable` 컴포넌트를 사용하여 자신만의 버튼을 만들 수 있다. 이러한 컴포넌트는 탭 제스처를 캡처하는 기능을 제공하며 제스처가 인식되면 피드백을 표시할 수 있습니다.
+
+어떤 `Touchable` 컴포넌트를 사용할지는 피드백의 종류에 따라 달라진다.
+
+- 사용자가 버튼을 누르면 뷰의 배경이 어두워지는 `TouchableHighlight`
+- Android에서 `TouchableNativeFeedback` 을 사용하여 사용자의 터치에 반응하는 것을 사용할 수 있다.
+- `TouchableOpacity` 를 사용하면 버튼의 불투명도를 낮추어 사용자가 버튼을 누르고 있는 동안 배경이 보이도록 하여 피드백을 제공할 수 있다.
+- 탭 제스처를 처리해야 하지만 피드백을 표시하지 않으려는 경우 `TouchableWithoutFeedback` 을 사용한다.
+
+<br/>
+
+### Scrolling and swiping
+---
+
+사용자가 스크롤하거나 콘텐츠 페이지를 스와이프할 때 제스처를 캡처하는 `ScrollView` 컴포넌트가 존재한다.
+
+<br/>
+
+
 
 <br/>
 
