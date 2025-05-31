@@ -2732,7 +2732,134 @@ React Native에서 제공하는 `Touchable` 컴포넌트를 사용하여 자신�
 
 <br/>
 
+## Interaction: Navigating Between Screens
+---
 
+###  React Navigation
+---
+
+{% raw %}
+```tsx
+import * as React from 'react';
+import {NavigationContainer} from '@react-navigation/native';
+import {createNativeStackNavigator} from '@react-navigation/native-stack';
+
+const Stack = createNativeStackNavigator();
+
+const MyStack = () => {
+  return (
+    <NavigationContainer>
+      <Stack.Navigator>
+        <Stack.Screen
+          name="Home"
+          component={HomeScreen}
+          options={{title: 'Welcome'}}
+        />
+        <Stack.Screen name="Profile" component={ProfileScreen} />
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+};
+```
+{% endraw %}
+
+- `Stack.Screen` 컴포넌트를 사용하여 2개의 화면(홈 및 프로필)을 정의했다.
+- 각 화면은 React 컴포넌트의 컴포넌트 프로퍼티를 사용한다. 
+
+<br/>
+
+`navigation.navigate` 를 사용하여 프로필 화면으로 이동할 수 있다.
+
+{% raw %}
+```tsx
+const HomeScreen = ({navigation}) => {
+  return (
+    <Button
+      title="Go to Jane's profile"
+      onPress={() =>
+        navigation.navigate('Profile', {name: 'Jane'})
+      }
+    />
+  );
+};
+const ProfileScreen = ({navigation, route}) => {
+  return <Text>This is {route.params.name}'s profile</Text>;
+};
+```
+{% endraw %}
+
+<br/>
+
+## Interaction: Animations
+---
+
+React Native는 두 가지 애니메이션 시스템을 제공한다. 인터랙티브 제어를 위한 `Animated` 와 애니메이션 글로벌 레이아웃 트랜잭션을 위한 `LayoutAnimation` 이 있다.
+
+<br/>
+
+### `Animated API`
+---
+
+`Animated` 는 입력과 출력 간의 선언적 관계에 중점을 두며, 그 사이에 구성 가능한 트랜스폼과 시간 기반 애니메이션 실행을 제어하는 시작/중지 메서드가 있다.
+
+`Animated` 는 애니메이션이 가능한 6가지 컴포넌트 유형을 내보낸다: `View` , `Text` , `Image` , `ScrollView` , `FlatList` , `SectionList` 이지만 `Animated.createAnimatedComponent()` 를 사용하여 직접 만들 수 있다.
+
+{% raw %}
+```tsx
+import {Animated, Text, useAnimatedValue, View, ViewStyle} from "react-native"  
+import React, {PropsWithChildren, useEffect} from "react";  
+  
+type FadeInViewProps = PropsWithChildren<{style: ViewStyle}>  
+  
+export default function AnimatedFadingIn() {  
+  return (  
+    <View  
+      style={{  
+        flex: 1,  
+        alignItems: 'center',  
+        justifyContent: 'center',  
+      }}>  
+      <FadeInView        
+          style={{  
+              width: 250,  
+              height: 50,  
+              backgroundColor: 'powderblue',  
+            }}>  
+        <Text style={{fontSize: 28, textAlign: 'center', margin: 10}}>  
+          Fading in  
+        </Text>  
+      </FadeInView>    
+    </View>  
+  )  
+}  
+  
+const FadeInView: React.FC<FadeInViewProps> = props => {  
+  const fadeAnim = useAnimatedValue(0)  
+  
+  useEffect(() => {  
+    Animated.timing(fadeAnim, {  
+      toValue: 1,  
+      duration: 10000,  
+      useNativeDriver: true,  
+    }).start()  
+  }, [fadeAnim])  
+  
+  return (  
+    <Animated.View  
+      style={{  
+        ...props.style,  
+        opacity: fadeAnim,  
+      }}>  
+      {props.children}  
+    </Animated.View>  
+  )  
+}
+```
+{% endraw %}
+
+- `FadeInView` 렌더 메서드에서 `fadeAnim` 이라는 새 `Animated.Value` 가 `useRef` 로 초기화된다.
+- `View` 의 불투명도 속성이 애니메이션 값에 매핑된다.
+- 백그라운드에서는 숫자 값이 추출되어 불투명도를 설정하는데 사용된다.
 
 <br/>
 
