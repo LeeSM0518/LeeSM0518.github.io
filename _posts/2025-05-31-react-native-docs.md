@@ -2863,6 +2863,259 @@ const FadeInView: React.FC<FadeInViewProps> = props => {
 
 <br/>
 
+## Connectivity: Networking
+---
+
+### Using Fetch
+---
+
+React Native는 네트워킹에 필요한 Fetch API를 제공한다.
+
+<br/>
+
+#### Making requests
+---
+
+데이터를 가져올 URL을 전달해서 조회할 수 있다.
+
+```ts
+fetch('https://mywebsite.com/mydata.json');
+```
+
+<br/>
+
+두 번째 인자를 통해 HTTP 요청을 사용자 정의할 수도 있다.
+
+```ts
+fetch('https://mywebsite.com/endpoint/', {
+  method: 'POST',
+  headers: {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    firstParam: 'yourValue',
+    secondParam: 'yourOtherValue',
+  }),
+});
+```
+
+<br/>
+
+#### Handling the response
+---
+
+네트워킹은 비동기 작업이다. Fetch 메서드는 비동기 방식으로 작동하는 코드를 쉽게 작성할 수 있는 `Promise` 를 반환한다.
+
+```ts
+const getMoviesFromApiAsync = async () => {
+  try {
+    const response = await fetch(
+      'https://reactnative.dev/movies.json',
+    );
+    const json = await response.json();
+    return json.movies;
+  } catch (error) {
+    console.error(error);
+  }
+};
+```
+- `fetch` 로 인해 발생할 수 있는 모든 오류를 포착해야 한다. 그렇지 않으면 오류가 자동으로 삭제된다.
+- `async` / `await` 문법을 사용할 수 있다.
+
+<br/>
+
+사용 예시는 다음과 같다.
+
+{% raw %}
+```tsx
+import {useEffect, useState} from "react";  
+import {ActivityIndicator, FlatList, Text, View} from "react-native";  
+  
+type Movie = {  
+  id: string;  
+  title: string;  
+  releaseYear: string;  
+}  
+  
+export default function NetworkingFetch(){  
+  const [isLoading, setLoading] = useState(false)  
+  const [data, setData] = useState<Movie[]>([])  
+  
+  const getMovies = async () => {  
+    try {  
+      const response = await fetch('https://reactnative.dev/movies.json')  
+      const json = await response.json()  
+      setData(json.movies)  
+    } catch (error) {  
+      console.error(error)  
+    } finally {  
+      setLoading(false)  
+    }  
+  }  
+  
+  useEffect(()=>{  
+    getMovies()  
+  }, [])  
+  
+  return (  
+    <View style={{flex: 1, padding: 24}}>  
+      {isLoading ? (  
+        <ActivityIndicator/>  
+      ) : (  
+        <FlatList  
+          data={data}  
+          keyExtractor={({id}) => id}  
+          renderItem={({item}) => (  
+           <Text>  
+              {item.title}, {item.releaseYear}  
+           </Text>  
+          )}  
+          />  
+      )}  
+    </View>  
+  )  
+}
+```
+{% endraw %}
+
+> 기본적으로 iOS 9.0 이상에서는 ATS(앱 전송 보안)가 적용된다. ATS를 사용하려면 모든 HTTP 연결이 HTTPS를 사용해야 한다. http로 가져와야 하는 경우 먼저 ATS 예외를 추가해야 한다. 런타임까지 도메인을 알 수 없는 경우 ATS를 완전히 비활성화할 수 있다. 단, ATS 비활성화에 대한 합리적인 근거를 제시해야 한다는 점에 유의해라.
+{: .prompt-warning }
+
+> 안드로이드에서는 API 레벨 28부터 http 트래픽이 기본적으로 차단된다. 이 동작은 앱 매니페스트 파일에서 `android:usesCleartextTraffic` 을 설정하여 재정의할 수 있다.
+{: .prompt-warning }
+
+<br/>
+
+### WebSocket Support
+---
+
+React Native는 웹소켓도 지원한다.
+
+{% raw %}
+```tsx
+const ws = new WebSocket('ws://host.com/path');
+
+ws.onopen = () => {
+  // connection opened
+  ws.send('something'); // send a message
+};
+
+ws.onmessage = e => {
+  // a message was received
+  console.log(e.data);
+};
+
+ws.onerror = e => {
+  // an error occurred
+  console.log(e.message);
+};
+
+ws.onclose = e => {
+  // connection closed
+  console.log(e.code, e.reason);
+};
+```
+{% endraw %}
+
+<br/>
+
+### Known Issues with `fetch` and cookie based authentication
+---
+
+다음 옵션은 `fetch` 에서 작동하지 않으며, 쿠키 기반 인증은 현재 불안정하다.
+
+- `redirect:manual`
+- `credentials:omit`
+
+<br/>
+
+## Connectivity: Security
+---
+
+### Storing Sensitive Info
+---
+
+엡 코드에 민감한 API 키를 저장하면 안 된다. 코드에 포함된 모든 내용은 앱 번들을 검사하는 모든 사람이 일반 텍스트로 액세스할 수 있다. `react-native-dotenv` 및 `react-native-config` 와 같은 도구는 API 엔드포인트와 같은 환경별 변수를 추가하는 데 유용하지만, 종종 시크릿 및 API 키를 포함할 수 있는 서버 측 환경 변수와 혼동해서는 안 된다.
+
+앱에서 일부 리소스에 액세스하기 위해 API 키 또는 비밀번호가 있어야 하는 경우 이를 처리하는 가장 안전한 방법은 앱과 리소스 사이에 오케스트레이션 계층을 구축하는 것이다.
+
+영속화되는 사용자 데이터의 경우 민감도에 따라 적절한 저장소 유형을 선택해서 저장해야 한다.
+
+<br/>
+
+### Async Storage
+---
+
+`Async Storage` 는 비동기식, 암호화되지 않은 키-값 저장소를 제공하는 React Native용 모듈이다. 이 저장소는 앱 간에 공유되지 않는다.
+
+| **Do** use async storage when...              | **Don't** use async storage for... |
+| --------------------------------------------- | ---------------------------------- |
+| Persisting non-sensitive data across app runs | Token storage                      |
+| Persisting Redux state                        | Secrets                            |
+| Persisting GraphQL state                      |                                    |
+| Storing global app-wide variables             |                                    |
+
+<br/>
+
+### Secure Storage
+---
+
+React Native에는 민감한 데이터를 저장하는 방법이 번들로 제공되지 않는다. 하지만, Android 및 iOS 플랫폼을 위한 기존 솔루션이 있다.
+
+<br/>
+
+#### iOS - Keychain Services
+---
+
+`Keychain Services` 를 사용하면 사용자를 위해 민감한 정보를 안전하게 저장할 수 있다. 인증서, 토큰, 비밀번호 및 비동기 저장소에 속하지 않는 기타 민감한 정보를 저장하기에 이상적인 장소이다.
+
+<br/>
+
+#### Anroid - Secure Shared Preferences
+---
+
+`Shared Preferences` 는 영구 키-값 데이터 저장소에 해당하는 Android용 데이터 저장소이다. 공유 환경설정의 데이터는 기본적으로 암호화되지 않지만, 암호화된 공유 환경설정은 Anroid용 공유 환경설정 클래스를 래핑하여 키와 값을 자동으로 암호화한다.
+
+<br/>
+
+#### Android - Keystore
+---
+
+`Android Keystore` 시스템을 사용하면 암호화 키를 컨테이너에 저장하여 기기에서 추출하기 어렵게 만들 수 있다.
+
+<br/>
+
+iOS의 `Keychain Services` 또는 Android의 `Secure Shared Preferences` 를 사용하면 브릿지를 직접 작성하거나 브릿지를 래핑하고 통합 API를 제공하는 라이브러리를 사용하여 위험을 감수할 수 있다. 이는 다음 라이브러리를 참고해라.
+
+- `expo-secure-store`
+- `react-native-keychain`
+
+<br/>
+
+### OAuth2 and Redirects
+---
+
+웹에서는 웹의 URL이 고유하기 때문에 이 리다이렉션 단계는 안전하다. 하지만 앱에서는 앞서 언급했듯이 URL 체계를 등록하는 중앙 집중식 방법이 없기 때문에 그렇지 않다. 이 보안 문제를 해결하려면 PKCE라는 형태로 추가 검사를 추가해야 한다.
+
+PKCE는 키 코드 교환 증명을 의미하며, OAuth2 사양의 확장이다. 여기에는 인증과 토큰 교환 요청이 동일한 클라이언트로부터 오는지 확인하는 추가 보안 계층을 추가하는 것이 포함된다. PKCE는 SHA256 암호화 해시 알고리즘을 사용한다. SHA256은 모든 크기의 텍스트 또는 파일에 대해 고유한 '서명'을 생성한다.
+
+<br/>
+
+두 개의 값이 사용된다.
+- `code_verifier` : 클라이언트에서 생성한 큰 무작위 문자열
+- `code_challenge` : code_verifier의 SHA256
+
+초기 `/authorize` 요청 중에 클라이언트는 메모리에 보관하고 있는 `code_verifier` 에 대한 `code_challenge` 도 전송한다. 권한 부여 요청이 올바르게 반환되면 클라이언트는 `code_challenge` 를 생성하는 데 사용된 `code_verifier` 도 함께 보낸다. 그러면 IDP는 `code_challenge` 를 계산하여 첫 번째 `/authorize` 요청에 설정된 것과 일치하는지 확인한 후 값이 일치하는 경우에만 액세스 토큰을 보낸다.
+
+이렇게 하면 초기 인증 흐름을 트리거한 애플리케이션만 인증 코드를 JWT로 성공적으로 교환할 수 있다. 따라서 악성 애플리케이션이 인증 코드에 액세스하더라도 그 자체로는 쓸모가 없다. 실제로 작동하는 방식은 [예시](https://aaronparecki.com/oauth-2-simplified/#mobile-apps)를 확인해라.
+
+<br/>
+
+React Native에서는 `react-native-app-auth` 를 사용한다. 이는 OAuth2 공급자와 통신하기 위한 SDK이다. 이 라이브러리는 네이티브 AppAuth-iOS 및 AppAuth-Android 라이브러리를 래핑하며 PKCE를 지원할 수 있다.
+
+<br/>
+
 ## Reference
 ---
 
