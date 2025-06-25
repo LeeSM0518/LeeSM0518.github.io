@@ -1,5 +1,5 @@
 ---
-title: Spring AI
+title: Spring AI (SNAPSHOT Version)
 date: 2024-12-16 00:00:00 +0900
 categories: spring
 tags:
