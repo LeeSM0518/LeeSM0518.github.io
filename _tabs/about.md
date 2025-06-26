@@ -58,16 +58,16 @@ Kotlin, Spring Webflux, R2DBC, JOOQ, Flyway, PostgreSQL, AWS
 
 <br/>
 
-### [Coinliveview (가상화폐 커뮤니티 어플)](https://play.google.com/store/apps/details?id=com.podoal.coinlive&hl=ko&gl=US)
+### Coinliveview (가상화폐 커뮤니티 어플)
 
-_2023.12 ~ 운영중_
+_2023.12 ~ 2025.03_
 
 #### 기여
 
 - 프로젝트 리더 (어플 개발자 1명, 기획자 1명과 협업)
 - 전화인증/회원/게시글/팔로우 등 어플에서 사용되는 모든 기능 설계 및 구현
 - 모든 기능들에 대한 143개의 테스트 구현
-- AWS EC2를 활용하여 서비스 운영중
+- AWS EC2를 활용하여 서비스 운영 경험
 - OneSignal을 활용한 푸시 알림 프로세스 설계 및 구현
 
 #### 사용 기술
