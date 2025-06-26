@@ -41,7 +41,7 @@ Kotlin, Armeria(gRPC), Spring Webflux, Hibernate, R2DBC, PostgreSQL, RabbitMQ, A
 
 ### [Devooks (전자책 판매 서비스)](https://github.com/LeeSM0518/devooks)
 
-_2024.06 ~ 개발중_
+_2024.06 ~ 2025.01_
 
 #### 기여
 
