@@ -6,9 +6,15 @@ order: 4
 
 ## 경력
 
+### [Imagoworks](https://dentbird.kr/)
+
+_2025.02 ~ 재직중 (백엔드 개발자)_
+
+<br/>
+
 ### [SI Analytics](https://si-analytics.ai/)
 
-_2022.08 ~ 재직중 (백엔드 개발자)_
+_2022.08 ~ 2025.02 (2년 7개월, 백엔드 개발자)_
 
 #### 업무
 
