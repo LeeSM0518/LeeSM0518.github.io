@@ -74,3 +74,80 @@ description: MongoDB Seminar 내용 정리
 
 <br/>
 
+## 3. Index
+---
+
+- 인덱스를 두 개의 필드를 만들 경우 MongoDB는 그 중 하나만 선택해서 조회하는 방식이다.
+- 두 개의 필드가 A, B 일 경우 A와 A, B로 조회하면 인덱스를 타지만 B로 조회하면 인덱스를 타지 않는다.
+- 복합 인덱스 상에서 조회한 후 정렬할 경우 오래 걸릴 수 있다.
+- 배열에 인덱스를 걸어도 문제 없다.
+- 특정 속성이 부합하는 것만 인덱스로 생성할 수 있도록 조건 인덱스를 만들 수 있다.
+
+<br/>
+
+## 4. Pattern & Lock
+---
+
+### 4.1. Pattern
+---
+
+ - `Extended Reference Pattern` : ex) 주문 내에 주문자(사용자) 정보
+	 - 주소, 이름 정보를 주문에 같이 저장하는 방법
+	 - 조인 횟수를 줄이기 위해 미리 넣어두는 것
+	 - 데이터를 중복 저장해야 함
+	 - 바뀌어도 상관없는 데이터를 넣는 것이 좋을 것 같다
+		 - 트리거나 변경 스트림을 통해 관련 데이터를 변경시킬 수 있다.
+ - `Subset Pattern` : ex) 가장 최신의 코멘트
+	 - Problem
+		 - 너무 많은 반복적인 조인
+	 - Solution
+		 - Lookup 하는 컬렉션 쪽에서 필드를 정의
+		 - 해당 필드를 메인 오브젝트로 가져옴
+ - `Bucket Pattern` : ex) 센싱 데이터
+	 - 데이터를 그룹화해서 저장함
+	 - 배열에 push
+	 - time collection을 활용할 수도 있음
+ - `Computed Pattern` : ex) 한 시간 동안의 평균 온도
+	 - 미리 계산해두고 도큐먼트에 저장
+	 - 주로 Bucket Pattern과 같이 사용됨
+ - `Attribute Pattern` : Array 형태로 필드를 묶음
+	 - `[{"k": "height", "v": 16}]`
+	 - attribute에만 인덱스를 걸면 통합 인덱스로 활용할 수 있음
+ - `Archive Pattern` : 오래된 문서를 아카이브 할 때 사용
+	 - 오래된 문서를 더 저렴한 계층에 저장
+	 - Archive는 Data Federation에서 조회할 수 있음
+	 - DB를 나눌 수 있고, Archive 옵션을 사용할 수도 있음
+ - `Schema Versioning Pattern` : 스키마 구조가 매번 바뀔 수 있을 경우
+	 - 스키마 버전으로 스키마 구조를 다르게 구성
+
+<br/>
+
+### 4.2. Lock
+---
+
+- MongoDB Lock & WiredTiger Lock
+- Collection 수준까지의 Lock 시스템
+	- Multi-granularity Lock 시스템 : 
+		- MongoDB Lock : Global, Database, Collection, 
+		- WiredTiger Lock : Document
+	- 잠금 종류 : Intent Shared, Intent Exclusive, Shard, Exclusive
+	- updateOne 했을 경우 : Document에 대해 쓰기 잠금 (Exclusive Lock) 획득이 필요
+		- Global, Database, Collection에 대해서 Intent Exclusive Lock이 발생
+		- 다른 컬렉션의 Intent Shard, Intent Exclusive lock 은 허용
+	- findOne 했을 경우 : 별도의 lock이 없음
+		- Global, Database, Collection에 대해서 Intent Shard lock
+		- 다른 컬렉션의 Intent Shared, Intent Exclusive, Shared 은 허용
+- Document 수준의 Lock 시스템
+	- Transaction (Read & Write) Concurrency
+		- 읽기/쓰기 각 최대 128개 티켓
+	- Document Level Concurrency
+		- WiredTiger는 Document 레벨의 동시성 제어를 함
+		- 다수의 클라이언트가 동시에 다른 문서를 수정할 수 있음
+		- Optimistic concurrency control을 사용
+		- Global, Database, Collection 수준의 intent lock만 사용
+			- 두 작업 간의 충돌을 감지하면, 한 작업이 쓰기 충돌이 발생하고 해당 작업을 재시도
+	- MVCC (MultiVersion Concurrency Control)
+		- 데이터에 대한 특정 시점 스냅샷을 제공
+		- 체크포인트(60s)으로 데이터를 디스크에 기록
+		- 데이터가 수정되는 경우 기존 데이터가 유지되고 변경된 데이터가 추가된다
+		- 트랜잭션 아이디로 요청 시점에 따라 이전 트랜잭션과 이후 트랜잭션의 데이터를 제공함
