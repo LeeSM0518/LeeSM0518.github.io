@@ -424,8 +424,188 @@ logging.level.org.springframework.ai.chat.client.advisor=DEBUG
 ## 4. Advisors API
 ---
 
+Spring AI의 Advisors API는 Spring 애플리케이션에서 AI 기반 상호작용을 인터셉트 하고, 수정 및 향상시킬 수 있는 유연하고 강력한 방식이다. Advisors API를 활용하면 개발자는 더 정교하고 재사용 가능하며 유지 보수가 쉬운 AI 컴포넌트를 만들 수 있다.
 
+<br/>
 
+주요 이점은 다음과 같다.
+
+- 반복적으로 등장하는 생성형 AI 패턴을 캡슐화
+- LLM과 주고 받는 데이터를 변환
+- 다양한 모델 및 사용 사례 간 이식성 확보
+
+<br/>
+
+**Advisor 구성 예시**
+
+```kotlin
+chatClient  
+  .prompt()  
+  .advisors(  
+    MessageChatMemoryAdvisor.builder(chatMemory).build(),   // 1. 대화 기록 추가
+    QuestionAnswerAdvisor.builder(vectorStore).build()      // 2. RAG 검색
+  ).user(userInput)  
+  .call()  
+  .content()
+```
+- Advisor는 `defaultAdvisors()` 로 빌드 타임에 등록해 두는 것을 권장한다.
+- Advisors는 Observability 스택에도 참여하므로, 실행 메트릭 및 트레이스를 확인할 수 있다.
+
+<br/>
+
+### 4.1. Core Components
+---
+
+![spring-ai6](/assets/img/spring-ai6.jpg)
+
+- 비스트리밍 : `CallAroundAdvisor` , `CallAroundAdvisorChain`
+- 스트리밍 : `StreamAroundAdvisor` , `StreamAroundAdvisorChain`
+- 미가공 Prompt 요청 : `AdvisedRequest`
+- Chat Completion 응답 : `AdvisedResponse`
+- 어드바이저 체인 전반에서 상태를 공유할 `adviseContext: Map<String, Obj>`
+- 체인 내 실행 순서 결정 : `getOrder` (값이 낮을수록 먼저 실행)
+- 고유 어드바이저 이름 : `getName`
+
+<br/>
+
+**어드바이저 체인 동작 방식**
+
+![spring-ai7](/assets/img/spring-ai7.jpg)
+
+Spring AI가 사용자의 Prompt로부터 `AdvisedRequest` 를 생성하고, 빈 `AdvisorContext` 객체를 준비한다.
+
+1. 체인의 각 어드바이저가 요청을 순차적으로 처리 및 수정한다.
+   (또는 다음 엔티티 호출을 생략해 요청을 차단할 수도 있으며, 이 경우 어드바이저가 직접 응답을 작성한다)
+2. 프레임워크가 자동으로 추가한 마지막 어드바이저가 LLM에 실제 요청을 전송한다.
+3. LLM 응답이 어드바이저 체인을 거꾸로 타고 올라가며 `AdvisedResponse` 로 변환되고, 공유된 `AdvisorContext` 가 함께 전달된다.
+4. 각 어드바이저가 응답을 검사 및 수정할 수 있다.
+5. 최종 `AdvisedResponse` 에서 ChatCompletion 이 추출되어 클라이언트에게 반환된다.
+
+<br/>
+
+### 4.2. Examples
+---
+
+#### 4.2.1. Logging Advisor
+---
+
+체인에서 다음 어드바이저를 호출하기 전에 `AdvisedRequest` 를, 호출이 끝난 후에 `AdvisedResponse` 를 로그에 남긴다.
+
+```java
+public class SimpleLoggerAdvisor implements CallAroundAdvisor, StreamAroundAdvisor {
+
+    private static final Logger logger = LoggerFactory.getLogger(SimpleLoggerAdvisor.class);
+
+    @Override
+    public String getName() { 
+        return this.getClass().getSimpleName();
+    }
+
+    @Override
+    public int getOrder() { 
+        return 0;   // 값이 낮을수록 먼저 실행
+    }
+
+    @Override
+    public AdvisedResponse aroundCall(AdvisedRequest advisedRequest, CallAroundAdvisorChain chain) {
+
+        logger.debug("BEFORE: {}", advisedRequest);
+
+        AdvisedResponse advisedResponse = chain.nextAroundCall(advisedRequest);
+
+        logger.debug("AFTER: {}", advisedResponse);
+
+        return advisedResponse;
+    }
+
+    @Override
+    public Flux<AdvisedResponse> aroundStream(AdvisedRequest advisedRequest, StreamAroundAdvisorChain chain) {
+
+        logger.debug("BEFORE: {}", advisedRequest);
+
+        Flux<AdvisedResponse> advisedResponses = chain.nextAroundStream(advisedRequest);
+
+        return new MessageAggregator().aggregateAdvisedResponse(
+                advisedResponses,
+                advisedResponse -> logger.debug("AFTER: {}", advisedResponse));
+    }
+}
+```
+
+<br/>
+
+#### 4.2.2. Re-Reading(Re2) Advisor
+---
+
+Re-Reading(Re2) 기법은 입력 프롬프트를 보강해 추론 능력을 향상시킨다.
+
+```java
+public class ReReadingAdvisor implements CallAroundAdvisor, StreamAroundAdvisor {
+
+    // 프롬프트 보강 로직
+    private AdvisedRequest before(AdvisedRequest advisedRequest) {
+
+        Map<String, Object> params = new HashMap<>(advisedRequest.userParams());
+        params.put("re2_input_query", advisedRequest.userText());
+
+        return AdvisedRequest.from(advisedRequest)
+            .userText("""
+                {re2_input_query}
+                Read the question again: {re2_input_query}
+                """)
+            .userParams(params)
+            .build();
+    }
+
+    @Override
+    public AdvisedResponse aroundCall(AdvisedRequest advisedRequest, CallAroundAdvisorChain chain) {
+        return chain.nextAroundCall(before(advisedRequest));
+    }
+
+    @Override
+    public Flux<AdvisedResponse> aroundStream(AdvisedRequest advisedRequest, StreamAroundAdvisorChain chain) {
+        return chain.nextAroundStream(before(advisedRequest));
+    }
+
+    @Override
+    public int getOrder() { 
+        return 0;
+    }
+
+    @Override
+    public String getName() { 
+        return this.getClass().getSimpleName();
+    }
+}
+```
+
+<br/>
+
+#### 4.2.3. Spring AI Built-in Advisors
+---
+
+| **분류**                 | **어드바이저**                    | **역할**                                                    |
+| ---------------------- | ---------------------------- | --------------------------------------------------------- |
+| **Chat Memory**        | MessageChatMemoryAdvisor     | 대화 기록을 **메시지 컬렉션** 형태로 프롬프트에 추가(모든 모델이 지원하지는 않음)          |
+|                        | PromptChatMemoryAdvisor      | 대화 기록을 **system 텍스트**에 삽입                                 |
+|                        | VectorStoreChatMemoryAdvisor | VectorStore에서 기록을 검색해 **system 텍스트**에 삽입                  |
+| **Question Answering** | QuestionAnswerAdvisor        | VectorStore 기반 **RAG**(Retrieval-Augmented Generation) 구현 |
+| **Content Safety**     | SafeGuardAdvisor             | 유해·부적절 콘텐츠 생성을 방지하는 간단한 필터                                |
+
+<br/>
+
+### 4.3. 구현 참고 노트
+---
+
+- **어드바이저를 특정 작업에 집중**시켜 모듈성을 높이세요.
+    
+- 필요할 때는 **adviseContext로 어드바이저 간 상태를 공유**하세요.
+    
+- 최대한 유연하게 사용하려면 **스트리밍·논-스트리밍 버전을 모두 구현**하세요.
+    
+- 데이터 흐름이 올바르게 유지되도록 **체인 내 어드바이저 실행 순서를 신중히 설계**하세요.
+
+<br/>
 
 ## Reference
 ---
