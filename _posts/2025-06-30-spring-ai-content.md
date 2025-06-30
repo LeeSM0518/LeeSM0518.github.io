@@ -598,12 +598,25 @@ public class ReReadingAdvisor implements CallAroundAdvisor, StreamAroundAdvisor 
 ---
 
 - **어드바이저를 특정 작업에 집중**시켜 모듈성을 높이세요.
-    
 - 필요할 때는 **adviseContext로 어드바이저 간 상태를 공유**하세요.
-    
 - 최대한 유연하게 사용하려면 **스트리밍·논-스트리밍 버전을 모두 구현**하세요.
-    
 - 데이터 흐름이 올바르게 유지되도록 **체인 내 어드바이저 실행 순서를 신중히 설계**하세요.
+
+<br/>
+
+## 5. Prompts
+---
+
+프롬프트는 AI 모델이 특정 출력을 생성하도록 유도하는 입력이다.
+
+<br/>
+
+### 5.1. API Overview: `Prompt`
+---
+
+대부분의 경우 `ChatModel` 의 `call()` 메서드는 `Prompt` 인스턴스를 받아 `ChatResponse` 를 반환하도록 사용한다.
+
+
 
 <br/>
 
