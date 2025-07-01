@@ -616,6 +616,257 @@ public class ReReadingAdvisor implements CallAroundAdvisor, StreamAroundAdvisor 
 
 대부분의 경우 `ChatModel` 의 `call()` 메서드는 `Prompt` 인스턴스를 받아 `ChatResponse` 를 반환하도록 사용한다.
 
+`Prompt` 클래스는 여러 개의 `Message` 와 `ChatOptions` 요청 옵션을 담는 컨테이너 역할을 한다. 각 `Message` 는 프롬프트 내에서 고유한 `Role(역할)` 을 가진다. 사용자 질문, AI가 생성한 응답, 배경 정보 등 다양한 요소가 이 Roles 안에 들어갈 수 있다.
+
+<br/>
+
+다음은 축약 버전의 `Prompt` 클래스이다.
+
+```java
+public class Prompt implements ModelRequest<List<Message>> {
+
+    private final List<Message> messages;
+
+    private ChatOptions chatOptions;
+}
+```
+
+<br/>
+
+### 5.2. API Overview: `Message`
+---
+
+`Message` 인터페이스는 `Prompt` 의 내용, 여러 메타데이터 속성, `MessageType` 을 하나로 묶어 둔 객체이다.
+
+다음은 인터페이스 정의이다.
+
+```java
+public interface Content {
+
+    String getContent();                 // 실제 문자열 콘텐츠
+    Map<String, Object> getMetadata();   // 임의의 메타데이터
+}
+
+public interface Message extends Content {
+
+    MessageType getMessageType();        // 역할(ROLE)에 해당
+}
+```
+
+- 멀티모달 메시지 타입은 `MediaContent` 인터페이스도 구현하여 이미지, 오디오 등 `Media` 객체 목록을 제공한다.
+
+<br/>
+
+`Message` 인터페이스의 구현체마다 AI 모델이 처리할 수 있는 다양한 메시지 카테고리를 표현한다.
+
+![spring-ai8](/assets/img/spring-ai8.jpg)
+
+<br/>
+
+**Roles (역할)**
+
+| **역할**            | **설명**                                                                                                                                               |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **System**        | AI의 동작 방식·응답 스타일을 안내하는 지시문.대화를 시작하기 전에 AI에게 규칙·매개변수를 설정해 줍니다.                                                                                        |
+| **User**          | 사용자의 입력(질문, 명령, 진술 등).AI의 응답이 이 역할을 기반으로 생성됩니다.                                                                                                      |
+| **Assistant**     | AI가 User 입력에 대해 생성한 응답.대화 흐름을 유지하는 핵심 역할로, 이전 Assistant 메시지를 추적해 일관성 있고 맥락에 맞는 대화를 보장합니다.또한 함수/툴 호출 요청 정보를 포함할 수도 있어 계산·데이터 조회 등 특별 기능을 수행할 때 사용됩니다. |
+| **Tool/Function** | Assistant 메시지에 의해 호출된 **툴/함수**가 반환하는 추가 정보를 담는 역할입니다.                                                                                                |
+
+<br/>
+
+### 5.3. API Overview: `PromptTemplate`
+---
+
+Spring AI에서 프롬프트 템플릿을 위해 핵심적으로 사용하는 클래스가 `PromptTemplate` 이다. 이 클래스는 구조화된 프롬프트를 손쉽게 작성해 AI 모델로 전송할 수 있도록 돕는다.
+
+```java
+public class PromptTemplate implements PromptTemplateActions, PromptTemplateMessageActions {
+
+    // 기타 메서드는 생략
+}
+```
+
+<br/>
+
+`PromptTemplate` 은 `TemplateRenderer` API를 이용해 템플릿을 렌더링한다.
+
+```java
+public interface TemplateRenderer extends BiFunction<String, Map<String, Object>, String> {
+
+	@Override
+	String apply(String template, Map<String, Object> variables);
+}
+```
+
+<br/>
+
+`<>` 구분자를 사용하는 예시
+
+```java
+PromptTemplate promptTemplate = PromptTemplate.builder()
+    .renderer(
+        StTemplateRenderer.builder()
+            .startDelimiterToken('<')
+            .endDelimiterToken('>')
+            .build())
+    .template("""
+            Tell me the names of 5 movies whose soundtrack was composed by <composer>.
+            """)
+    .build();
+
+String prompt = promptTemplate.render(Map.of("composer", "John Williams"));
+```
+
+<br/>
+
+### 5.4. Example Usage
+---
+
+다음은 `PromptTemplates` 예제의 간단한 코드이다.
+
+```java
+PromptTemplate promptTemplate =
+        new PromptTemplate("Tell me a {adjective} joke about {topic}");
+
+Prompt prompt =
+        promptTemplate.create(Map.of("adjective", adjective, "topic", topic));
+
+return chatModel.call(prompt).getResult();
+```
+
+<br/>
+
+다음은 메시제에 대한 여러 Role을 활용한 예시이다.
+
+```java
+String userText = """
+    Tell me about three famous pirates from the Golden Age of Piracy and why they did.
+    Write at least a sentence for each pirate.
+    """;
+
+Message userMessage = new UserMessage(userText);
+
+String systemText = """
+  You are a helpful AI assistant that helps people find information.
+  Your name is {name}
+  You should reply to the user's request with your name and also in the style of a {voice}.
+  """;
+
+SystemPromptTemplate systemPromptTemplate = new SystemPromptTemplate(systemText);
+Message systemMessage =
+        systemPromptTemplate.createMessage(Map.of("name", name, "voice", voice));
+
+Prompt prompt = new Prompt(List.of(userMessage, systemMessage));
+
+List<Generation> response = chatModel.call(prompt).getResults();
+```
+
+<br/>
+
+문자열 대신 리소스를 사용하는 예시이다.
+
+```java
+@Value("classpath:/prompts/system-message.st")
+private Resource systemResource;
+
+SystemPromptTemplate systemPromptTemplate =
+        new SystemPromptTemplate(systemResource);
+```
+
+<br/>
+
+### 5.5. Prompt Engineering
+---
+
+프롬프트의 품질과 구조에 따라 AI 출력의 효과가 크게 달라진다.
+
+<br/>
+
+#### 5.5.1. 효과적인 프롬프트 구성 요소
+
+1. **Instructions** : AI에게 주는 명확하고 직접적인 지시.
+2. **External Context** : 답변에 필요한 배경 정보나 추가 지침
+3. **User Input** : 사용자의 실제 질문, 요청
+4. **Output Indicator** : 원하는 응답 형식(ex. JSON)
+
+또한 예시 질문과 답변을 함께 제공하면 AI가 의도와 형식을 더 잘 파악해 정밀한 답을 내놓는다.
+
+<br/>
+
+#### 5.5.2. 참고할 기술 및 기법
+---
+
+Text Summarization 
+: 긴 문서를 핵심만 간략히 요약
+
+```
+~~내용~~
+한 문장으로 요약: 
+```
+{: file='Prompt'}
+
+<br/>
+
+Question Answering
+: 주어진 텍스트에서 정확한 답 추출
+
+```
+아래 문맥(Context)을 바탕으로 질문에 답하십시오.  
+답변은 짧고 간결하게 작성하세요.  
+정답이 확실하지 않으면 "정답을 확신할 수 없음"이라고 답하세요.
+
+문맥: 테플리주맙(Teplizumab)의 기원은 뉴저지의 제약사인 Ortho Pharmaceutical로 거슬러 올라갑니다. 이곳에서 과학자들은 OKT3라 불리는 항체의 초기 버전을 만들어 냈습니다. OKT3는 처음에는 쥐에서 유래한 분자로, T 세포 표면에 결합해 세포의 살상 능력을 제한할 수 있었습니다. 1986년에는 신장 이식 후 장기 거부반응을 예방하기 위해 승인되며, 인체 사용이 허가된 첫 치료용 항체가 되었습니다.
+
+질문: OKT3는 원래 무엇에서 유래했습니까?  
+답변:
+```
+{: file='Prompt'}
+
+<br/>
+
+Text Classification
+: 텍스트를 카테고리로 분류
+
+```
+다음을 중립, 긍정, 부정 중 하나로 분류하세요.
+
+문장: I think the food was okay.
+감정:
+```
+{: file='Prompt'}
+
+<br/>
+
+Conversation
+: 자연스러운 대화 주고받기
+
+```
+다음은 AI 연구 보조와 나누는 대화입니다.  
+AI의 말투는 기술적이고 과학적입니다.  
+
+Human: Hello, who are you?  
+AI: Greeting! I am an AI research assistant. How can I help you today?  
+Human: Can you tell me about the creation of blackholes?  
+AI:
+```
+{: file='Prompt'}
+
+<br/>
+
+Code Generation
+: 설명을 바탕으로 코드 스니펫 생성
+
+Zero-shot, Few-shot Learning
+: 예시가 거의 없거나 전혀 없는 상황에서도 추론
+
+Chain-of-Thought
+: 단계별 사고 과정을 드러내며 응답
+
+ReAct (Reason + Act)
+: "생각 -> 행동" 패턴으로 분석 후 실행
+
+Framework for Prompt Creation and Optimization
+: 마이크로소프트가 제시한 체계적인 프롬프트 설계 및 최적화 가이드
 
 
 <br/>
