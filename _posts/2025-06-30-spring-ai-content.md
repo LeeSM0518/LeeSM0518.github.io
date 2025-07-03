@@ -856,17 +856,294 @@ AI:
 Code Generation
 : 설명을 바탕으로 코드 스니펫 생성
 
+```
+departments 테이블, 컬럼 = [DepartmentId, DepartmentName]
+students 테이블, 컬럼 = [DepartmentId, StudentId, StudentName]
+컴퓨터 공학과(Computer Science Department)에 소속된 모든 학생을 조회하는 MySQL 쿼리를 작성하세요.
+```
+{: file='Prompt'}
+
+<br/>
+
 Zero-shot, Few-shot Learning
 : 예시가 거의 없거나 전혀 없는 상황에서도 추론
+
+```
+다음 텍스트를 중립(neutral), 부정적(negative), 긍정적(positive)으로 분류하세요.
+텍스트: I think the vacation is okay.
+감정:
+```
+{: file='Prompt'}
+
+```
+"Whatpu"는 탄자니아가 원산지인 작고 털이 많은 동물입니다. "whatpu"라는 단어를 사용한 문장의 예시는 다음과 같습니다:
+We were traveling in Africa and we saw these very cute whatpus.
+
+"Farduddle"이란 단어는 매우 빠르게 위아래로 뛰어오르는 것을 의미합니다. "farduddle"이 들어간 문장의 예시는 다음과 같습니다:
+```
+{: file='Prompt'}
+
+<br/>
 
 Chain-of-Thought
 : 단계별 사고 과정을 드러내며 응답
 
+```
+시장에 가서 사과 10개를 샀습니다. 이웃에게 2개를 주고 수리공에게도 2개를 주었습니다. 그 후 사과를 5개 더 샀고, 1개를 먹었습니다. 남은 사과는 총 몇 개일까요?
+Let's think step by step.
+```
+{: file='Prompt'}
+
+<br/>
+
 ReAct (Reason + Act)
 : "생각 -> 행동" 패턴으로 분석 후 실행
 
+```
+"콜로라도 조산운동의 동쪽 부분이 확장된 지역의 해발 고도 범위는 얼마인가?"
+- Thought 1: “콜로라도 조산운동(Colorado orogeny)을 검색해서 동쪽 부분이 확장된 지역을 찾고, 그 지역의 해발 고도 범위를 찾아야겠다.”
+    
+- Action 1: 검색[Colorado orogeny]
+    
+- Observation 1: “콜로라도 조산운동은 콜로라도 및 주변 지역의 조산운동(산 형성 과정)이다.”
+    
+- Thought 2: “동쪽 부분에 대한 언급이 없다. 동쪽 부분(eastern sector)을 검색해 보겠다.”
+    
+- Action 2: 검색[eastern sector]
+    
+- Observation 2: “동쪽 부분은 High Plains 지역으로 뻗어 있으며, Central Plains orogeny라 불린다.”
+    
+- Thought 3: “동쪽 부분이 High Plains까지 확장되었으므로, High Plains를 검색하여 해발 고도 범위를 찾자.”
+    
+- Action 3: 검색[High Plains]
+    
+- Observation 3: “High Plains는 두 개의 별개 지역 중 하나를 나타낸다.”
+    
+- Thought 4: “정확히 미국의 High Plains를 검색해야겠다.”
+    
+- Action 4: 검색[High Plains (United States)]
+    
+- Observation 4: “High Plains 지역의 해발 고도는 동쪽에서 서쪽으로 약 1,800피트에서 7,000피트까지 증가한다.”
+    
+- Thought 5: “해발 고도는 1,800피트에서 7,000피트이므로, 정답은 1,800에서 7,000피트다.”
+    
+- Action 5: Finish[1,800 to 7,000 ft]
+```
+{: file='Prompt'}
+
+<br/>
+
 Framework for Prompt Creation and Optimization
 : 마이크로소프트가 제시한 체계적인 프롬프트 설계 및 최적화 가이드
+
+<br/>
+
+## 6. Structured Output
+---
+
+Spring AI의 `Structured Output Converters` 는 LLM의 출력을 구조화된 포맷으로 손쉽게 변환할 수 있도록 돕는다. 아래의 다이어그램과 같이, 이 접근법은 LLM의 텍스트 완성(completion) API 엔드포인트를 중심으로 작동한다.
+
+![spring-ai9](/assets/img/spring-ai9.jpg)
+
+- LLM 호출 이전 : 변환기(converter)는 포맷 지침(format instructions)을 프롬프트(prompt)에 추가하여 모델이 원하는 출력 구조를 생성하도록 명확한 안내를 제공한다.
+- LLM 호출 이후 : 변환기는 모델이 생성한 텍스트 출력을 받아 구조화된 타입의 인스턴스로 변환한다. 이 변환 과정에서는 텍스트 결과를 파싱하고 JSOM, XML, 도메인 특정 데이터 구조 등으로 대응하는 구조화된 표현으로 매핑하는 작업이 포함된다.
+
+<br/>
+
+인공지늠 모델이 항상 요청된 구조를 정확히 따라 출력하리라는 보장은 없다. 따라서 실제 서비스에서는 모델의 출력이 원하는 구조를 따르고 있는지를 검증(validation)하는 추가적인 절차를 구현하는 것이 바람직하다.
+
+또한 `StructuredOutputConverter` 는 LLM Tool Calling(도구 호출) 방식에서는 사용되지 않는다. 왜냐하면 Tool Calling 방식 자체가 이미 구조화된 출력을 기본적으로 제공하기 때문이다.
+
+<br/>
+
+### 6.1. Structured Output API
+---
+
+`StructuredOutputConverter` 인터페이스를 사용하면 AI 모델의 텍스트 기반 출력을 클래스나 값 배열과 같은 구조화된 형태로 손쉽게 얻을 수 있다.
+
+```java
+public interface StructuredOutputConverter<T> extends Converter<String, T>, FormatProvider {
+}
+```
+
+<br/>
+
+![spring-ai10](/assets/img/spring-ai10.jpg)
+
+```
+[사용자 입력] --(FormatProvider가 형식 지침 추가)--> [프롬프트 생성] --(LLM 호출)--> [LLM 출력 텍스트] --(Converter가 텍스트를 구조화된 타입으로 변환)--> [구조화된 출력]
+```
+
+- 구조화된 출력 API를 사용할 때의 데이터 흐름을 보여준다.
+
+<br/>
+
+이러한 형식 지침은 일반적으로 프롬프트 템플릿(PromptTemplate)을 통해 사용자 입력의 끝에 추가된다.
+
+```java
+StructuredOutputConverter outputConverter = ...;
+String userInputTemplate = """
+    ... 사용자 입력 텍스트 ...
+    {format}
+    """; // "format" 플레이스홀더가 포함된 사용자 입력.
+
+Prompt prompt = new Prompt(
+    new PromptTemplate(
+        this.userInputTemplate,
+        Map.of(..., "format", outputConverter.getFormat()) 
+        // "format" 플레이스홀더를 converter의 포맷으로 치환
+    ).createMessage()
+);
+```
+
+<br/>
+
+#### 6.1.1. 사용 가능한 변환기(Converters)
+---
+
+![spring-ai11](/assets/img/spring-ai11.jpg)
+
+<br/>
+
+### 6.2. 변환기(Converters) 사용 방법
+---
+
+#### 6.2.1. BeanOutputConverter
+---
+
+목표 타입 정의
+
+```java
+record ActorsFilms(String actor, List<String> movies) {}
+```
+
+<br/>
+
+사용 예시
+```java
+// 고수준 API 사용
+ActorsFilms actorsFilms = ChatClient.create(chatModel).prompt()
+    .user(u -> u.text("Generate the filmography of 5 movies for {actor}.")
+                .param("actor", "Tom Hanks"))
+    .call()
+    .entity(ActorsFilms.class);
+
+// 저수준 API 사용
+BeanOutputConverter<ActorsFilms> beanOutputConverter =
+    new BeanOutputConverter<>(ActorsFilms.class);
+
+String format = beanOutputConverter.getFormat();
+
+String actor = "Tom Hanks";
+
+String template = """
+    Generate the filmography of 5 movies for {actor}.
+    {format}
+    """;
+
+Prompt prompt = new PromptTemplate(template, Map.of("actor", actor, "format", format)).create();
+
+Generation generation = chatModel.call(prompt).getResult();
+
+ActorsFilms actorsFilms = beanOutputConverter.convert(generation.getOutput().getText());
+```
+
+<br/>
+
+#### 6.2.2. 생성된 스키마(JSON)에서의 프로퍼티 순서 지정하기
+---
+
+JSON 출력에서 속성 순서를 명확하게 지정한다.
+
+```java
+@JsonPropertyOrder({"actor", "movies"})
+record ActorsFilms(String actor, List<String> movies) {}
+```
+
+<br/>
+
+**Generic Bean 타입 지정하기**
+
+보다 복잡한 데이터 구조로 출력받고 싶다면, `ParameterizedTypeReference` 를 사용할 수 있다.
+
+```java
+// 고수준 방식
+List<ActorsFilms> actorsFilms = ChatClient.create(chatModel).prompt()
+    .user("Generate the filmography of 5 movies for Tom Hanks and Bill Murray.")
+    .call()
+    .entity(new ParameterizedTypeReference<List<ActorsFilms>>() {});
+
+// 저수준 방식
+BeanOutputConverter<List<ActorsFilms>> outputConverter = new BeanOutputConverter<>(
+    new ParameterizedTypeReference<List<ActorsFilms>>() { });
+
+String format = outputConverter.getFormat();
+String template = """
+    Generate the filmography of 5 movies for Tom Hanks and Bill Murray.
+    {format}
+    """;
+
+Prompt prompt = new PromptTemplate(template, Map.of("format", format)).create();
+
+Generation generation = chatModel.call(prompt).getResult();
+
+List<ActorsFilms> actorsFilms = outputConverter.convert(generation.getOutput().getText());
+```
+
+<br/>
+
+#### 6.2.3. MapOutputConverter
+
+모델 출력을 Java Map 형태로 변환
+
+```java
+Map<String, Object> result = ChatClient.create(chatModel).prompt()
+    .user(u -> u.text("Provide me a List of {subject}")
+                .param("subject", "an array of numbers from 1 to 9 under the key name 'numbers'"))
+    .call()
+    .entity(new ParameterizedTypeReference<Map<String, Object>>() {});
+```
+
+<br/>
+
+#### 6.2.4. ListOutputConverter
+---
+
+모델 출력을 Java List 형태로 변환
+
+```java
+List<String> flavors = ChatClient.create(chatModel).prompt()
+    .user(u -> u.text("List five {subject}")
+                .param("subject", "ice cream flavors"))
+    .call()
+    .entity(new ListOutputConverter(new DefaultConversionService()));
+```
+
+<br/>
+
+### 6.3. 내장 JSON 모드 (Built-in JSON mode)
+---
+
+일부 AI 모델은 별도의 내장 옵션을 통해 구조화된 출력을 생성할 수 있도록 지원한다.
+
+<br/>
+
+**OpenAI Structured Outputs**
+- `JSON_OBJECT` : 모델이 생성하는 메시지가 유효한 JSON 포맷을 따르도록 보장한다.
+- `JSON_SCHEMA` : 사용자가 제공한 JSON Schema에 엄격히 부합하는 응답을 생성하도록 보장한다.
+
+```
+spring.ai.openai.chat.options.responseFormat={"type":"json_object"}
+```
+
+<br/>
+
+**Ollama**
+- 출력의 형식을 JSON으로 명시할 수 있으며, 현재 유일한 지원값은 json이다.
+
+```
+spring.ai.ollama.chat.options.format=json
+```
 
 
 <br/>
