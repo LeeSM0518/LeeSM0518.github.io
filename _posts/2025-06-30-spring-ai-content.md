@@ -1145,6 +1145,47 @@ spring.ai.openai.chat.options.responseFormat={"type":"json_object"}
 spring.ai.ollama.chat.options.format=json
 ```
 
+<br/>
+
+## 7. Multimodality API
+---
+
+멀티모달리티(multimodality)란 모델이 텍스트뿐만 아니라 이미지, 오디오, 영상 등 여러 형태의 데이터를 함께 이해하고 처리할 수 있는 능력을 의미한다.
+
+Spring AI의 Message API는 이러한 멀티모달 언어모델을 쉽게 지원하기 위해 추상화를 제공한다.
+
+![spring-ai11](/assets/img/spring-ai11.jpg)
+
+<br/>
+
+## 8. Chat Model API
+---
+
+Chat Model API는 AI 기반의 채팅 완성 기능을 애플리케이션에 쉽게 통합할 수 있도록 제공한다.
+
+이 API는 질문이나 대화 일부(prompt)를 모델에 전달하여 모델이 학습된 데이터를 기반으로 자연어를 이해하고, 그 결과를 응답의 형태로 반환하는 방식으로 작동한다.
+
+Spring AI의 Chat Model API는 다양한 AI 모델과 상호작용하기 위한 간결하고 휴대성이 높은 인터페이스를 제공하며, 모델 전환 시 최소한의 코드 변경만으로 가능하도록 설계되었다.
+
+<br/>
+
+### 8.1. API 개요
+---
+
+#### 8.1.1. ChatModel 인터페이스
+---
+
+```java
+public interface ChatModel extends Model<Prompt, ChatResponse> {
+
+	default String call(String message) {...}
+
+	@Override
+	ChatResponse call(Prompt prompt);
+}
+```
+
+- 
 
 <br/>
 
