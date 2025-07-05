@@ -1167,6 +1167,8 @@ Chat Model API는 AI 기반의 채팅 완성 기능을 애플리케이션에 쉽
 
 Spring AI의 Chat Model API는 다양한 AI 모델과 상호작용하기 위한 간결하고 휴대성이 높은 인터페이스를 제공하며, 모델 전환 시 최소한의 코드 변경만으로 가능하도록 설계되었다.
 
+또한 Prompt(입력 캡슐화), ChatResponse(출력 처리)와 같은 보조 클래스들을 통해 Chat Model API는 AI 모델과의 통신을 통합한다.
+
 <br/>
 
 ### 8.1. API 개요
@@ -1185,7 +1187,200 @@ public interface ChatModel extends Model<Prompt, ChatResponse> {
 }
 ```
 
-- 
+- 문자열 매개변수를 사용하는 `call()` 메서드는 초기 사용을 간소화하여, Prompt 및 ChatResponse 클래스의 복잡함을 피할 수 있도록 한다.
+- Prompt 인스턴스를 전달하고 ChatResponse를 반환하는 `call()` 메서드가 더 일반적이다.
+
+<br/>
+
+#### 8.1.2. StreamingChatModel 인터페이스
+---
+
+```java
+public interface StreamingChatModel extends StreamingModel<Prompt, ChatResponse> {
+
+    default Flux<String> stream(String message) {...}
+
+    @Override
+	Flux<ChatResponse> stream(Prompt prompt);
+}
+```
+
+- `stream()` 메서드는 ChatModel과 유사하게 String 또는 Prompt를 매개변수로 받아 응답을 리액티브 Flux API를 통해 스트리밍한다.
+
+<br/>
+
+#### 8.1.3. Prompt 인터페이스
+---
+
+```java
+public class Prompt implements ModelRequest<List<Message>> {
+
+    private final List<Message> messages;
+
+    private ChatOptions modelOptions;
+
+	@Override
+	public ChatOptions getOptions() {...}
+
+	@Override
+	public List<Message> getInstructions() {...}
+
+    // constructors and utility methods omitted
+}
+```
+
+- `Prompt` 는 `Message` 객체 목록과 선택적인 모델 요청 옵션을 캡슐화하는 `ModelRequest` 이다.
+
+<br/>
+
+#### 8.1.4. Message 인터페이스
+---
+
+```java
+public interface Content {
+
+	String getText();
+
+	Map<String, Object> getMetadata();
+}
+
+public interface Message extends Content {
+
+	MessageType getMessageType();
+}
+
+public interface MediaContent extends Content {
+
+	Collection<Media> getMedia();
+
+}
+```
+
+- `Message` 는 프롬프트의 텍스트 콘텐츠, 메타데이터 속성 집합, `MessageType` 을 캡슐화한다.
+
+<br/>
+
+**Spring AI Message API**
+
+![spring-ai13](/assets/img/spring-ai13.jpg)
+
+Chat Completion Endpoint는 대화의 역할에 따라 메시지 유형을 구분한다.
+
+예를 들어 OpenAI는 `system`, `user`, `function` , `assistant` 등의 역할별 메시지 유형을 인식한다.
+
+<br/>
+
+**Chat Options**
+
+AI 모델에 전달될 수 있는 옵션을 나타낸다. `ChatOptions` 는 `ModelOptions` 의 하위 인터페이스로, 다음과 같이 정의된다.
+
+```java
+public interface ChatOptions extends ModelOptions {
+
+	String getModel();
+	Float getFrequencyPenalty();
+	Integer getMaxTokens();
+	Float getPresencePenalty();
+	List<String> getStopSequences();
+	Float getTemperature();
+	Integer getTopK();
+	Float getTopP();
+	ChatOptions copy();
+
+}
+```
+
+<br/>
+
+다음은 Spring AI가 ChatModel 실행과 구성을 처리하는 흐름도이다.
+
+![spring-ai14](/assets/img/spring-ai14.jpg)
+
+1. Start-up Configuration : ChatModel/StreamingChatModel이 초기 설정된 옵션이다.
+2. Runtime Configuration : Prompt 객체에 런타임 옵션이 포함될 수 있으며, 이는 초기 설정을 덮어쓴다.
+3. Option Merging Process : 런타임 옵션이 있을 경우 우선 적용되어 병합된다.
+4. Input Processing : 입력을 모델 전용 포맷으로 변환한다.
+5. Output Processing : 모델 응답을 ChatResponse 형식으로 변환한다.
+
+<br/>
+
+#### 8.1.5. ChatResponse 인터페이스
+---
+
+```java
+public class ChatResponse implements ModelResponse<Generation> {
+
+    private final ChatResponseMetadata chatResponseMetadata;
+	private final List<Generation> generations;
+
+	@Override
+	public ChatResponseMetadata getMetadata() {...}
+
+    @Override
+	public List<Generation> getResults() {...}
+
+    // other methods omitted
+}
+```
+
+- `ChatResponse` 는 AI 모델의 출력 결과를 담고 있으며, 하나의 `Prompt` 요청에 대해 여러 개의 `Generation` 결과를 가질 수 있다.
+
+<br/>
+
+#### 8.1.6. Generation 인터페이스
+---
+
+```java
+public class Generation implements ModelResult<AssistantMessage> {
+
+	private final AssistantMessage assistantMessage;
+	private ChatGenerationMetadata chatGenerationMetadata;
+
+	@Override
+	public AssistantMessage getOutput() {...}
+
+	@Override
+	public ChatGenerationMetadata getMetadata() {...}
+
+    // other methods omitted
+}
+```
+
+- `Generation` 클래스는 `ModelResult` 를 상속하며, AI의 출력 메시지 및 관련 메타데이터를 표현한다.
+
+<br/>
+
+## 9.  Chat Model 비교
+---
+
+- Multimodality : 다양한 입력 처리 여부
+- Tool/Function Calling : 외부 도구 사용이나 함수 호출 가능 여부
+- Streaming : 스트리밍 응답 제공 여부
+- Retry : 자동 재시도 지원 여부
+- Observability : 모니터링 및 디버깅 기능 제공 여부
+- Built-in JSON : JSON 형식의 출력 지원 여부
+- Local deployment : 로컬 실행 가능 여부
+- OpenAI API Compability : 해당 모델이 Open AI API와 호환되는지 여부
+
+| Provider                                                                                                | Multimodality                                     | Tools/Functions                                                    | Streaming                                                          | Retry                                                              | Observability                                                      | Built-in JSON                                                      | Local                                                              | OpenAI API Compatible                                              |  
+| ------------------------------------------------------------------------------------------------------- | ------------------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------ | ------------------------------------------------------------------ | ------------------------------------------------------------------ | ------------------------------------------------------------------ | ------------------------------------------------------------------ | ------------------------------------------------------------------ |  
+| [Anthropic Claude](https://docs.spring.io/spring-ai/reference/api/chat/anthropic-chat.html)             | text, pdf, image                                  | O | O | O | O | | | |  
+| [Azure OpenAI](https://docs.spring.io/spring-ai/reference/api/chat/azure-openai-chat.html)              | text, image                                       | O | O | O | O | O | | O |  
+| [DeepSeek (OpenAI-proxy)](https://docs.spring.io/spring-ai/reference/api/chat/deepseek-chat.html)       | text                                              | | O | O | O | O | O | O |  
+| [Google VertexAI Gemini](https://docs.spring.io/spring-ai/reference/api/chat/vertexai-gemini-chat.html) | text, pdf, image, audio, video                    | O | O | O | O | O | | O |  
+| [Groq (OpenAI-proxy)](https://docs.spring.io/spring-ai/reference/api/chat/groq-chat.html)               | text, image                                       | O | O | O | O | | | O |  
+| [HuggingFace](https://docs.spring.io/spring-ai/reference/api/chat/huggingface.html)                     | text                                              | | | | | | | |  
+| [Mistral AI](https://docs.spring.io/spring-ai/reference/api/chat/mistralai-chat.html)                   | text, image                                       | O | O | O | O | O | | O |  
+| [MiniMax](https://docs.spring.io/spring-ai/reference/api/chat/minimax-chat.html)                        | text                                              | O | O | O | O | | |                                                                    |  
+| [Moonshot AI](https://docs.spring.io/spring-ai/reference/api/chat/moonshot-chat.html)                   | text                                              | | O | O | O | | |                                                                    |  
+| [NVIDIA (OpenAI-proxy)](https://docs.spring.io/spring-ai/reference/api/chat/nvidia-chat.html)           | text, image                                       | O | O | O | O | | | O |  
+| [OCI GenAI/Cohere](https://docs.spring.io/spring-ai/reference/api/chat/oci-genai/cohere-chat.html)      | text                                              | | | | O | | | |  
+| [Ollama](https://docs.spring.io/spring-ai/reference/api/chat/ollama-chat.html)                          | text, image                                       | O | O | O | O | O | O | O |  
+| [OpenAI](https://docs.spring.io/spring-ai/reference/api/chat/openai-chat.html)                          | In: text, image, audio Out: text, audio           | O | O | O | O | O | | O |  
+| [Perplexity (OpenAI-proxy)](https://docs.spring.io/spring-ai/reference/api/chat/perplexity-chat.html)   | text                                              | | O | O | O | | | O |  
+| [QianFan](https://docs.spring.io/spring-ai/reference/api/chat/qianfan-chat.html)                        | text                                              | | O | O | O | | | |  
+| [ZhiPu AI](https://docs.spring.io/spring-ai/reference/api/chat/zhipuai-chat.html)                       | text                                              | O | O | O | O | | | |  
+| [Amazon Bedrock Converse](https://docs.spring.io/spring-ai/reference/api/chat/bedrock-converse.html)    | text, image, video, docs (pdf, html, md, docx …) | O | O | O | O | | | |
 
 <br/>
 
