@@ -2033,6 +2033,208 @@ Flux<ChatResponse> responseStream = chatModel.stream(
 
 <br/>
 
+## 12. Chat Memory
+---
+
+LLM은 상태가 없기 때문에 이전 상호작용에 대한 정보를 유지하지 않는다. 이를 해결하기 위해 Spring AI는 LLM과의 여러 상호작용에서 정보를 저장하고 불러올 수 있는 채팅 메모리 기능을 제공한다.
+
+메시지의 실제 저장은 `ChatMemoryRepository` 가 담당하며, 이 저장소는 메시지를 저장하고 검색하는 역할만 한다. 어떤 메시지를 유지하고 언제 제거할지는 `ChatMemory` 구현체에 따라 달라진다.
+
+<br/>
+
+메모리 유형을 선택하기 전에, 채팅 메모리와 채팅 히스토리의 차이를 이해하는 것이 중요하다.
+
+- 채팅 메모리 : LLM이 대화 중 문맥을 유지하기 위해 보유하고 사용하는 정보이다.
+- 채팅 히스토리 : 사용자와 모델 간에 주고받은 전체 대화 기록을 포함한 모든 메시지이다.
+
+<br/>
+
+`ChatMemory` 추상화는 채팅 메모리를 관리하기 위해 설계되었다. 현재 대화의 문맥과 관련된 메시지를 저장하고 검색할 수 있도록 해준다. 그러나 전체 채팅 히스토리를 저장하는 용도로는 적합하지 않다.
+
+<br/>
+
+### 12.1. 빠른 시작
+---
+
+`ChatMemory` 빈을 자동으로 구성해준다. 기본적으로 메모리 내 저장소(`InMemoryChatMemoryRepository`)를 사용하고, 대화 기록을 관리하기 위해 `MessageWindowChatMemory` 구현체를 사용한다.
+
+```java
+@Autowired
+ChatMemory chatMemory;
+```
+
+<br/>
+
+### 12.2. Memory Types
+---
+
+`MessageWindowChatMemory` 는 지정된 최대 크기만큼의 메시지 윈도우를 유지한다. 기본 윈도우 크기는 20개의 메시지이다.
+
+```java
+MessageWindowChatMemory memory = MessageWindowChatMemory.builder()
+    .maxMessages(10)
+    .build();
+```
+
+<br/>
+
+### 12.3. Memory Storage
+---
+
+Spring AI는 채팅 메모리를 저장하기 위한 `ChatMemoryRepository` 추상화를 제공한다.
+
+<br/>
+
+#### 12.3.1. In-Memory Repository
+---
+
+`InMemoryChatMemoryRepository` 는 `ConcurrentHashMap` 을 사용해 메시지를 메모리 내에 저장한다. 다른 저장소가 설정되어 있지 않은 경우, Spring AI는 기본적으로 `InMemoryChatMemoryRepository` 타입의 `ChatMemoryRepository` 빈을 자동으로 구성한다.
+
+```java
+// 자동 등록된 빈 주입
+@Autowired
+ChatMemoryRepository chatMemoryRepository;
+
+// 직접 인스턴스를 생성하고 사용할 수도 있다.
+ChatMemoryRepository repository = new InMemoryChatMemoryRepository();
+```
+
+<br/>
+
+#### 12.3.2. JdbcChatMemoryRepository
+---
+
+관계형 데이터베이스에 메시지를 저장하는 구현체이다. 영구적인 메시지 저장이 필요한 애플리케이션에 적합하다.
+
+먼저 의존성을 추가한다.
+
+```groovy
+dependencies {
+    implementation 'org.springframework.ai:spring-ai-starter-model-chat-memory-repository-jdbc'
+}
+```
+
+<br/>
+
+자동 구성을 사용하거나 수동 설정을 할 수 있다.
+
+```java
+// 자동 구성
+@Autowired
+JdbcChatMemoryRepository chatMemoryRepository;
+
+ChatMemory chatMemory = MessageWindowChatMemory.builder()
+    .chatMemoryRepository(chatMemoryRepository)
+    .maxMessages(10)
+    .build();
+
+// 수동 생성
+ChatMemoryRepository chatMemoryRepository = JdbcChatMemoryRepository.builder()
+    .jdbcTemplate(jdbcTemplate)
+    .dialect(new PostgresChatMemoryDialect())
+    .build();
+```
+- 지원되는 데이터베이스 : PostgreSQL, MySQL/MariaDB, SQL Server, HSQLDB
+
+<br/>
+
+**구성 속성**
+
+|**속성**|**설명**|**기본값**|
+|---|---|---|
+|spring.ai.chat.memory.repository.jdbc.initialize-schema|스키마 초기화 시점 (embedded, always, never)|embedded|
+|spring.ai.chat.memory.repository.jdbc.schema|초기화에 사용할 스키마 스크립트 경로|classpath:org/springframework/ai/chat/memory/repository/jdbc/schema-@@platform@@.sql|
+|spring.ai.chat.memory.repository.jdbc.platform|@@platform@@ 치환에 사용할 플랫폼 이름|자동 감지|
+
+<br/>
+
+### 12.4. 사용 방법
+---
+
+ChatClient API를 사용할 때, 대화 문맥을 유지하려면 `ChatMemory` 구현체를 함께 제공할 수 있다.
+
+<br/>
+
+Spring AI는 `ChatClient` 의 메모리 동작을 구성할 수 있는 여러 가지 내장 `Advisor` 를 제공한다.
+
+1. `MessageChatMemoryAdvisor`
+    1. 제공된 `ChatMemory` 를 사용하여 대화 메모리를 관리한다.
+    2. 매 상호작용마다 메모리에서 대화 내역을 가져와 메시지 컬렉션 형태로 프롬프트에 포함시킨다.
+2. `PromptChatMemoryAdvisor`
+    1. 제공된 `ChatMemory` 를 사용하여 대화 메모리를 관리한다.
+    2. 매 상호작용마다 메모리에서 대화 내역을 가져와 시스템 프롬프트에 일반 텍스트로 추가한다.
+3. `VectorStoreChatMemoryAdvisor`
+    1. `VectorStore` 구현체를 사용하여 대화 메모리를 관리한다.
+    2. 매 상호작용마다 벡터 저장소에서 대화 내역을 가져와 시스템 메시지에 일반 텍스트로 추가한다.
+
+<br/>
+
+**MessageChatMemoryAdvisor 와 MessageWindowChatMemory 사용 예시**
+
+```java
+ChatMemory chatMemory = MessageWindowChatMemory.builder().build();
+
+ChatClient chatClient = ChatClient.builder(chatModel)
+    .defaultAdvisors(MessageChatMemoryAdvisor.builder(chatMemory).build())
+    .build();
+```
+
+대화 요청 시, 메모리는 지정한 `conversationId` 를 기준으로 자동 관리된다.
+
+```java
+String conversationId = "007";
+
+chatClient.prompt()
+    .user("Do I have license to code?")
+    .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, conversationId))
+    .call()
+    .content();
+```
+
+<br/>
+
+#### 12.4.1. PromptChatMemoryAdvisor
+---
+
+`PromptChatMemoryAdvisor` 는 기본 템플릿을 사용해 시스템 메시지에 메모리를 추가한다.
+
+<br/>
+
+#### 12.4.2. VectorStoreChatMemoryAdvisor
+---
+
+`VectorStoreChatMemoryAdvisor` 도 기본 템플릿을 사용하여 시스템 메시지에 불러온 대화 메모리를 추가한다.
+
+<br/>
+
+<br/>
+
+#### 12.4.3. ChatModel에서 직접 메모리 관리
+---
+
+`ChatClient` 대신 `ChatModel` 을 사용할 경우, 메모리를 수동으로 관리해야 한다.
+
+```java
+ChatMemory chatMemory = MessageWindowChatMemory.builder().build();
+String conversationId = "007";
+
+// 첫 번째 상호작용
+UserMessage userMessage1 = new UserMessage("My name is James Bond");
+chatMemory.add(conversationId, userMessage1);
+ChatResponse response1 = chatModel.call(new Prompt(chatMemory.get(conversationId)));
+chatMemory.add(conversationId, response1.getResult().getOutput());
+
+// 두 번째 상호작용
+UserMessage userMessage2 = new UserMessage("What is my name?");
+chatMemory.add(conversationId, userMessage2);
+ChatResponse response2 = chatModel.call(new Prompt(chatMemory.get(conversationId)));
+chatMemory.add(conversationId, response2.getResult().getOutput());
+
+// 응답 내용에는 "James Bond"가 포함될 것
+```
+
+<br/>
+
 ## Reference
 ---
 
