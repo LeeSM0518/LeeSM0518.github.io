@@ -1992,6 +1992,47 @@ g}
 
 <br/>
 
+### 11.6. 수동 설정
+---
+
+수동으로 연결하고 싶을 경우 다음과 같이 진행한다.
+
+먼저 의존을 추가한다
+
+```groovy
+dependencies {
+    implementation 'org.springframework.ai:spring-ai-openai'
+}
+```
+
+<br/>
+
+**OpenAiChatModel 직접 생성**
+
+```java
+var openAiApi = OpenAiApi.builder()
+    .apiKey(System.getenv("OPENAI_API_KEY"))
+    .build();
+
+var openAiChatOptions = OpenAiChatOptions.builder()
+    .model("gpt-3.5-turbo")
+    .temperature(0.4)
+    .maxTokens(200)
+    .build();
+
+var chatModel = new OpenAiChatModel(openAiApi, openAiChatOptions);
+
+// 동기 호출
+ChatResponse response = chatModel.call(
+    new Prompt("Generate the names of 5 famous pirates."));
+
+// 스트리밍 호출
+Flux<ChatResponse> responseStream = chatModel.stream(
+    new Prompt("Generate the names of 5 famous pirates."));
+```
+
+<br/>
+
 ## Reference
 ---
 
