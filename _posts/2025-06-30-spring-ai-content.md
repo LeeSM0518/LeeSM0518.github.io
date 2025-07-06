@@ -2352,6 +2352,128 @@ System.out.println(response);
 
 <br/>
 
+### 13.2. 개요
+---
+
+![spring-ai15](/assets/img/spring-ai15.jpg)
+
+**도구 호출의 주요 동작 순서**
+
+1. 도구 정의 포함 : 채팅 요청에 도구 정의(Tool Definition)를 포함시킨다. 도구 정의는 이름(name), 설명(description), 입력 파라미터의 스키마(shema)로 구성된다.
+2. 도구 호출 요청 : 모델이 도구를 호출하기로 결정하면, 정의된 스키마에 맞춘 입력 파라미터와 도구 이름을 포함한 응답을 보낸다.
+3. 도구 실행 : 애플리케이션은 도구 이름을 기반으로 해당 도구를 찾아, 모델이 제공한 입력 파라미터로 실행한다.
+4. 결과 처리 : 도구 실행 결과는 애플리케이션에서 처리된다.
+5. 결과 반환 : 도구 실행 결과를 모델에 다시 전달한다.
+6. 최종 응답 생성 : 모델은 도구 실행 결과를 추가적인 컨텍스트로 활용하여 최종 응답을 생성한다.
+
+<br/>
+
+### 13.3. 메서드를 도구로 사용하기
+---
+
+Spring AI는 메서드를 기반으로 도구(`ToolCallback`)를 지정하는 두 가지 방법을 제공한다.
+1. 선언적 방식 : `@Tool` 어노테이션 사용
+2. 프로그래밍 방식 : `MethodToolCallback` 클래스를 사용하여 직접 구성
+
+<br/>
+
+#### 13.3.1. 선언적 방식: @Tool
+---
+
+아래처럼 메서드에 `@Tool` 어노테이션을 붙이면 해당 메서드는 모델이 사용할 수 있는 도구로 등록된다.
+
+```java
+class DateTimeTools {
+
+    @Tool(description = "Get the current date and time in the user's timezone")
+    String getCurrentDateTime() {
+        return LocalDateTime.now().atZone(LocaleContextHolder.getTimeZone().toZoneId()).toString();
+    }
+
+}
+```
+
+- `name` : 도구 이름 (생략 시 메서드 이름 사용). 중복 불가
+- `description` : 도구 설명. 자세히 설명해야 모델이 언제/어떻게 호출할지 이해할 수 있음
+- `returnDirect` : 도구 실행 결과를 모델이 아닌 클라이언트에게 직접 반환할지 여부
+- `resultConverter` : 도구 실행 결과를 문자열로 변환해 모델에 전달하는 방식 지정
+
+<br/>
+
+다음과 같이 입력 파라미터에 설명을 추가할 수 있다.
+
+```java
+class DateTimeTools {
+
+    @Tool(description = "Set a user alarm for the given time")
+    void setAlarm(@ToolParam(description = "Time in ISO-8601 format") String time) {
+        LocalDateTime alarmTime = LocalDateTime.parse(time, DateTimeFormatter.ISO_DATE_TIME);
+        System.out.println("Alarm set for " + alarmTime);
+    }
+
+}
+```
+- `description` : 입력값 설명
+- `required` : 필수 여부 (기본값은 true)
+- `@Nullable` 과 함께 사용하면 선택값으로 처리된다.
+
+<br/>
+
+**ChatClient에 도구 추가**
+
+```java
+ChatClient.create(chatModel)
+    .prompt("What day is tomorrow?")
+    .tools(new DateTimeTools()) // 선언적 방식 사용
+    .call()
+    .content();
+```
+
+<br/>
+
+#### 13.3.2. 프로그래밍 방식: MethodToolCallback
+---
+
+```java
+class DateTimeTools {
+
+    String getCurrentDateTime() {
+        return LocalDateTime.now().atZone(LocaleContextHolder.getTimeZone().toZoneId()).toString();
+    }
+
+}
+```
+
+<br/>
+
+메서드를 기반으로 직접 `MethodToolCallback` 인스턴스를 생성할 수 있다.
+
+```java
+Method method = ReflectionUtils.findMethod(DateTimeTools.class, "getCurrentDateTime");
+
+ToolCallback toolCallback = MethodToolCallback.builder()
+    .toolDefinition(ToolDefinition.builder(method)
+        .description("Get the current date and time in the user's timezone")
+        .build())
+    .toolMethod(method)
+    .toolObject(new DateTimeTools()) // static 메서드면 생략 가능
+    .build();
+```
+
+<br/>
+
+#### 13.3.3. 제한 사항
+---
+
+아래 타입은 메서드 파라미터나 반환 타입으로 사용할 수 없다.
+
+1. `Optional`
+2. 비동기 타입 (`CompletableFuture`, `Future`)
+3. 리액티브 타입 (`Mono` , `Flux` , `Flow`)
+4. 함수형 타입 (`Function`, `Supplier` , `Consumer`)
+
+<br/>
+
 ## Reference
 ---
 
