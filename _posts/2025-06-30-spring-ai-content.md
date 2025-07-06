@@ -2235,6 +2235,123 @@ chatMemory.add(conversationId, response2.getResult().getOutput());
 
 <br/>
 
+## 13. Tool Calling
+---
+
+도구 호출은 모델이 API나 도구 집합과 상호작용하여 기능을 확장할 수 있게 해주는 AI 애플리케이션의 일반적인 패턴이다.
+
+도구는 주로 다음과 같은 목적으로 사용된다.
+
+- 정보 검색
+    - 이는 DB, 웹 서비스, 파일 시스템, 웹 검색과 같은 외부 소스에서 정보를 검색하는 데 사용된다.
+    - 이는 RAG(Retrieval Argumented Generation)에 사용될 수 있다.
+- 작업 수행
+    - 이메일 보내기, 데이터베이스에 새 레코드 생성 등 소프트웨어 시스템에서 작업을 수행하는 데 사용된다.
+
+<br/>
+
+도구 호출은 클라이언트 애플리케이션이 도구 호출 로직을 제공해야 한다. 모델은 단지 도구 호출 요청과 입력 인수를 제공할 수 있을 뿐이며, 애플리케이션이 해당 입력 인수로 도구를 호출하고 결과를 반환하는 역할을 담당한다. 모델은 도구로 제공된 API에 직접 접근할 수 없으며, 이는 중요한 보안 고려 사항이다.
+
+<br/>
+
+Spring AI는 도구 정의, 모델의 도구 호출 요청 처리, 도구 호출 실행을 위한 편리한 API를 제공한다.
+
+<br/>
+
+### 13.1. 빠른 시작
+---
+
+#### 13.1.1. 정보 검색
+---
+
+AI 모델은 실시간 정보에 접근할 수 없으므로, 현재 날짜나 날씨 예보와 같은 실시간 정보에 대한 대답을 할 수 없다. 그러나 해당 정보를 검색할 수 있는 도구를 제공하면, 모델은 이 도구를 호출하여 실시간 정보에 접근할 수 있다.
+
+<br/>
+
+도구는 `@Tool` 어노테이션을 통해 정의되며, 모델이 언제 이 도구를 호출해야 하는지 이해할 수 있도록 설명도 함께 제공한다.
+
+```java
+import java.time.LocalDateTime;
+import org.springframework.ai.tool.annotation.Tool;
+import org.springframework.context.i18n.LocaleContextHolder;
+
+class DateTimeTools {
+
+    @Tool(description = "Get the current date and time in the user's timezone")
+    String getCurrentDateTime() {
+        return LocalDateTime.now().atZone(LocaleContextHolder.getTimeZone().toZoneId()).toString();
+    }
+
+}
+```
+
+<br/>
+
+`ChatClient` 를 사용하여 모델과 상호작용 하므로 `tools()` 메서드를 통해 `DateTimeTools` 인스턴스를 모델에 제공하면, 모델이 현재 날짜와 시간을 알아야 할 때 해당 도구를 호출하게 된다.
+
+내부적으로는 `ChatClient` 가 도구를 호출하고 그 결과를 모델에 반환하여, 모델이 최종 응답을 생성할 수 있도록 돕는다.
+
+```java
+ChatModel chatModel = // ...
+
+String response = ChatClient.create(chatModel)
+        .prompt("What day is tomorrow?")
+        .tools(new DateTimeTools())
+        .call()
+        .content();
+
+System.out.println(response);
+```
+
+<br/>
+
+#### 13.1.2. 작업 수행
+---
+
+AI 모델은 특정 목표를 달성하기 위한 계획을 생성할 수 있다. 하지만 계획을 실제로 실행할 수는 없다. 이때 도구가 사용되며, 실제로 실행할 수 있도록 도와준다.
+
+예시로 특정 시간이 됐을 때 메시지를 콘솔에 출력하는 도구를 정의해보자.
+
+```java
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import org.springframework.ai.tool.annotation.Tool;
+import org.springframework.context.i18n.LocaleContextHolder;
+
+class DateTimeTools {
+
+    @Tool(description = "Get the current date and time in the user's timezone")
+    String getCurrentDateTime() {
+        return LocalDateTime.now().atZone(LocaleContextHolder.getTimeZone().toZoneId()).toString();
+    }
+
+    @Tool(description = "Set a user alarm for the given time, provided in ISO-8601 format")
+    void setAlarm(String time) {
+        LocalDateTime alarmTime = LocalDateTime.parse(time, DateTimeFormatter.ISO_DATE_TIME);
+        System.out.println("Alarm set for " + alarmTime);
+    }
+
+}
+```
+
+<br/>
+
+이제 두 도구를 모델이 사용할 수 있도록 설정한다. 이로써 "10분 후에 알람을 설정해줘" 라는 사용자의 요청을 처리할 수 있게 된다.
+
+```java
+ChatModel chatModel = // ...
+
+String response = ChatClient.create(chatModel)
+        .prompt("Can you set an alarm 10 minutes from now?")
+        .tools(new DateTimeTools())
+        .call()
+        .content();
+
+System.out.println(response);
+```
+
+<br/>
+
 ## Reference
 ---
 
