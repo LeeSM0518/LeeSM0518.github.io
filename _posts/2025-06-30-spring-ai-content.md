@@ -2546,6 +2546,27 @@ ToolCallback callback = MethodToolCallback.builder()
 ```
 - 다수의 도구가 동시에 호출되는 경우 모든 도구의 `returnDirect` 가 `true` 여야 직접 반환된다.
 
+<br/>
+
+### 13.6. 도구 실행
+---
+
+이는 도구를 호출하고 결과를 반환하는 프로세스를 말하며, `ToolCallingManager` 인터페이스가 담당한다.
+
+<br/>
+
+#### 13.6.1. 프레임워크 제어 방식
+---
+
+Spring AI가 도구 호출을 자동으로 감지하고 실행하며, 결과를 모델에 반환한다. 모든 처리는 `ChatModel` 이 `ToolCallingManager` 를 사용해 자동 처리한다.
+
+![spring-ai18](/assets/img/spring-ai18.jpg)
+
+1. 사용자가 도구 정의와 함께 `Prompt` 전송
+2. 모델이 도구를 호출할 필요가 있다고 판단하면 도구 호출 요청(ChatResponse) 전송
+3. `ChatModel` 이 `ToolCallingManager` 에게 실행 요청
+4. 도구 실행 결과가 `ChatModel` 로 반한됨
+5. 모델은 결과를 바탕으로 최종 응답 생성 후 사용자에게 전달
 
 <br/>
 
