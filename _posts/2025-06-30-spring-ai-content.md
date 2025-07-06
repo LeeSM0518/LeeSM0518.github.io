@@ -29,10 +29,10 @@ ollama start
 
 <br/>
 
-ollama로 deepseek-r1 모델을 다운받고 실행한다.
+ollama로 llama3.1 모델을 다운받고 실행한다.
 
 ```sh
-ollama run deepseek-r1
+ollama run llama3.1
 ```
 
 <br/>
