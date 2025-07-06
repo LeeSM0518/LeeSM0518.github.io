@@ -1721,6 +1721,277 @@ Flux<ChatResponse> response = chatModel.stream(
 
 <br/>
 
+## 11. OpenAI Chat
+---
+
+### 11.1. 사전 준비 사항
+---
+
+1. OpenAI에서 계정을 생성한다.
+2. API 키 페이지에서 API 토큰을 발급받는다.
+
+`spring.ai.openai.api-key` 라는 구성 속성을 통해 API 키를 설정할 수 있다.
+
+```
+spring.ai.openai.api-key=<your-openai-api-key>
+```
+
+<br/>
+
+### 11.2. 자동 구성
+---
+
+다음 의존을 추가하여 자동으로 구성할 수 있다.
+
+```xml
+<dependency>
+    <groupId>org.springframework.ai</groupId>
+    <artifactId>spring-ai-starter-model-openai</artifactId>
+</dependency>
+```
+
+<br/>
+
+### 11.3. 채팅 속성
+---
+
+#### 11.3.1. Retry 설정
+---
+
+|**속성**|**설명**|**기본값**|
+|---|---|---|
+|spring.ai.retry.max-attempts|최대 재시도 횟수|10|
+|spring.ai.retry.backoff.initial-interval|최초 재시도 대기 시간|2초|
+|spring.ai.retry.backoff.multiplier|재시도 대기 시간 증가 비율|5|
+|spring.ai.retry.backoff.max-interval|최대 재시도 대기 시간|3분|
+|spring.ai.retry.on-client-errors|false일 경우, 4xx 응답에 대해 재시도하지 않고 예외 발생|false|
+|spring.ai.retry.exclude-on-http-codes|재시도를 하지 않을 HTTP 상태 코드 목록|없음|
+|spring.ai.retry.on-http-codes|재시도를 유발할 HTTP 상태 코드 목록|없음|
+
+<br/>
+
+#### 11.3.2. Connection 설정
+---
+
+|**속성**|**설명**|**기본값**|
+|---|---|---|
+|spring.ai.openai.base-url|연결할 OpenAI API URL|https://api.openai.com|
+|spring.ai.openai.api-key|OpenAI API 키|(필수 입력)|
+|spring.ai.openai.organization-id|요청에 사용할 조직 ID (선택사항)|없음|
+|spring.ai.openai.project-id|요청에 사용할 프로젝트 ID (선택사항)|없음|
+
+<br/>
+
+#### 11.3.3. Chat Model 설정
+---
+
+**활성화 설정**
+
+|**성**|**설명**|**기본값**|
+|---|---|---|
+|spring.ai.model.chat|사용할 채팅 모델 지정 (openai 또는 none)|openai|
+
+<br/>
+
+**모델 및 옵션 설정**
+
+|**속성**|**설명**|**기본값**|
+|---|---|---|
+|spring.ai.openai.chat.options.model|사용할 모델 이름 (예: gpt-4o, gpt-3.5-turbo)|gpt-4o-mini|
+|spring.ai.openai.chat.options.temperature|창의성 조절 (0.0~2.0)|0.8|
+|spring.ai.openai.chat.options.frequencyPenalty|반복 억제 정도 (-2.0~2.0)|0.0|
+|spring.ai.openai.chat.options.presencePenalty|새 주제 유도 정도 (-2.0~2.0)|없음|
+|spring.ai.openai.chat.options.maxCompletionTokens|최대 생성 토큰 수 (입력+출력 포함)|없음|
+|spring.ai.openai.chat.options.n|생성할 응답 개수|1|
+|spring.ai.openai.chat.options.store|응답 저장 여부|false|
+|spring.ai.openai.chat.options.metadata|사용자 정의 메타데이터|빈 맵|
+|spring.ai.openai.chat.options.topP|토큰 상위 누적 확률 선택|없음|
+|spring.ai.openai.chat.options.stop|텍스트 생성을 중지할 시퀀스 (최대 4개)|없음|
+|spring.ai.openai.chat.options.seed|반복 요청 시 동일 결과를 위한 시드 값 (베타)|없음|
+
+<br/>
+
+**JSON 응답 형식 설정**
+
+|**속성**|**설명**|
+|---|---|
+|spring.ai.openai.chat.options.responseFormat.type|응답 형식 (예: JSON_OBJECT, JSON_SCHEMA)|
+|spring.ai.openai.chat.options.responseFormat.schema|JSON 스키마 (type이 JSON_SCHEMA일 경우 필수)|
+|spring.ai.openai.chat.options.responseFormat.name|응답 스키마 이름|
+|spring.ai.openai.chat.options.responseFormat.strict|스키마 준수 강도 설정|
+
+<br/>
+
+**툴 사용 관련**
+
+|**속성**|**설명**|
+|---|---|
+|spring.ai.openai.chat.options.tools|사용할 툴(함수) 목록|
+|spring.ai.openai.chat.options.toolChoice|툴 사용 방식 (예: auto, none, 특정 함수)|
+|spring.ai.openai.chat.options.functions|단일 프롬프트에 사용할 함수 이름 목록|
+|spring.ai.openai.chat.options.parallel-tool-calls|병렬 함수 호출 허용 여부 (true)|
+|spring.ai.openai.chat.options.proxy-tool-calls|Spring이 아닌 클라이언트 측에서 함수 실행할지 여부 (false)|
+
+<br/>
+
+**기타 설정**
+
+|**속성**|**설명**|**기본값**|
+|---|---|---|
+|spring.ai.openai.chat.options.user|고유 사용자 ID (악용 방지용)|없음|
+|spring.ai.openai.chat.options.stream-usage|스트리밍 중 사용량 정보 포함 여부|false|
+|spring.ai.openai.chat.options.http-headers|추가 HTTP 헤더 설정 (예: Authorization)|없음|
+
+<br/>
+
+### 11.4. 구조화된 출력
+---
+
+OpenAI는 JSON Schema를 기반으로 모델이 응답을 구조화된 형식으로 생성하도록 보장하는 Structured Outputs API를 제공한다.
+
+<br/>
+
+#### 11.4.1. JSON Schema 기반 응답 구성 예시
+---
+
+```java
+String jsonSchema = """
+        {
+            "type": "object",
+            "properties": {
+                "steps": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "explanation": { "type": "string" },
+                            "output": { "type": "string" }
+                        },
+                        "required": ["explanation", "output"],
+                        "additionalProperties": false
+                    }
+                },
+                "final_answer": { "type": "string" }
+            },
+            "required": ["steps", "final_answer"],
+            "additionalProperties": false
+        }
+        """;
+
+Prompt prompt = new Prompt("how can I solve 8x + 7 = -23",
+        OpenAiChatOptions.builder()
+            .model(ChatModel.GPT_4_O_MINI)
+            .responseFormat(new ResponseFormat(ResponseFormat.Type.JSON_SCHEMA, this.jsonSchema))
+            .build());
+
+ChatResponse response = this.openAiChatModel.call(this.prompt);
+```
+
+<br/>
+
+#### 11.4.2. 도메인 객체 기반 자동 변환
+---
+
+```kotlin
+data class MathReasoning(
+	val steps: Steps,
+	@get:JsonProperty(value = "final_answer") val finalAnswer: String) {
+
+	data class Steps(val items: Array<Items>) {
+
+		data class Items(
+			val explanation: String,
+			val output: String)
+	}
+}
+
+val outputConverter = BeanOutputConverter(MathReasoning::class.java)
+
+val jsonSchema = outputConverter.jsonSchema;
+
+val prompt = Prompt("how can I solve 8x + 7 = -23",
+	OpenAiChatOptions.builder()
+		.model(ChatModel.GPT_4_O_MINI)
+		.responseFormat(ResponseFormat(ResponseFormat.Type.JSON_SCHEMA, jsonSchema))
+		.build())
+
+val response = openAiChatModel.call(prompt)
+val content = response.getResult().getOutput().getContent()
+
+val mathReasoning = outputConverter.convert(content)
+```
+- Kotlin의 경우 널 여부와 기본값에 따라 필수 여부가 추론되므로 `@get:JsonProperty(required = true)` 는 불필요하다.
+
+<br/>
+
+#### 11.4.3. 설정 파일 기반 구성
+---
+
+구성 파일을 통해 구조화된 출력 설정이 가능하다.
+
+```
+spring.ai.openai.api-key=YOUR_API_KEY
+spring.ai.openai.chat.options.model=gpt-4o-mini
+
+spring.ai.openai.chat.options.response-format.type=JSON_SCHEMA
+spring.ai.openai.chat.options.response-format.name=MySchemaName
+spring.ai.openai.chat.options.response-format.schema={"type":"object","properties":{"steps":{"type":"array","items":{"type":"object","properties":{"explanation":{"type":"string"},"output":{"type":"string"}},"required":["explanation","output"],"additionalProperties":false}},"final_answer":{"type":"string"}},"required":["steps","final_answer"],"additionalProperties":false}
+spring.ai.openai.chat.options.response-format.strict=true
+```
+
+<br/>
+
+### 11.5. 사용 예시
+---
+
+먼저 의존을 추가한다
+
+```xml
+dependencies {
+    implementation 'org.springframework.ai:spring-ai-starter-model-openai'
+}
+```
+
+<br/>
+
+`application.properties` 구성한다
+
+```
+spring.ai.openai.api-key=YOUR_API_KEY
+spring.ai.openai.chat.options.model=gpt-4o
+spring.ai.openai.chat.options.temperature=0.7
+```
+
+<br/>
+
+컨트롤러를 구성한다
+
+```java
+@RestController
+public class ChatController {
+
+    private final OpenAiChatModel chatModel;
+
+    @Autowired
+    public ChatController(OpenAiChatModel chatModel) {
+        this.chatModel = chatModel;
+    }
+
+    @GetMapping("/ai/generate")
+    public Map<String, String> generate(@RequestParam(value = "message", defaultValue = "Tell me a joke") String message) {
+        return Map.of("generation", this.chatModel.call(message));
+    }
+
+    @GetMapping("/ai/generateStream")
+    public Flux<ChatResponse> generateStream(@RequestParam(value = "message", defaultValue = "Tell me a joke") String message) {
+        Prompt prompt = new Prompt(new UserMessage(message));
+        return this.chatModel.stream(prompt);
+    }
+g}
+```
+
+<br/>
+
 ## Reference
 ---
 
