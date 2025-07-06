@@ -1384,6 +1384,343 @@ public class Generation implements ModelResult<AssistantMessage> {
 
 <br/>
 
+## 10. Ollama Chat
+---
+
+Spring AI는 Ollama 채팅 통합을 위한 Spring Boot 자동 구성을 제공한다. 아래와 같이 의존성을 추가하면 된다.
+
+```xml
+<dependency>
+   <groupId>org.springframework.ai</groupId>
+   <artifactId>spring-ai-starter-model-ollama</artifactId>
+</dependency>
+```
+
+<br/>
+
+### 10.1. 기본 설정
+---
+
+|**속성(Property)**|**설명(Description)**|**기본값(Default)**|
+|---|---|---|
+|spring.ai.ollama.base-url|Ollama API 서버가 실행 중인 기본 URL|localhost:11434|
+
+<br/>
+
+다음은 Ollama 통합 초기화 및 모델 자동 다운로드(Auto-pulling)에 관련된 속성들입니다:
+
+|**속성(Property)**|**설명(Description)**|**기본값(Default)**|
+|---|---|---|
+|spring.ai.ollama.init.pull-model-strategy|애플리케이션 시작 시 모델을 다운로드할지 여부 및 방식 설정|never|
+|spring.ai.ollama.init.timeout|모델 다운로드 시 대기할 최대 시간|5m|
+|spring.ai.ollama.init.max-retries|모델 다운로드 작업의 최대 재시도 횟수|0|
+|spring.ai.ollama.init.chat.include|초기화 작업에 챗용 모델 포함 여부|true|
+|spring.ai.ollama.init.chat.additional-models|기본 속성 외에 추가로 초기화할 모델 목록|[]|
+
+<br/>
+
+### 10.2. 채팅 설정
+---
+
+- **활성화**: spring.ai.model.chat=ollama (기본값은 활성화 상태)
+- **비활성화**: spring.ai.model.chat=none (또는 ollama와 일치하지 않는 어떤 값)
+
+<br/>
+
+#### 10.2.1. 주요 구성 속성
+
+spring.ai.ollama.chat.options는 Ollama 챗 모델을 구성하기 위한 속성 접두어입니다. 이 속성은 모델 이름, 응답 형식, 메모리 유지 시간 등의 고급 요청 파라미터와 Ollama 모델 세부 옵션을 포함합니다.
+
+|**속성**|**설명**|**기본값**|
+|---|---|---|
+|spring.ai.ollama.chat.options.model|사용할 모델 이름|mistral|
+|spring.ai.ollama.chat.options.format|응답 형식 (json만 허용됨)|-|
+|spring.ai.ollama.chat.options.keep_alive|모델을 메모리에 유지할 시간|5m|
+
+<br/>
+
+#### 10.2.2. 고급 요청 및 성능 최적화 옵션
+
+|**속성**|**설명**|**기본값**|
+|---|---|---|
+|spring.ai.ollama.chat.options.numa|NUMA 사용 여부|false|
+|spring.ai.ollama.chat.options.num-ctx|컨텍스트 윈도우 크기|2048|
+|spring.ai.ollama.chat.options.num-batch|최대 배치 크기|512|
+|spring.ai.ollama.chat.options.num-gpu|GPU에 보낼 레이어 수 (-1은 자동)|-1|
+|spring.ai.ollama.chat.options.main-gpu|다중 GPU 사용 시 작은 텐서를 처리할 GPU 인덱스|0|
+|spring.ai.ollama.chat.options.low-vram|VRAM 사용 최소화 옵션|false|
+|spring.ai.ollama.chat.options.f16-kv|16비트 키-값 캐시 사용|true|
+|spring.ai.ollama.chat.options.logits-all|모든 토큰에 대한 로짓 반환 여부|-|
+|spring.ai.ollama.chat.options.vocab-only|단어 사전만 로드, 가중치는 로드하지 않음|-|
+|spring.ai.ollama.chat.options.use-mmap|메모리 매핑 사용 여부|null|
+|spring.ai.ollama.chat.options.use-mlock|모델을 메모리에 고정 (swap 방지)|false|
+|spring.ai.ollama.chat.options.num-thread|사용할 스레드 수 (0 = 자동 감지)|0|
+|spring.ai.ollama.chat.options.num-keep|이전 토큰 수 유지|4|
+|spring.ai.ollama.chat.options.seed|텍스트 생성을 위한 랜덤 시드 설정|-1|
+|spring.ai.ollama.chat.options.num-predict|최대 생성 토큰 수 (-1=무제한, -2=컨텍스트 채우기)|-1|
+
+<br/>
+
+#### 10.2.3. 생성 다양성 및 제어 관련 옵션
+
+|**속성**|**설명**|**기본값**|
+|---|---|---|
+|spring.ai.ollama.chat.options.top-k|높은 값 = 다양성 증가, 낮은 값 = 보수적|40|
+|spring.ai.ollama.chat.options.top-p|top-k와 함께 다양성 조절|0.9|
+|spring.ai.ollama.chat.options.min-p|가장 가능성 높은 토큰 기준 필터 임계값|0.0|
+|spring.ai.ollama.chat.options.tfs-z|덜 가능성 있는 토큰 영향 감소|1.0|
+|spring.ai.ollama.chat.options.typical-p|전형적 샘플링 확률|1.0|
+|spring.ai.ollama.chat.options.repeat-last-n|반복 방지를 위해 참조할 이전 토큰 수|64|
+|spring.ai.ollama.chat.options.temperature|창의성 조절 (높을수록 창의적)|0.8|
+|spring.ai.ollama.chat.options.repeat-penalty|반복에 대한 패널티 강도|1.1|
+|spring.ai.ollama.chat.options.presence-penalty|새로운 단어 등장 유도|0.0|
+|spring.ai.ollama.chat.options.frequency-penalty|자주 등장하는 단어 억제|0.0|
+
+<br/>
+
+#### 10.2.4. Mirostat 관련 옵션
+
+|**속성**|**설명**|**기본값**|
+|---|---|---|
+|spring.ai.ollama.chat.options.mirostat|Mirostat 샘플링 활성화 (0=비활성화, 1=Mirostat 1.0, 2=Mirostat 2.0)|0|
+|spring.ai.ollama.chat.options.mirostat-tau|집중도 vs 다양성 조절|5.0|
+|spring.ai.ollama.chat.options.mirostat-eta|학습률 (응답 조정 속도)|0.1|
+
+<br/>
+
+#### 10.2.5. 기타 옵션
+
+|**속성**|**설명**|**기본값**|
+|---|---|---|
+|spring.ai.ollama.chat.options.penalize-newline|줄바꿈 문자 패널티 적용 여부|true|
+|spring.ai.ollama.chat.options.stop|텍스트 생성을 멈출 패턴 지정|-|
+|spring.ai.ollama.chat.options.functions|사용할 함수 이름 목록 (Function Calling)|-|
+|spring.ai.ollama.chat.options.proxy-tool-calls|함수 호출을 클라이언트로 프록시할지 여부|false|
+
+<br/>
+
+### 10.3. 런타임 옵션
+---
+
+기본 설정을 덮어쓰고 요청별로 다른 설정을 적용하려면, `Prompt` 호출 시 요청 전용 옵션을 추가하면 된다.
+
+```java
+ChatResponse response = chatModel.call(
+    new Prompt(
+        "Generate the names of 5 famous pirates.",
+        OllamaOptions.builder()
+            .model(OllamaModel.LLAMA3_1)  // LLAMA 3.1 모델 사용
+            .temperature(0.4)             // 낮은 창의성 설정
+            .build()
+    ));
+```
+
+<br/>
+
+### 10.4. 함수 호출
+---
+
+Spring AI의 `OllamaChatModel` 은 사용자 정의 Java 함수를 등록하고, Ollama 모델이 해당 함수 중 하나 또는 여러 개를 지능적으로 선택해 호출할 수 있도록 지원한다.
+
+모델은 적절한 타이밍에 호출할 함수와 인자를 담은 JSON 객체를 출력하며, 이를 통해 LLM의 능력을 외부 도구 및 API와 연결할 수 있다.
+
+<br/>
+
+### 10.5. 구조화된 출력
+---
+
+Ollama는 JSON Schema에 정확히 부합하는 응답을 생성하도록 강제할 수 있는 고유 Structured Output API를 제공한다.
+
+Spring AI는 기존의 범용 `StructuredOutputConverter` 외에도, Ollama 전용 API를 통해 더 정밀하고 통제 가능한 구조화된 출력 기능을 제공한다.
+
+<br/>
+
+#### 10.5.1. 구성 방법
+---
+
+Spring AI에서는 `OllamaOptions` 빌더를 사용하여 응답 포맷을 프로그래밍 방식으로 지정할 수 있다.
+
+<br/>
+
+**예시1. 직접 JSON Schema 지정**
+
+```java
+String jsonSchema = """
+{
+  "type": "object",
+  "properties": {
+    "steps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "explanation": { "type": "string" },
+          "output": { "type": "string" }
+        },
+        "required": ["explanation", "output"],
+        "additionalProperties": false
+      }
+    },
+    "final_answer": { "type": "string" }
+  },
+  "required": ["steps", "final_answer"],
+  "additionalProperties": false
+}
+""";
+
+Prompt prompt = new Prompt("how can I solve 8x + 7 = -23",
+    OllamaOptions.builder()
+        .model(OllamaModel.LLAMA3_2.getName())
+        .format(new ObjectMapper().readValue(jsonSchema, Map.class))
+        .build());
+
+ChatResponse response = this.ollamaChatModel.call(prompt);
+```
+
+<br/>
+
+**예시2. 도메인 객체를 통한 자동 변환**
+
+`BeanOutputConverter` 를 사용하면 도메인 객체로부터 자동으로 JSON Schema를 생성하고, 나중에 모델 응답을 해당 객체로 변환할 수 있다.
+
+```java
+record MathReasoning(
+    @JsonProperty(required = true, value = "steps") Steps steps,
+    @JsonProperty(required = true, value = "final_answer") String finalAnswer) {
+
+    record Steps(
+        @JsonProperty(required = true, value = "items") Items[] items) {
+
+        record Items(
+            @JsonProperty(required = true, value = "explanation") String explanation,
+            @JsonProperty(required = true, value = "output") String output) {
+        }
+    }
+}
+
+var outputConverter = new BeanOutputConverter<>(MathReasoning.class);
+
+Prompt prompt = new Prompt("how can I solve 8x + 7 = -23",
+    OllamaOptions.builder()
+        .model(OllamaModel.LLAMA3_2.getName())
+        .format(outputConverter.getJsonSchemaMap())
+        .build());
+
+ChatResponse response = this.ollamaChatModel.call(prompt);
+String content = response.getResult().getOutput().getText();
+
+MathReasoning result = outputConverter.convert(content);
+```
+
+<br/>
+
+#### 10.5.2. OpenAI API 호환성
+---
+
+Ollama는 Open API와 호환되므로, Spring AI의 OpenAI 클라이언트를 사용해 Ollama에 연결하고 도구(Function Calling) 기능도 그대로 활용할 수 있다.
+
+<br/>
+
+**구성 방법**
+
+OpenAI 클라이언트를 사용하여 Ollama 인스턴스에 연결하려면 아래와 같이 설정하면 된다.
+
+```
+spring.ai.openai.chat.base-url=http://localhost:11434
+spring.ai.openai.chat.options.model=mistral
+```
+
+<br/>
+
+#### 10.5.3. 사용 예시
+---
+
+`spring-ai-starter-model-ollama` 의존을 추가한다.
+
+`src/main/resources` 디렉터리에 `application.yaml` 파일을 생성하고, Ollama 채팅 모델을 활성화하고 구성한다.
+
+```yaml
+spring:
+  ai:
+    ollama:
+      base-url: http://localhost:11434
+      chat:
+        options:
+          model: mistral
+          temperature: 0.7
+```
+
+<br/>
+
+`@RestController` 예제는 다음과 같다.
+
+```java
+@RestController
+public class ChatController {
+
+    private final OllamaChatModel chatModel;
+
+    @Autowired
+    public ChatController(OllamaChatModel chatModel) {
+        this.chatModel = chatModel;
+    }
+
+    @GetMapping("/ai/generate")
+    public Map<String, String> generate(@RequestParam(value = "message", defaultValue = "Tell me a joke") String message) {
+        return Map.of("generation", this.chatModel.call(message));
+    }
+
+    @GetMapping("/ai/generateStream")
+    public Flux<ChatResponse> generateStream(@RequestParam(value = "message", defaultValue = "Tell me a joke") String message) {
+        Prompt prompt = new Prompt(new UserMessage(message));
+        return this.chatModel.stream(prompt);
+    }
+
+}
+```
+
+<br/>
+
+#### 10.5.4. 수동 설정
+---
+
+Spring Boot의 자동 구성 기능을 사용하지 않고 수동으로 OllamaChatModel을 설정할 수도 있다.
+
+이를 사용하려면 다음과 같이 의존을 추가한다.
+
+```xml
+<dependency>
+    <groupId>org.springframework.ai</groupId>
+    <artifactId>spring-ai-ollama</artifactId>
+</dependency>
+```
+
+<br/>
+
+다음과 같이 `OllamaChatModel` 인스턴스를 수동으로 생성하고, 텍스트 생성을 요청할 수 있다.
+
+```java
+var ollamaApi = OllamaApi.builder().build();
+
+var chatModel = OllamaChatModel.builder()
+    .ollamaApi(ollamaApi)
+    .defaultOptions(
+        OllamaOptions.builder()
+            .model(OllamaModel.MISTRAL)
+            .temperature(0.9)
+            .build())
+    .build();
+
+ChatResponse response = chatModel.call(
+    new Prompt("Generate the names of 5 famous pirates."));
+
+// 또는 스트리밍 응답으로
+Flux<ChatResponse> response = chatModel.stream(
+    new Prompt("Generate the names of 5 famous pirates."));
+```
+
+<br/>
+
 ## Reference
 ---
 
