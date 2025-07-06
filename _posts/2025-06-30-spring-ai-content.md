@@ -2474,6 +2474,81 @@ ToolCallback toolCallback = MethodToolCallback.builder()
 
 <br/>
 
+### 13.4. 함수 기반 도구 사용하기
+---
+
+Spring AI는 함수형 타입(Function, Supplier, Consumer, BiFunction)을 도구로 정의할 수 있는 기능을 제공한다.
+
+<br/>
+
+### 13.5. 도구 명세
+---
+
+도구 명세의 구조와 이를 확장 및 커스터마이징 하는 방법을 살펴보자.
+
+- 설명 (Description)
+    - `@ToolParam(description = ...)` 
+- 필수 여부 (Required/Optional)
+    - `@ToolParam(required = false)`
+
+<br/>
+
+**결과 반환**
+
+도구 실행 결과는 `ToolCallResultConverter` 를 통해 `String` 으로 변환되어 모델에 전달된다.
+
+<br/>
+
+**ToolContext: 도구 실행 시 컨텍스트 정보 전달**
+
+도구 실행 시 `ToolContext` 를 통해 사용자 정의 데이터를 함께 전달할 수 있다.
+
+![spring-ai16](/assets/img/spring-ai16.jpg)
+
+```java
+@Tool
+Customer getCustomerInfo(Long id, ToolContext toolContext) {
+    return customerRepository.findById(id, toolContext.get("tenantId"));
+}
+
+ChatClient.create(chatModel)
+    .prompt("Tell me about customer 42")
+    .tools(new CustomerTools())
+    .toolContext(Map.of("tenantId", "acme"))
+    .call()
+    .content();
+```
+- `ToolContext` 는 모델에게는 전달되지 않으며, 오직 도구 실행에만 사용된다.
+
+<br/>
+
+**Return Direct: 결과를 모델이 아닌 호출자에게 직접 반환**
+
+기본적으로 도구 실행 결과는 모델에 전달되어 후속 응답 생성을 위한 컨텍스트로 사용된다.
+하지만 RAG 또는 API 호출 등 결과를 직접 사용자에게 반환해야 하는 경우, `returnDirect = true` 로 설정하면 된다.
+
+![spring-ai17](/assets/img/spring-ai17.jpg)
+
+```java
+// 선언적 방식
+@Tool(description = "Retrieve customer info", returnDirect = true)
+Customer getCustomerInfo(Long id) { ... }
+
+// 프로그래밍 방식
+ToolMetadata toolMetadata = ToolMetadata.builder()
+    .returnDirect(true)
+    .build();
+
+ToolCallback callback = MethodToolCallback.builder()
+    .toolMetadata(toolMetadata)
+    ...
+    .build();
+```
+- 다수의 도구가 동시에 호출되는 경우 모든 도구의 `returnDirect` 가 `true` 여야 직접 반환된다.
+
+
+<br/>
+
 ## Reference
 ---
 
