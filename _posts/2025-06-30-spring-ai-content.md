@@ -2570,6 +2570,183 @@ Spring AI가 도구 호출을 자동으로 감지하고 실행하며, 결과를 
 
 <br/>
 
+#### 13.6.2. 사용자 제어 방식
+---
+
+Spring AI에서는 기본적으로 도구 호출을 자동으로 처리하지만, 사용자가 직접 도구 실행을 제어할 수 있는 옵션도 제공한다. 이 방식을 사용하면 도구 호출 여부 확인, 도구 실행, 결과 처리 등을 모두 수동으로 수행할 수 있어 에이전트 로직 구현, 흐름 제어, 디버깅 등에 매우 유용하다.
+
+<br/>
+
+**설정 방법**
+
+`ToolCallingChatOptions` 에서 `internalToolExecutionEnabled` 옵션을 `false` 로 설정하면 자동 도구 실행을 비활성화할 수 있다.
+
+```java
+ToolCallingChatOptions.builder()
+    .toolCallbacks(new CustomerTools())
+    .internalToolExecutionEnabled(false) // 사용자가 직접 도구 실행 제어
+    .build();
+```
+
+<br/>
+
+**예시 1: 기본 사용자 제어 예시**
+
+```java
+ChatModel chatModel = ...
+ToolCallingManager toolCallingManager = ToolCallingManager.builder().build();
+
+ChatOptions chatOptions = ToolCallingChatOptions.builder()
+    .toolCallbacks(new CustomerTools())
+    .internalToolExecutionEnabled(false)
+    .build();
+
+Prompt prompt = new Prompt("Tell me more about the customer with ID 42", chatOptions);
+ChatResponse chatResponse = chatModel.call(prompt);
+
+// 도구 호출이 존재할 경우 수동 실행
+while (chatResponse.hasToolCalls()) {
+    ToolExecutionResult result = toolCallingManager.executeToolCalls(prompt, chatResponse);
+
+    prompt = new Prompt(result.conversationHistory(), chatOptions);
+    chatResponse = chatModel.call(prompt);
+}
+
+System.out.println(chatResponse.getResult().getOutput().getText());
+```
+
+<br/>
+
+**예시 2: ChatMemory API와 통합**
+
+사용자 메시지와 응답을 메모리 기반으로 누적 관리하며 대화 흐름을 유지한다.
+
+```java
+ToolCallingManager toolCallingManager = DefaultToolCallingManager.builder().build();
+ChatMemory chatMemory = MessageWindowChatMemory.builder().build();
+String conversationId = UUID.randomUUID().toString();
+
+ChatOptions chatOptions = ToolCallingChatOptions.builder()
+    .toolCallbacks(ToolCallbacks.from(new MathTools()))
+    .internalToolExecutionEnabled(false)
+    .build();
+
+// 초기 프롬프트 설정
+Prompt prompt = new Prompt(
+    List.of(
+        new SystemMessage("You are a helpful assistant."),
+        new UserMessage("What is 6 * 8?")
+    ),
+    chatOptions
+);
+chatMemory.add(conversationId, prompt.getInstructions());
+
+Prompt promptWithMemory = new Prompt(chatMemory.get(conversationId), chatOptions);
+ChatResponse chatResponse = chatModel.call(promptWithMemory);
+chatMemory.add(conversationId, chatResponse.getResult().getOutput());
+
+// 도구 호출 존재 시 수동 실행
+while (chatResponse.hasToolCalls()) {
+    ToolExecutionResult result = toolCallingManager.executeToolCalls(promptWithMemory, chatResponse);
+
+    chatMemory.add(conversationId,
+        result.conversationHistory().get(result.conversationHistory().size() - 1));
+
+    promptWithMemory = new Prompt(chatMemory.get(conversationId), chatOptions);
+    chatResponse = chatModel.call(promptWithMemory);
+    chatMemory.add(conversationId, chatResponse.getResult().getOutput());
+}
+
+// 새로운 사용자 질문 처리
+UserMessage newUserMessage = new UserMessage("What did I ask you earlier?");
+chatMemory.add(conversationId, newUserMessage);
+
+ChatResponse newResponse = chatModel.call(new Prompt(chatMemory.get(conversationId)));
+```
+
+<br/>
+
+#### 13.6.3. 예외 처리
+---
+
+도구 실행 중 오류가 발생하면 예외가 `ToolExecutionException` 으로 전달된다.
+
+이 예외를 어떻게 처리할지 정의하는 것이 `ToolExecutionExceptionProcessor` 의 역할이다.
+
+```java
+@FunctionalInterface
+public interface ToolExecutionExceptionProcessor {
+    /**
+     * 도구 실행 중 발생한 예외를 AI 모델에 보낼 수 있는 문자열로 변환하거나,
+     * 호출자가 직접 처리하도록 예외를 다시 던질 수 있음.
+     */
+    String process(ToolExecutionException exception);
+}
+```
+
+<br/>
+
+### 13.6.4. Tool Resolution
+---
+
+런타임에서 도구 이름을 기반으로 동적으로 해석(resolve)하도록 설정할 수도 있으며, 이때 사용되는 것이 `ToolCallbackResolver` 이다.
+
+```java
+public interface ToolCallbackResolver {
+
+    /**
+     * 도구 이름을 받아 해당 ToolCallback 인스턴스를 반환
+     */
+    @Nullable
+    ToolCallback resolve(String toolName);
+
+}
+```
+- 클라이언트 측 : 도구 인스턴스 대신 도구 이름만 전달
+- 서버 측 : `ToolCallbackResolver` 가 도구 이름을 `ToolCallback` 으로 매핑하여 실제 실행
+
+<br/>
+
+**사용 예시**
+
+```java
+ChatClient.create(chatModel)
+    .prompt("What's the weather like in Seoul?")
+    .tools("currentWeather") // 도구 이름만 전달
+    .call()
+    .content();
+```
+
+<br/>
+
+### 13.6.5. Observability
+---
+
+Spring AI는 도구 호출에 대해 tracing 및 metric 관측 지원을 제공한다.
+
+- `spring.ai.tool.observations` 를 통해 도구 호출 시간 측정, 분산 추적 정보 전파
+- 도구 호출 시 입력과 결과값을 span 속성으로 기록할 수도 있음
+
+<br/>
+
+**로깅 설정**
+
+```
+logging.level.org.springframework.ai=DEBUG
+```
+
+<br/>
+
+## 14. Model Context Protocol (MCP)
+---
+
+MCP는 AI 모델이 외부 도구 및 리소스와 구조화된 방식으로 상호작용할 수 있도록 하는 표준화된 프로토콜이다.
+
+이 프로토콜은 다양한 환경에서의 유연성을 위해 여러 전송 메커니즘을 지원한다.
+
+
+<br/>
+
 ## Reference
 ---
 
