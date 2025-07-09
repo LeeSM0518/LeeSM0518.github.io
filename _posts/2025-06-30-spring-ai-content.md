@@ -2945,6 +2945,220 @@ String answer = chatClient.prompt()
 
 <br/>
 
+### 15.2. Modules
+---
+
+Spring AI는 모듈형 RAG 아키텍처를 구현한다.
+
+<br/>
+
+#### 15.2.1. Pre-Retrieval (검색 전 단계)
+---
+
+사용자 쿼리를 처리하여 최적의 검색 결과를 얻도록 돕는 역할을 한다.
+
+<br/>
+
+**Query Transformation (쿼리 변환)**
+
+입력 쿼리를 변환하여 검색 성능을 높이기 위한 컴포넌트이다.
+
+잘못된 형식의 쿼리, 모호한 용어, 복잡한 허위, 미지원 언어 등의 문제를 해결한다.
+
+> `QueryTransformer` 를 사용할 경우, `temperature` 를 낮게(ex. 0.0) 설정하면 더 정확하고 일관된 결과를 얻을 수 있다.
+{: .prompt-tip }
+
+<br/>
+
+*CompressionQueryTransformer*
+
+대화 이력과 후속 질문을 독립적인 하나의 쿼리로 압축한다. 긴 대화 히스토리에서 유용하다.
+
+```java
+Query query = Query.builder()
+        .text("And what is its second largest city?")
+        .history(new UserMessage("What is the capital of Denmark?"),
+                 new AssistantMessage("Copenhagen is the capital of Denmark."))
+        .build();
+
+QueryTransformer queryTransformer = CompressionQueryTransformer.builder()
+        .chatClientBuilder(chatClientBuilder)
+        .build();
+
+Query transformedQuery = queryTransformer.transform(query);
+```
+
+<br/>
+
+*RewriteQueryTransformer*
+
+장황하거나 모호한 사용자 쿼리를 개선하여 검색 시스템에 적합하도록 다시 작성한다.
+
+```java
+Query query = new Query("I'm studying machine learning. What is an LLM?");
+
+QueryTransformer queryTransformer = RewriteQueryTransformer.builder()
+        .chatClientBuilder(chatClientBuilder)
+        .build();
+
+Query transformedQuery = queryTransformer.transform(query);
+```
+
+<br/>
+
+*TranslationQueryTransformer*
+
+사용자 쿼리를 임베딩 모델이 지원하는 언어로 번역한다. 이미 해당 언어이거나 언어를 알 수 없는 경우 그대로 반환된다.
+
+```java
+Query query = new Query("Hvad er Danmarks hovedstad?");
+
+QueryTransformer queryTransformer = TranslationQueryTransformer.builder()
+        .chatClientBuilder(chatClientBuilder)
+        .targetLanguage("english")
+        .build();
+
+Query transformedQuery = queryTransformer.transform(query);
+```
+
+<br/>
+
+**Query Expansion (쿼리 확장)**
+
+입력 쿼리를 다양한 방식으로 확장하여 더 많은 문맥을 확보한다.
+
+<br/>
+
+*MultiQueryExpander*
+
+하나의 쿼리를 의미적으로 다양한 변형으로 확장한다.
+
+```java
+MultiQueryExpander queryExpander = MultiQueryExpander.builder()
+    .chatClientBuilder(chatClientBuilder)
+    .numberOfQueries(3)
+    .build();
+
+List<Query> queries = queryExpander.expand(new Query("How to run a Spring Boot app?"));
+```
+
+기본적으로 원본 쿼리도 포함되며, 제외도 가능하다.
+
+```java
+MultiQueryExpander queryExpander = MultiQueryExpander.builder()
+    .chatClientBuilder(chatClientBuilder)
+    .includeOriginal(false)
+    .build();
+```
+
+<br/>
+
+#### 15.2.2. Retrieval (검색 단계)
+---
+
+데이터 시스템에서 관련 문서를 검색한다.
+
+<br/>
+
+**Document Search**
+
+문서 검색을 위한 핵심 컴포넌트이다.
+
+<br/>
+
+*VectorStoreDocumentRetriever*
+
+벡터 스토어에서 의미적으로 유사한 문서를 검색한다. 메타데이터 기반 필터링, 유사도 임계값, top-k 설정을 지원한다.
+
+```java
+DocumentRetriever retriever = VectorStoreDocumentRetriever.builder()
+    .vectorStore(vectorStore)
+    .similarityThreshold(0.73)
+    .topK(5)
+    .filterExpression(new FilterExpressionBuilder()
+        .eq("genre", "fairytale")
+        .build())
+    .build();
+
+List<Document> documents = retriever.retrieve(new Query("What is the main character of the story?"));
+```
+
+동적 필터 예시
+
+```java
+DocumentRetriever retriever = VectorStoreDocumentRetriever.builder()
+    .vectorStore(vectorStore)
+    .filterExpression(() -> new FilterExpressionBuilder()
+        .eq("tenant", TenantContextHolder.getTenantIdentifier())
+        .build())
+    .build();
+```
+
+요청별 필터 제공
+
+```java
+Query query = Query.builder()
+    .text("Who is Anacletus?")
+    .context(Map.of(VectorStoreDocumentRetriever.FILTER_EXPRESSION, "location == 'Whispering Woods'"))
+    .build();
+
+List<Document> retrievedDocuments = documentRetriever.retrieve(query);
+```
+
+<br/>
+
+**Document Join**
+
+여러 쿼리 또는 데이터 소스에서 검색된 문서를 하나로 합친다.
+
+<br/>
+
+*ConcatenationDocumentJoiner*
+
+문서를 단순히 이어붙여 하나의 컬렉션으로 만든다. 중복 문서는 첫 번째 항목을 유지하며, 점수는 변경되지 않는다.
+
+```java
+Map<Query, List<List<Document>>> documentsForQuery = ...
+DocumentJoiner documentJoiner = new ConcatenationDocumentJoiner();
+List<Document> documents = documentJoiner.join(documentsForQuery);
+```
+
+<br/>
+
+#### 15.2.3. Post-Retrieval (검색 후 처리 단계)
+---
+
+검색된 문서를 가공하여 생성 품질을 향상시킨다.
+
+<br/>
+
+**Document Post-Processing**
+
+관련성이 낮거나 중복된 문서를 제거하거나 문서 내용을 압축하여 노이즈를 줄인다. 모델의 컨텍스트 길이 제한을 고려할 때 유용하다.
+
+<br/>
+
+#### 15.2.4. Generation (생성 단계)
+---
+
+사용자 질문과 검색된 문서를 기반으로 최종 응답을 생성한다.
+
+<br/>
+
+**Query Augmentation (쿼리 증강)**
+
+입력 쿼리에 추가 데이터를 결합하여 LLM에 필요한 문맥을 제공한다.
+
+<br/>
+
+*ContextualQueryAugmenter*
+
+검색된 문서 내용을 쿼리에 포함시킨다. 기본적으로 검색 결과가 비어 있으면 응답을 하지 않도록 설정되어 있다.
+
+```java
+QueryAugmenter queryAugmenter = ContextualQueryAugmenter.builder().build();
+```
+
 <br/>
 
 ## Reference
