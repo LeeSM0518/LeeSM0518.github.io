@@ -3616,6 +3616,53 @@ for (Document doc : enrichedDocs) {
 
 <br/>
 
+### 16.5. Writers
+---
+
+ETL 파이프라인의 마지막 단계에서 `Document` 객체들을 외부 저장소에 기록하는 역할을 한다.
+
+<br/>
+
+#### 16.5.1. FileDocumentWriter
+---
+
+문서 리스트를 텍스트 파일로 저장하는 `DocumentWriter` 구현체
+
+```java
+@Component
+class MyDocumentWriter {
+
+    public void writeDocuments(List<Document> documents) {
+        FileDocumentWriter writer = new FileDocumentWriter("output.txt", true, MetadataMode.ALL, false);
+        writer.accept(documents);
+    }
+}
+```
+
+```java
+List<Document> documents = // 문서 리스트 초기화
+FileDocumentWriter writer = new FileDocumentWriter("output.txt", true, MetadataMode.ALL, true);
+writer.accept(documents);
+```
+
+<br/>
+
+#### 16.5.2. VectorStore
+---
+
+벡터 기반 검색을 위한 외부 벡터 데이터베이스와 연동되는 Writer
+문서를 벡터 임베딩하여 Vector DB에 저장한다.
+
+<br/>
+
+## 17. Vector Database
+---
+
+
+
+
+<br/>
+
 ## Reference
 ---
 
