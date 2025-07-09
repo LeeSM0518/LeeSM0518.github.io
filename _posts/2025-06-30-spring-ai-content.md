@@ -3161,6 +3161,461 @@ QueryAugmenter queryAugmenter = ContextualQueryAugmenter.builder().build();
 
 <br/>
 
+## 16. ETL Pipeline
+---
+
+Extract(추출), Transform(변환), Load(적재) 프레임워크는 RAG 사용 사례에서 데이터 처리의 중추 역할을 한다.
+
+ETL 파이프라인은 원시 데이터 소스에서 구조화된 벡터 저장소로의 흐름을 조율하여, AI 모델이 데이터를 최적으로 검색할 수 있는 형식으로 변환되도록 보장한다.
+
+RAG은 생성형 모델의 기능을 강화하기 위해 텍스트를 기반으로 관련 정보를 데이터 집합에서 검색하여, 생성되는 출력물의 품질과 관련성을 향상시키는 데 목적이 있다.
+
+<br/>
+
+### 16.1. API 개요
+---
+
+ETL 파이프라인은 `Document` 인스턴스를 생성하고, 변환하며, 저장한다.
+
+![spring-ai19](/assets/img/spring-ai19.jpg)
+
+- `Document` 클래스는 텍스트, 메타데이터, 미디어를 포함할 수 있다.
+
+<br/>
+
+ETL 파이프라인은 다음 세 가지 구성 요소로 이루어져 있다.
+
+1. `DocumentReader` : `Supplier<List<Document>>` 를 구현
+2. `DocumentTransformer` : `Function<List<Document>, List<Document>>` 를 구현
+3. `DocumentWriter` : `Consumer<List<Document>>` 를 구현
+
+<br/>
+
+`Document` 클래스의 콘텐츠는 PDF, 텍스트 파일 및 기타 문서 유형으로부터 `DocumentReader` 를 통해 생성된다.
+
+간단한 ETL 파이프라인을 구성하려면, 각 유형의 인스턴스를 연결하면 된다.
+
+![spring-ai20](/assets/img/spring-ai20.jpg)
+
+<br/>
+
+**ETL 파이프라인 예시**
+
+다음과 같은 세 가지 ETL 구성 요소 인스턴스가 있다고 가정해보자.
+
+- `PagePdfDocumentReader` : `DocumentReader` 구현체
+- `TokenTextSplitter` : `DocumentTransformer` 구현체
+- `VectorStore` : `DocumentWritter` 구현체
+
+<br/>
+
+RAG 패턴에서 사용할 벡터 데이터베이스에 기본 데이터를 적재하려면, 다음 코드를 사용한다.
+
+```java
+vectorStore.accept(tokenTextSplitter.apply(pdfReader.get()));
+```
+
+<br/>
+
+또는 도메인에 더 자연스럽게 표현되는 메서드 이름을 사용해서 작성할 수도 있다.
+
+```java
+vectorStore.write(tokenTextSplitter.split(pdfReader.read()));
+```
+
+<br/>
+
+### 16.2. ETL 인터페이스
+---
+
+ETL 파이프라인은 다음과 같은 인터페이스 및 구현체들로 구성된다.
+
+<br/>
+
+#### 16.2.1. DocumentReader
+---
+
+다양한 출처에서 문서를 제공하는 역할
+
+```java
+public interface DocumentReader extends Supplier<List<Document>> {
+
+    default List<Document> read() {
+        return get();
+    }
+}
+```
+
+<br/>
+
+#### 16.2.2. DocumentTransformer
+---
+
+문서의 배치를 처리 워크플로의 일부로 변환
+
+```java
+public interface DocumentTransformer extends Function<List<Document>, List<Document>> {
+
+    default List<Document> transform(List<Document> transform) {
+        return apply(transform);
+    }
+}
+```
+
+<br/>
+
+#### 16.2.3. DocumentWriter
+---
+
+문서 저장을 위한 형식으로 준비
+
+```java
+public interface DocumentWriter extends Consumer<List<Document>> {
+
+    default void write(List<Document> documents) {
+        accept(documents);
+    }
+}
+```
+
+<br/>
+
+#### 16.2.4. ETL 클래스 다이어그램
+---
+
+![spring-ai21](/assets/img/spring-ai21.jpg)
+
+<br/>
+
+### 16.3. DocumentReaders
+---
+#### 16.3.1. JSON
+---
+
+`JsonReader` 는 JSON 문서를 파싱하여 `Document` 리스트로 변환한다.
+
+```java
+@Component
+class MyJsonReader {
+
+    private final Resource resource;
+
+    MyJsonReader(@Value("classpath:bikes.json") Resource resource) {
+        this.resource = resource;
+    }
+
+    List<Document> loadJsonAsDocuments() {
+        JsonReader jsonReader = new JsonReader(this.resource, "description", "content");
+        return jsonReader.get();
+    }
+}
+```
+
+<br/>
+
+#### 16.3.2. Text
+---
+
+`TextReader` 는 일반 텍스트 파일을 `Document` 객체로 읽는다.
+
+```java
+@Component
+class MyTextReader {
+
+    private final Resource resource;
+
+    MyTextReader(@Value("classpath:text-source.txt") Resource resource) {
+        this.resource = resource;
+    }
+
+    List<Document> loadText() {
+        TextReader textReader = new TextReader(this.resource);
+        textReader.getCustomMetadata().put("filename", "text-source.txt");
+        return textReader.read();
+    }
+}
+```
+- 매우 큰 파일에는 적합하지 않음. `TokenTextSplitter` 로 분할 추천
+
+<br/>
+
+#### 16.3.3. HTML (JSoup)
+---
+
+`JsoupDocumentReader` 는 `JSoup` 라이브러리를 사용하여 HTML 문서를 처리한다.
+
+```java
+@Component
+class MyHtmlReader {
+
+    private final Resource resource;
+
+    MyHtmlReader(@Value("classpath:/my-page.html") Resource resource) {
+        this.resource = resource;
+    }
+
+    List<Document> loadHtml() {
+        JsoupDocumentReaderConfig config = JsoupDocumentReaderConfig.builder()
+            .selector("article p")
+            .charset("ISO-8859-1")
+            .includeLinkUrls(true)
+            .metadataTags(List.of("author", "date"))
+            .additionalMetadata("source", "my-page.html")
+            .build();
+
+        JsoupDocumentReader reader = new JsoupDocumentReader(this.resource, config);
+        return reader.get();
+    }
+}
+```
+
+<br/>
+
+#### 16.3.4. Markdown
+---
+
+`MarkdownDocumentReader` 는 마크다운 문서를 처리하여 `Document` 리스트로 변환한다.
+
+```java
+@Component
+class MyMarkdownReader {
+
+    private final Resource resource;
+
+    MyMarkdownReader(@Value("classpath:code.md") Resource resource) {
+        this.resource = resource;
+    }
+
+    List<Document> loadMarkdown() {
+        MarkdownDocumentReaderConfig config = MarkdownDocumentReaderConfig.builder()
+            .withHorizontalRuleCreateDocument(true)
+            .withIncludeCodeBlock(false)
+            .withIncludeBlockquote(false)
+            .withAdditionalMetadata("filename", "code.md")
+            .build();
+
+        MarkdownDocumentReader reader = new MarkdownDocumentReader(this.resource, config);
+        return reader.get();
+    }
+}
+```
+
+<br/>
+
+#### 16.3.5. PDF Page
+---
+
+`PagePdfDocumentReader` 는 Apache PDFBox를 사용하여 PDF 문서를 페이지 단위로 파싱한다.
+
+```groovy
+dependencies {
+    implementation 'org.springframework.ai:spring-ai-pdf-document-reader'
+}
+```
+
+```java
+@Component
+public class MyPagePdfDocumentReader {
+
+    List<Document> getDocsFromPdf() {
+        PagePdfDocumentReader pdfReader = new PagePdfDocumentReader("classpath:/sample1.pdf",
+            PdfDocumentReaderConfig.builder()
+                .withPageTopMargin(0)
+                .withPageExtractedTextFormatter(
+                    ExtractedTextFormatter.builder()
+                        .withNumberOfTopTextLinesToDelete(0)
+                        .build())
+                .withPagesPerDocument(1)
+                .build());
+
+        return pdfReader.read();
+    }
+}
+```
+
+<br/>
+
+#### 16.3.6. Tika (PDF, DOCX, PPTX, HTML 등)
+---
+
+`TikaDocumentReader` 는 Apache Tike를 사용하여 다양한 문서 형식에서 텍스트를 추출한다.
+
+```groovy
+dependencies {
+    implementation 'org.springframework.ai:spring-ai-tika-document-reader'
+}
+```
+
+```java
+@Component
+class MyTikaDocumentReader {
+
+    private final Resource resource;
+
+    MyTikaDocumentReader(@Value("classpath:/word-sample.docx") Resource resource) {
+        this.resource = resource;
+    }
+
+    List<Document> loadText() {
+        TikaDocumentReader tikaDocumentReader = new TikaDocumentReader(this.resource);
+        return tikaDocumentReader.read();
+    }
+}
+```
+
+<br/>
+
+### 16.4. Transformers
+---
+
+ETL 파이프라인의 중간 단계에서 문서를 변환해주는 `DocumentTransformer` 구현체들이다.
+
+<br/>
+
+#### 16.4.1. TextSplitter
+---
+
+AI 모델의 컨텍스트 윈도우 크기에 맞게 문서를 분할할 수 있도록 설계된 기본 클래스
+
+<br/>
+
+#### 16.4.2. TokenTextSplitter
+---
+
+토큰 수를 기준으로 문서를 분할하는 `TextSplitter` 구현체.
+CL100K_BASE 인코딩을 통해 문장을 의미 단위로 나누는 데 중점을 둔다.
+
+```java
+@Component
+class MyTokenTextSplitter {
+
+    public List<Document> splitDocuments(List<Document> documents) {
+        TokenTextSplitter splitter = new TokenTextSplitter();
+        return splitter.apply(documents);
+    }
+
+    public List<Document> splitCustomized(List<Document> documents) {
+        TokenTextSplitter splitter = new TokenTextSplitter(1000, 400, 10, 5000, true);
+        return splitter.apply(documents);
+    }
+}
+```
+
+```java
+Document doc1 = new Document("This is a long piece of text that needs to be split into smaller chunks for processing.",
+        Map.of("source", "example.txt"));
+Document doc2 = new Document("Another document with content that will be split based on token count.",
+        Map.of("source", "example2.txt"));
+
+TokenTextSplitter splitter = new TokenTextSplitter();
+List<Document> splitDocuments = this.splitter.apply(List.of(this.doc1, this.doc2));
+
+for (Document doc : splitDocuments) {
+    System.out.println("Chunk: " + doc.getContent());
+    System.out.println("Metadata: " + doc.getMetadata());
+}
+```
+
+<br/>
+
+#### 16.4.3. ContentFormatTransformer
+---
+
+문서들의 콘텐츠 형식을 일관되게 유지하도록 포맷을 조정한다.
+
+<br/>
+
+#### 16.4.4. KeywordMetadataEnricher
+---
+
+생성형 AI 모델을 이용해 문서의 키워드를 추출하고, 메타데이터로 추가한다.
+
+```java
+@Component
+class MyKeywordEnricher {
+
+    private final ChatModel chatModel;
+
+    MyKeywordEnricher(ChatModel chatModel) {
+        this.chatModel = chatModel;
+    }
+
+    List<Document> enrichDocuments(List<Document> documents) {
+        KeywordMetadataEnricher enricher = new KeywordMetadataEnricher(this.chatModel, 5);
+        return enricher.apply(documents);
+    }
+}
+```
+
+```java
+ChatModel chatModel = // initialize your chat model
+KeywordMetadataEnricher enricher = new KeywordMetadataEnricher(chatModel, 5);
+
+Document doc = new Document("This is a document about artificial intelligence and its applications in modern technology.");
+
+List<Document> enrichedDocs = enricher.apply(List.of(this.doc));
+
+Document enrichedDoc = this.enrichedDocs.get(0);
+String keywords = (String) this.enrichedDoc.getMetadata().get("excerpt_keywords");
+System.out.println("Extracted keywords: " + keywords);
+```
+
+<br/>
+
+#### 16.4.5. SummaryMetadataEnricher
+---
+
+문서의 요약을 생성하여 메타데이터에 추가하는 변환기이다.
+현재 문서뿐 아니라 이전/다음 문서의 요약도 지원한다.
+
+```java
+@Configuration
+class EnricherConfig {
+
+    @Bean
+    public SummaryMetadataEnricher summaryMetadata(OpenAiChatModel aiClient) {
+        return new SummaryMetadataEnricher(aiClient,
+            List.of(SummaryType.PREVIOUS, SummaryType.CURRENT, SummaryType.NEXT));
+    }
+}
+```
+
+```java
+@Component
+class MySummaryEnricher {
+
+    private final SummaryMetadataEnricher enricher;
+
+    MySummaryEnricher(SummaryMetadataEnricher enricher) {
+        this.enricher = enricher;
+    }
+
+    List<Document> enrichDocuments(List<Document> documents) {
+        return this.enricher.apply(documents);
+    }
+}
+```
+
+```java
+ChatModel chatModel = // initialize your chat model
+SummaryMetadataEnricher enricher = new SummaryMetadataEnricher(chatModel,
+    List.of(SummaryType.PREVIOUS, SummaryType.CURRENT, SummaryType.NEXT));
+
+Document doc1 = new Document("Content of document 1");
+Document doc2 = new Document("Content of document 2");
+
+List<Document> enrichedDocs = enricher.apply(List.of(this.doc1, this.doc2));
+
+// Check the metadata of the enriched documents
+for (Document doc : enrichedDocs) {
+    System.out.println("Current summary: " + doc.getMetadata().get("section_summary"));
+    System.out.println("Previous summary: " + doc.getMetadata().get("prev_section_summary"));
+    System.out.println("Next summary: " + doc.getMetadata().get("next_section_summary"));
+}
+```
+
+<br/>
+
 ## Reference
 ---
 
