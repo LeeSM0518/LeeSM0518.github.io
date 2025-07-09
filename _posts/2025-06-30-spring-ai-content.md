@@ -2744,6 +2744,206 @@ MCP는 AI 모델이 외부 도구 및 리소스와 구조화된 방식으로 상
 
 이 프로토콜은 다양한 환경에서의 유연성을 위해 여러 전송 메커니즘을 지원한다.
 
+<br/>
+
+## 15. Retrieval Augmented Generation (RAG)
+---
+
+RAG은 장문의 콘텐츠, 사실 기반 정확성, 문맥 인식 등에서 어려움을 겪는 대형 언어 모델의 한계를 극복하는 데 유용한 기술이다.
+
+Spring AI는 모듈식 아키텍처를 제공하여 직접 맞춤형 RAG 플로우를 구축하거나 Advisor API를 사용해 즉시 사용할 수 있는 RAG 플로우를 활용할 수 있도록 함으로써 RAG을 지원한다.
+
+<br/>
+
+### 15.1. Advisors
+---
+
+Spring AI는 Advisor API를 통해 일반적인 RAG(검색 증강 생성) 플로우에 대한 즉시 사용 가능한 지원을 제공한다.
+
+`QuestionAnswerAdvisor` 나 `RetrievalAugmentationAdvisor` 를 사용하려면, 다음과 같이 `spring-ai-advisors-vector-store` 의존성을 프로젝트에 추가해야 한다.
+
+```xml
+<dependency>
+   <groupId>org.springframework.ai</groupId>
+   <artifactId>spring-ai-advisors-vector-store</artifactId>
+</dependency>
+```
+
+<br/>
+
+#### 15.1.1. QuestionAnswerAdvisor
+---
+
+벡터 데이터베이스는 AI 모델이 알지 못하는 데이터를 저장한다. 사용자의 질문이 AI 모델에 전달되면, `QuestionAnswerAdvisor` 가 해당 질문과 관련된 문서를 벡터 데이터베이스에서 검색한다.
+
+검색된 문서는 사용자 질문에 문맥으로 추가되어, AI 모델이 더 정확한 답변을 생성할 수 있도록 도와준다.
+
+벡터 스토어에 이미 데이터를 로드한 상태라면, `QuestionAnswerAdvisor` 인스턴스를 `ChatClient` 에 제공하여 `RAG` 을 수행할 수 있다.
+
+```java
+ChatResponse response = ChatClient.builder(chatModel)
+        .build().prompt()
+        .advisors(new QuestionAnswerAdvisor(vectorStore))
+        .user(userText)
+        .call()
+        .chatResponse();
+```
+
+<br/>
+
+`QuestionAnswerAvisor` 는 벡터 데이터베이스 내 모든 문서를 대상으로 유사도 검색을 수행한다. 검색 대상을 제한하려면 SQL과 유사한 필터 표현식을 `SearchRequest` 에 설정하면 된다. 이 필터는 어드바이저 생성 시 고정할 수도 있고, 런타임에 동적으로 제공할 수도 있다.
+
+```java
+var qaAdvisor = QuestionAnswerAdvisor.builder(vectorStore)
+        .searchRequest(SearchRequest.builder().similarityThreshold(0.8d).topK(6).build())
+        .build();
+```
+- 유사도 임계값을 0.8로 설정하고 상위 6개 결과만 반환하는 설정
+
+<br/>
+
+**동적 필터 표현식**
+
+런타임에 검색 필터를 업데이트하려면, `FILTER_EXPRESSION` 어드바이저 컨텍스트 파라미터를 사용하면 된다.
+
+```java
+ChatClient chatClient = ChatClient.builder(chatModel)
+    .defaultAdvisors(QuestionAnswerAdvisor.builder(vectorStore)
+        .searchRequest(SearchRequest.builder().build())
+        .build())
+    .build();
+
+String content = this.chatClient.prompt()
+    .user("Please answer my question XYZ")
+    .advisors(a -> a.param(QuestionAnswerAdvisor.FILTER_EXPRESSION, "type == 'Spring'"))
+    .call()
+    .content();
+```
+- `FILTER_EXPRESSION` 파라미터를 사용하면 조건에 따라 검색 결과를 동적으로 필터링할 수 있다.
+
+<br/>
+
+**사용자 정의 템플릿**
+
+`QuestionAnswerAdvisor` 는 기본 템플릿을 사용해 사용자 질문에 검색된 문서를 추가한다. 그러나 `PromptTemplate` 객체를 제공하여 이 동작을 사용자 정의할 수 있다.
+
+```java
+PromptTemplate customPromptTemplate = PromptTemplate.builder()
+    .renderer(StTemplateRenderer.builder().startDelimiterToken('<').endDelimiterToken('>').build())
+    .template("""
+            <query>
+
+            Context information is below.
+
+			---------------------
+			<question_answer_context>
+			---------------------
+
+			Given the context information and no prior knowledge, answer the query.
+
+			Follow these rules:
+
+			1. If the answer is not in the context, just say that you don't know.
+			2. Avoid statements like "Based on the context..." or "The provided information...".
+            """)
+    .build();
+
+String question = "Where does the adventure of Anacletus and Birba take place?";
+
+QuestionAnswerAdvisor qaAdvisor = QuestionAnswerAdvisor.builder(vectorStore)
+        .promptTemplate(customPromptTemplate)
+        .build();
+
+String response = ChatClient.builder(chatModel).build()
+        .prompt(question)
+        .advisors(qaAdvisor)
+        .call()
+        .content();
+```
+
+<br/>
+
+#### 15.1.2. RetrievalAugmentationAdvisor
+---
+
+`RetrievalAugmentationAdvisor` 는 가장 일반적인 RAG 흐름을 위한 모듈 기반 아키텍처에 따른 기본 구현을 제공한다.
+
+```java
+Advisor retrievalAugmentationAdvisor = RetrievalAugmentationAdvisor.builder()
+        .documentRetriever(VectorStoreDocumentRetriever.builder()
+                .similarityThreshold(0.50)
+                .vectorStore(vectorStore)
+                .build())
+        .build();
+
+String answer = chatClient.prompt()
+        .advisors(retrievalAugmentationAdvisor)
+        .user(question)
+        .call()
+        .content();
+```
+- 기본 RAG 플로우
+
+<br/>
+
+기본적으로 `RetrievalAugmentationAdvisor` 는 검색된 문맥이 비어 있으면 응답하지 않도록 구성되어 있다. 이 동작을 변경하려면 `allowEmptyContext(true)` 설정을 추가해야 한다.
+
+```java
+Advisor retrievalAugmentationAdvisor = RetrievalAugmentationAdvisor.builder()
+        .documentRetriever(VectorStoreDocumentRetriever.builder()
+                .similarityThreshold(0.50)
+                .vectorStore(vectorStore)
+                .build())
+        .queryAugmenter(ContextualQueryAugmenter.builder()
+                .allowEmptyContext(true)
+                .build())
+        .build();
+```
+
+<br/>
+
+필터 표현식을 사용한 예시는 다음과 같다.
+
+```java
+Advisor retrievalAugmentationAdvisor = RetrievalAugmentationAdvisor.builder()
+        .documentRetriever(VectorStoreDocumentRetriever.builder()
+                .similarityThreshold(0.50)
+                .vectorStore(vectorStore)
+                .build())
+        .build();
+
+String answer = chatClient.prompt()
+        .advisors(retrievalAugmentationAdvisor)
+        .advisors(a -> a.param(VectorStoreDocumentRetriever.FILTER_EXPRESSION, "type == 'Spring'"))
+        .user(question)
+        .call()
+        .content();
+```
+
+<br/>
+
+**고급 RAG**
+
+```java
+Advisor retrievalAugmentationAdvisor = RetrievalAugmentationAdvisor.builder()
+        .queryTransformers(RewriteQueryTransformer.builder()
+                .chatClientBuilder(chatClientBuilder.build().mutate())
+                .build())
+        .documentRetriever(VectorStoreDocumentRetriever.builder()
+                .similarityThreshold(0.50)
+                .vectorStore(vectorStore)
+                .build())
+        .build();
+
+String answer = chatClient.prompt()
+        .advisors(retrievalAugmentationAdvisor)
+        .user(question)
+        .call()
+        .content();
+```
+- 또한, `DocumentPostProcessor` API를 사용하여 검색된 문서를 후처리할 수 있다. 예를 들어, 문서의 관련도에 따라 재정렬하거나, 불필요한 내용을 제거하거나, 문서를 압축하여 노이즈를 줄일 수 있다.
+
+<br/>
 
 <br/>
 
