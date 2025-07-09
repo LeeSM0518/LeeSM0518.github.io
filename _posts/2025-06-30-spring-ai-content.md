@@ -3655,6 +3655,119 @@ writer.accept(documents);
 
 <br/>
 
+## 17. Vector Database
+---
+
+벡터 데이터베이스에서의 쿼리는 유사성 검색을 수행한다. 쿼리로 벡터가 주어지면, 벡터 데이터베이스는 해당 벡터와 "유사한" 벡터들을 반환한다.
+
+벡터 데이터베이스는 사용자의 데이터를 AI 모델과 통합하기 위해 사용된다. 사용의 첫 단계는 데이터를 벡터 데이터베이스에 로드하는 것이다. 그럼 다음, 사용자의 쿼리가 AI 모델에 전달되기 전에, 유사한 문서들을 먼저 검색한다. 이 문서들은 사용자의 질문에 대한 문맥 역할을 하며, 사용자 쿼리와 함께 AI 모델로 전달된다. 이 기법을 RAG 이라고 부른다.
+
+<br/>
+
+### 17.1. API 개요
+---
+
+Spring AI는 VectorStore 인터페이스를 통해 벡터 데이터베이스와 상호작용할 수 있는 추상화된 API를 제공한다.
+
+데이터를 벡터 데이터베이스에 삽입하려면, 데이터를 `Document` 객체에 캡슐화해야 한다. `Document` 클래스는 PDF나 Word 문서 같은 데이터 소스의 콘텐츠를 포함하며, 문자열로 표현된 텍스트와 파일 이름 등의 메타데이터를 포함한다.
+
+데이터베이스에 삽입될 때, 텍스트 내용은 임베딩 모델을 통해 `float[]` 형태의 숫자 배열로 변환되며, 이를 벡터 임베딩이라 부른다.
+
+벡터 데이터베이스는 이러한 임베딩을 저장하고 유사성 검색을 수행하는 역할을 한다. 즉, 자체적으로 임베딩을 생성하지 않으며, 임베딩 생성을 위해서는 `EmbeddingModel` 을 사용해야 한다.
+
+<br/>
+
+`similaritySearch` 메서드는 특정 쿼리 문자열과 유사한 문서들을 검색하는 기능을 한다. 이 검색은 다음과 같은 파라미터를 통해 조정할 수 있다.
+
+- `k` : 반환할 유사 문서의 최대 개수. 일반적으로 'Tok K' 검색 또는 K-최근접 이웃(KNN)이라고 부른다.
+- `threshold` : 0에서 1 사이의 double 값으로, 1에 가까울수록 더 높은 유사성을 의미한다. 즉, 임계값을 의미한다.
+- `Filter.Expression` : SQL의 'where' 절과 유사하게 작동하는 표현식으로, `Document` 의 메타데이터에만 적용된다.
+- `filterExpression` : ANTLR4 기반의 외부 DSL로, 필터 표현식을 문자열로 전달할 수 있다.
+
+<br/>
+
+### 17.2. 스키마 초기화
+---
+
+사용 중인 벡터 스토어의 문서를 참조한 후 `application.yml` 파일에서 관련 `initialize-schema` 속성을 `true` 로 설정해야 한다.
+
+<br/>
+
+### 17.3. 배치 전략
+---
+
+많은 문서를 한 번에 임베딩하려는 시도는 여러 문제를 유발할 수 있다.
+
+임베딩 모델은 텍스트를 토큰 단위로 처리하며, 일반적으로 최대 토큰 제한이 있다. 즉, 너무 많은 토큰을 한 번에 임베딩하려 하면 오류가 발생하거나 결과가 잘릴 수 있다.
+
+이러한 토큰 문제를 해결하기 위해 Spring AI는 배치 전략을 구현한다. 이 전략은 문서 집합을 임베딩 모델의 최대 토큰 수 제한에 맞는 소규모 배치로 나누어 처리한다.
+
+이 방식은 토큰 제한을 피할 수 있을 뿐만 아니라 성능을 개선하고 API 속도 제한도 효율적으로 사용할 수 있게 한다.
+
+<br/>
+
+**BatchingStrategy 인터페이스**
+
+```java
+public interface BatchingStrategy {
+    List<List<Document>> batch(List<Document> documents);
+}
+```
+
+- 문서 리스트를 받아서 배치 리스트로 반환하는 `batch` 메서드를 정의한다.
+
+<br/>
+
+#### 17.3.1. 기본 구현
+---
+
+Spring AI는 기본 구현으로 `TokenCountBatchingStrategy` 를 제공한다. 이 전략은 문서의 토큰 수 기준으로 배치를 나눈다.
+
+<br/>
+
+#### 17.3.2. Auto-Truncation과 함께 사용하기
+
+일부 임베딩 모델(e.g. Vertex AI)은 `auto_truncate` 기능을 지원한다.
+
+<br/>
+
+**Spring Boot 자동 구성**
+
+사용자 정의 `BatchingStrategy` 빈을 등록하면 기본 전략을 자동으로 대체한다.
+
+```java
+@Bean
+public BatchingStrategy customBatchingStrategy() {
+    return new TokenCountBatchingStrategy(
+            EncodingType.CL100K_BASE,
+            132900,
+            0.1
+    );
+}
+```
+
+<br/>
+
+#### 17.3.3. 커스텀 전략 구현
+---
+
+기본 구현 외에 직접 커스텀 전략을 구현하고 사용할 수도 있다.
+
+```java
+@Configuration
+public class EmbeddingConfig {
+    @Bean
+    public BatchingStrategy customBatchingStrategy() {
+        return new CustomBatchingStrategy();
+    }
+}
+```
+
+<br/>
+
+
+
+
 
 <br/>
 
