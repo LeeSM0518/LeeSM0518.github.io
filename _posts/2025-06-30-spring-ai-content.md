@@ -3655,11 +3655,6 @@ writer.accept(documents);
 
 <br/>
 
-## 17. Vector Database
----
-
-
-
 
 <br/>
 
