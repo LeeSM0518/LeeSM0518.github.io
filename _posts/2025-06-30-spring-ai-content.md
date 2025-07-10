@@ -3763,10 +3763,364 @@ public class EmbeddingConfig {
 }
 ```
 
+<br/>
+
+### 17.4. 사용 예제
+---
+
+벡터 데이터베이스에 임베딩을 계산하려면, 사용하는 상위 AI 모델에 적합한 임베딩 모델을 선택해야 한다.
+
+예를 들어 OpenAI용 자동 구성을 통해, `EmbeddingModel` 의 구현체를 Spring 애플리케이션 컨텍스트에 자동으로 등록하여 의존성 주입이 가능하도록 한다.
+
+<br/>
+
+**데이터 로딩 흐름**
+
+벡터 스토어에 데이터를 로딩하는 일반적인 방식은 다음과 같이 배치 작업 형태로 수행된다.
+
+1. JSON 파일 등에서 데이터를 로드
+2. Spring AI의 `Document` 클래스로 감싸기
+3. `VectorStore` 의 `add()` 또는 `save()` 메서드 호출
+
+```java
+@Autowired
+VectorStore vectorStore;
+
+void load(String sourceFile) {
+    JsonReader jsonReader = new JsonReader(new FileSystemResource(sourceFile),
+            "price", "name", "shortDescription", "description", "tags"); // 읽을 JSON 필드 지정
+
+    List<Document> documents = jsonReader.get(); // Document 리스트 생성
+    this.vectorStore.add(documents);             // 벡터 DB에 저장
+}
+```
+
+- `JsonReader` 는 지정한 JSON 필드를 읽어 작은 조각으로 분할
+- `VectorStore` 구현체에 전달
+- 구현체는 임베딩을 계산하고, JSON 원본과 함께 벡터 DB에 저장
+
+<br/>
+
+**사용자 질문 처리**
+
+사용자의 질문이 들어오면, 유사성 검색을 통해 관련 문서를 검색한다.
+
+이 문서들은 프롬프트의 컨텍스트로 삽입되어 AI 모델에게 함께 전달된다.
+
+```java
+String question = <사용자 질문>;
+List<Document> similarDocuments = store.similaritySearch(this.question);
+```
+
+<br/>
+
+## 18. Vector Database: MongoDB Atlas
+---
+
+MongoDB Atlas는 AWS, Azure, GCP에서 사용 가능한 MongoDB의 완전 관리형 클라우드 데이터베이스이다. Atlas는 MongoDB 문서 데이터에 대해 기본 벡터 검색과 전체 텍스트 검색을 지원한다.
+
+MongoDB Atlas Vector Search를 사용하면 임베딩을 MongoDB 문서에 저장하고, 벡터 검색 인덱스를 생성하며, 근사 최근접 이웃 알고리즘을 사용하여 KNN 검색을 수행할 수 있다. MongoDB의 집계 단계에서 `$vectorSearch` 집계 연산자를 사용하여 벡터 임베딩을 기반으로 검색을 수행할 수 있다.
+
+<br/>
+
+### 18.1. 사전 준비 사항
+---
+
+- Vector Search가 활성화된 MongoDB Atlas 인스턴스
+- 벡터 검색 인덱스가 구성된 컬렉션
+- id(문자열), content(문자열), metadata(문서), embedding(벡터) 필드가 포함된 컬렉션 스키마
+- 인덱스 및 컬렉션 작업을 위한 적절한 접근 권한
+
+<br/>
+
+### 18.2. 자동 구성
+---
+
+다음과 같이 의존을 추가한다.
+
+```groovy
+dependencies {
+    implementation 'org.springframework.ai:spring-ai-starter-vector-store-mongodb-atlas'
+}
+```
+
+<br/>
+
+벡터 저장소 구현체는 필요한 스키마를 자동으로 초기화할 수 있지만, 설정 파일에서 다음 속성을 설정해야 활성화된다.
+
+```
+spring.ai.vectorstore.mongodb.initialize-schema=true
+```
+- 추가로 `EmbeddingModel` Bean을 구성해야 한다. 자세한 내용은 EmbeddingModel 섹션을 참고해라.
+
+<br/>
+
+애플리케이션 내에서 `MongoDBAtlasVectorStore` 를 벡터 저장소로 자동 주입할 수 있다.
+
+```java
+@Autowired
+VectorStore vectorStore;
+
+// ...
+
+List<Document> documents = List.of(
+    new Document("Spring AI rocks!! Spring AI rocks!! Spring AI rocks!! Spring AI rocks!! Spring AI rocks!!", Map.of("meta1", "meta1")),
+    new Document("The World is Big and Salvation Lurks Around the Corner"),
+    new Document("You walk forward facing the past and you turn back toward the future.", Map.of("meta2", "meta2"))
+);
+
+// MongoDB Atlas에 문서 추가
+vectorStore.add(documents);
+
+// 쿼리와 유사한 문서 검색
+List<Document> results = vectorStore.similaritySearch(
+    SearchRequest.builder().query("Spring").topK(5).build()
+);
+```
+
+<br/>
+
+**구성 속성**
+
+`MongoDBAtlasVectorStore` 를 사용하려면 인스턴스의 접근 정보를 제공해야 한다.
+
+```yaml
+spring:
+  data:
+    mongodb:
+      uri: <mongodb atlas connection string>
+      database: <database name>
+  ai:
+    vectorstore:
+      mongodb:
+        initialize-schema: true
+        collection-name: custom_vector_store
+        index-name: custom_vector_index
+        path-name: custom_embedding
+        metadata-fields-to-filter: author,year
+```
+
+<br/>
+
+`spring.ai.vectorstore.mongodb.*` 로 시작하는 속성은 `MongoDBAtlasVectorStore` 의 구성을 위한 항목이다.
+
+|**성**|**설명**|**기본값**|
+|---|---|---|
+|spring.ai.vectorstore.mongodb.initialize-schema|필요한 스키마를 초기화할지 여부|false|
+|spring.ai.vectorstore.mongodb.collection-name|벡터를 저장할 컬렉션 이름|vector_store|
+|spring.ai.vectorstore.mongodb.index-name|벡터 검색 인덱스 이름|vector_index|
+|spring.ai.vectorstore.mongodb.path-name|벡터가 저장될 경로|embedding|
+|spring.ai.vectorstore.mongodb.metadata-fields-to-filter|필터링에 사용할 수 있는 메타데이터 필드 목록 (쉼표 구분)|빈 리스트|
+
+<br/>
+
+## 19. MongoDB 및 Spring AI로 구현하는 RAG
+---
+
+먼저 설정을 추가한다.
+
+```
+spring.application.name=RagApp
+
+spring.ai.openai.api-key=<Your-API-Key>
+spring.ai.openai.chat.options.model=gpt-4o
+
+spring.ai.vectorstore.mongodb.initialize-schema=true
+
+spring.data.mongodb.uri=<Your-Connection-URI>
+spring.data.mongodb.database=rag
+```
+
+<br/>
+
+설정을 구성한다.
+
+```java
+@Configuration
+public class Config {
+    @Value("${spring.ai.openai.api-key}")
+    private String openAiKey;
+
+    @Bean
+    public EmbeddingModel embeddingModel() {
+        return new OpenAiEmbeddingModel(new OpenAiApi(openAiKey));
+    }
+
+    @Bean
+    public VectorStore mongodbVectorStore(MongoTemplate mongoTemplate, EmbeddingModel embeddingModel) {
+        return new MongoDBAtlasVectorStore(mongoTemplate, embeddingModel,
+                MongoDBAtlasVectorStore.MongoDBVectorStoreConfig.builder().build(), true);
+    }
+}
+```
+
+<br/>
+
+데이터셋을 `resources/docs` 디렉터리에 저장한다.
+
+그 후 `DocsLoaderService` 에서 문서를 불러오고 임베딩한 후 MongoDB에 저장한다.
+
+```java
+package com.mongodb.RagApp.service;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.ai.document.Document;
+import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.stereotype.Service;
+
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+@Service
+public class DocsLoaderService {
+
+    private static final int MAX_TOKENS_PER_CHUNK = 2000; 
+    private final VectorStore vectorStore;
+    private final ObjectMapper objectMapper;
+
+    @Autowired
+    public DocsLoaderService(VectorStore vectorStore, ObjectMapper objectMapper) {
+        this.vectorStore = vectorStore;
+        this.objectMapper = objectMapper;
+    }
+
+    public String loadDocs() {
+        try (InputStream inputStream = new ClassPathResource("docs/devcenter-content-snapshot.2024-05-20.json").getInputStream();
+             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
+
+            List<Document> documents = new ArrayList<>();
+            String line;
+
+            while ((line = reader.readLine()) != null) {
+                Map<String, Object> jsonDoc = objectMapper.readValue(line, Map.class);
+                String content = (String) jsonDoc.get("body");
+
+                // Split the content into smaller chunks if it exceeds the token limit
+                List<String> chunks = splitIntoChunks(content, MAX_TOKENS_PER_CHUNK);
+
+                // Create a Document for each chunk and add it to the list
+                for (String chunk : chunks) {
+                    Document document = createDocument(jsonDoc, chunk);
+                    documents.add(document);
+                }
+                // Add documents in batches to avoid memory overload
+                if (documents.size() >= 100) {
+                    vectorStore.add(documents);
+                    documents.clear();
+                }
+            }
+            if (!documents.isEmpty()) {
+                vectorStore.add(documents);
+            }
+
+            return "All documents added successfully!";
+        } catch (Exception e) {
+            return "An error occurred while adding documents: " + e.getMessage();
+        }
+    }
+
+    private Document createDocument(Map<String, Object> jsonMap, String content) {
+        Map<String, Object> metadata = (Map<String, Object>) jsonMap.get("metadata");
+
+        metadata.putIfAbsent("sourceName", jsonMap.get("sourceName"));
+        metadata.putIfAbsent("url", jsonMap.get("url"));
+        metadata.putIfAbsent("action", jsonMap.get("action"));
+        metadata.putIfAbsent("format", jsonMap.get("format"));
+        metadata.putIfAbsent("updated", jsonMap.get("updated"));
+
+        return new Document(content, metadata);
+    }
+
+    private List<String> splitIntoChunks(String content, int maxTokens) {
+        List<String> chunks = new ArrayList<>();
+        String[] words = content.split("\\s+");
+        StringBuilder chunk = new StringBuilder();
+        int tokenCount = 0;
+
+        for (String word : words) {
+            // Estimate token count for the word (approximated by character length for simplicity)
+            int wordTokens = word.length() / 4;  // Rough estimate: 1 token = ~4 characters
+            if (tokenCount + wordTokens > maxTokens) {
+                chunks.add(chunk.toString());
+                chunk.setLength(0); // Clear the buffer
+                tokenCount = 0;
+            }
+            chunk.append(word).append(" ");
+            tokenCount += wordTokens;
+        }
+        if (chunk.length() > 0) {
+            chunks.add(chunk.toString());
+        }
+        return chunks;
+    }
+}
+```
+
+<br/>
+
+간단한 테스트용 컨트롤러를 구현한다.
+
+```java
+@RestController
+@RequestMapping("/api/docs")
+public class DocsLoaderController {
+    private DocsLoaderService docsLoaderService;
+    public DocsLoaderController(DocsLoaderService docsLoaderService) {
+        this.docsLoaderService = docsLoaderService;
+    }
+
+    @GetMapping("/load")
+    public String loadDocuments() {
+        return docsLoaderService.loadDocs();
+    }
+}
+```
+
+<br/>
+
+질문 및 응답을 처리하는 RAG 기능을 구현한다.
+
+```java
+@RestController
+public class RagController {
+    private final ChatClient chatClient;
+
+    public RagController(ChatClient.Builder builder, VectorStore vectorStore) {
+        this.chatClient = builder
+                .defaultAdvisors(new QuestionAnswerAdvisor(vectorStore, SearchRequest.defaults()))
+                .build();
+    }
+
+    @GetMapping("/question")
+    public String question(@RequestParam(value = "message", defaultValue = "How to analyze time-series data with Python and MongoDB?") String message) {
+        return chatClient.prompt()
+                .user(message)
+                .call()
+                .content();
+    }
+}
+```
+
+<br/>
+
+테스트를 수행한다.
+
+1. 애플리케이션 수행
+2. 문서 로드 : `http://localhost:8080/api/docs/load`
+3. 질문 테스트 : `http://localhost:8080/question?message=<question>`
+
+<br/>
 
 <br/>
 
 ## Reference
 ---
 
-[Spring AI: Reference Doc.](https://docs.spring.io/spring-ai/reference/index.html)
+[Spring AI](https://docs.spring.io/spring-ai/reference/index.html)
+[Retrieval-Augmented Generation With MongoDB and Spring AI](https://www.mongodb.com/developer/languages/java/retrieval-augmented-generation-spring-ai/)
