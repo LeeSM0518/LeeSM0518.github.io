@@ -4117,8 +4117,6 @@ public class RagController {
 
 <br/>
 
-<br/>
-
 ## Reference
 ---
 
