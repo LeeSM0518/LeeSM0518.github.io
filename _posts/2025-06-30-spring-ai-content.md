@@ -10,7 +10,7 @@ tags:
 description: Spring AI 설정 및 사용 가이드
 ---
 
-## 1. Ollama 환경 설정
+## 1. Ollama 환경 설정법
 ---
 
 brew를 사용해 `ollama` 를 설치한다.
