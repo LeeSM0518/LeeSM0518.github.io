@@ -31,7 +31,11 @@ description: AWS DB Migration Seminar 청강
 
 - Oracle to PostgreSQL 진행
 - AWS SCT(Schema Conversion Tool)
+    - 데이터베이스의 스키마 변환
+    - 서로 다른 데이터베이스 엔진 간 마이그레이션할 때 사용
 - AWS DMS(Database Migration Service)
+    - 실제 데이터를 옮기는 작업
+    - 데이터를 소스 DB에서 대상 DB로 마이그레이션할 때 사용
 
 <br/>
 
