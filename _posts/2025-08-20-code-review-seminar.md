@@ -1,10 +1,10 @@
 ---
-title: 제목
+title: 코드 리뷰 사내 세미나
 date: 2025-08-20 09:00:00 +0900
 categories: review
 tags:
   - code-review
-description: 코드 리뷰 사내 세미나
+description: 
 ---
 
 ## 1. 코드 리뷰의 기본 원칙
