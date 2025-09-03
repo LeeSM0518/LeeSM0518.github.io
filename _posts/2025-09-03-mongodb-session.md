@@ -46,3 +46,18 @@ description:
     - 애플리케이션에서 함께 조회되는 것은 데이터베이스에서도 함께 저장되야 한다.
 - 패턴
     - 디자인 패턴은 필요할 때만, 스키마는 단순하게 하는 것이 좋다.
+
+## MongoDB 성능 개선
+---
+
+- MongoDB Atlas Ignite Package (컨설팅)
+- Index Tuning
+    - Performance Advisor
+    - Query Profiler (매일 모니터링 필요)
+- Cluster Version Update
+- Covered Query : 인덱스에 모든 데이터를 넣는 방식
+- Archiving : 오래된 데이터를 S3로 옮김
+- Analytics Node : 분석용 노드
+    - 분석할 때나 스케쥴링 작업 등
+- In-Memory Caching : 상수 조회 쿼리를 인메모리로 관리
+- AI Code Review for Index
