@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bundle exec jekyll serve:*)",
+      "Read(/Users/sangminlee/me/aiminder-server/src/main/kotlin/ai/aiminder/aiminderserver/goal/domain/**)",
+      "Read(/Users/sangminlee/me/aiminder-server/src/main/kotlin/ai/aiminder/aiminderserver/goal/domain/**)",
+      "Read(/Users/sangminlee/me/aiminder-server/src/main/kotlin/ai/aiminder/aiminderserver/goal/entity/**)",
+      "Read(/Users/sangminlee/me/aiminder-server/src/main/kotlin/ai/aiminder/aiminderserver/goal/controller/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
