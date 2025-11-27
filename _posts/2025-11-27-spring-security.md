@@ -129,6 +129,95 @@ Set-Cookie: JSESSIONID=randomid; Domain=bank.example.com; Secure; HttpOnly; Same
 
 <br/>
 
+#### 보안 HTTP 응답 헤더
+---
+
+웹 애플리케이션의 보안을 강화하기 위해 HTTP 응답 헤더를 다양한 방식으로 사용할 수 있다.
+
+<br/>
+
+##### 기본 보안 헤더
+
+Spring Security는 보안 기본값을 제공하기 위해 보안 관련 HTTP 응답 헤더의 기본 세트를 제공한다.
+
+```
+Cache-Control: no-cache, no-store, max-age=0, must-revalidate
+Pragma: no-cache
+Expires: 0
+X-Content-Type-Options: nosniff
+Strict-Transport-Security: max-age=31536000; includeSubDomains
+X-Frame-Options: DENY
+X-XSS-Protection: 0
+```
+- `Strict-Transport-Security` 는 HTTPS 요청에서만 추가된다.
+
+<br/>
+
+##### Cache Control
+
+Spring Security의 기본값은 사용자의 콘텐츠를 보호하기 위해 캐싱을 비활성화하는 것이다. 기본적으로 전송되는 캐시 제어 헤더는 다음과 같다.
+
+```
+Cache-Control: no-cache, no-store, max-age=0, must-revalidate
+Pragma: no-cache
+Expires: 0
+```
+
+<br/>
+
+##### Content Type Options
+
+콘텐츠 스니핑을 통해 악의적인 사용자가 XSS 공격을 수행할 수 있다. 예를 들어, 악의적인 사용자는 유효한 JavaScript 파일이기도 한 포스트스크립트 문서를 만들어 XSS 공격을 수행할 수 있다.
+
+- Content Sniffing : 브라우저가 파일의 타입을 추측해서 동작시키는 것
+- XSS (Cross-Site Scription) : 공격자가 다른 사람의 브라우저에서 악성 스크립트를 실행시키는 공격
+
+<br/>
+
+위와 같은 공격을 막기 위해 Spring Security는 HTTP 응답에 다음 헤더를 추가하여 콘텐츠 스니핑을 비활성화한다.
+
+```
+X-Content-Type-Options: nosniff
+```
+
+<br/>
+
+##### HTTP Strict Transport Security (HSTS)
+
+`mybank.example.com` 과 같이 `https` 프로토콜을 생략해서 웹사이트를 입력할 때, 초기 HTTP 요청을 가로채서 `https://mibank.example.com` 으로 리디렉션 할 수 있다.
+
+이처럼 많은 사용자가 `https` 프로토콜을 생략하기 때문에 **HTTP Strict Transport Security (HSTS)** 가 만들어졌다.
+
+이를 막기 위해 Spring Security 에서는 브라우저에 도메인을 1년 동안 HSTS 호스트로 취급하도록 지시하는 다음 헤더를 추가한다.
+
+```
+Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+```
+
+<br/>
+
+##### X-Frame-Options
+
+웹사이트가 프레임에 추가되도록 허용하는 것은 보안 문제가 될 수 있다. 예를 들어, 교묘한 CSS 스타일링을 사용하여 사용자가 의도하지 않은 것을 클릭하도록 유도할 수 있다. 이러한 공격을 클릭재킹이라고 한다.
+
+클릭재킹을 해결하는 방법은 `X-Frame-Options` 헤더를 사용하는 것이다. 기본적으로 Spring Security는 다음 헤더를 사용하여 iframe 내에서 페이지 렌더링을 비활성화한다.
+```
+X-Frame-Options: DENY
+```
+
+<br/>
+
+##### Content Security Policy (CSP)
+
+콘텐츠 보안 정책(CSP)은 웹 애플리케이션이 크로스 사이트 스크립팅(XSS)과 같은 콘텐츠 삽입 취약점을 완화하는 데 사용할 수 있는 메커니즘이다. CSP는 웹 애플리케이션 작성자가 웹 애플리케이션이 리소스를 로드할 것으로 예상하는 소스에 대해 클라이언트에게 선언하고 궁극적으로 알리는 기능을 제공하는 선언적 정책이다.
+
+예를 들어, 웹 애플리케이션은 응답에 다음 헤더를 포함하여 특정 신뢰할 수 있는 소스에서 스크립트를 로드할 것으로 예상한다고 선언할 수 있다.
+```
+Content-Security-Policy: script-src https://trustedscripts.example.com
+```
+
+<br/>
+
 ## Reference
 ---
 
