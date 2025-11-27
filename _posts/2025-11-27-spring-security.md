@@ -218,6 +218,13 @@ Content-Security-Policy: script-src https://trustedscripts.example.com
 
 <br/>
 
+#### HTTP 요청
+---
+
+정적 리소스를 포함한 모든 HTTP 기반 통신은 TLS를 사용하여 보호되어야 한다. Spring Security는 클라이언트가 HTTP를 사용할 때 HTTPS로 리디렉션하도록 구성할 수 있다.
+
+<br/>
+
 ## Reference
 ---
 
