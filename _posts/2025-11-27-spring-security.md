@@ -225,6 +225,94 @@ Content-Security-Policy: script-src https://trustedscripts.example.com
 
 <br/>
 
+## Architecture (Servlet Applications)
+---
+
+서블릿 기반 애플리케이션 내에서 Spring Security의 고수준 아키텍처에 대해 설명한다.
+
+<br/>
+
+### FilterChain
+---
+
+Spring Security의 서블릿 지원은 서블릿 필터를 기반으로 하므로, 먼저 필터의 일반적인 역할을 살펴보는 것이 좋다. 다음 이미지는 단일 HTTP 요청에 대한 핸들러의 일반적인 계층화를 보여준다.
+
+![spring-security1](/assets/img/spring-security1.png)
+
+<br/>
+
+클라이언트가 애플리케이션에 요청을 보내면, 컨테이너는 요청 URI의 경로를 기반으로 `HttpServletRequest` 를 처리해야 하는 `Filter` 인스턴스와 `Servlet` 을 포함하는 `FilterChain` 을 생성한다.
+
+Spring MVC 애플리케이션에서 `Servlet` 은 `DispatcherServlet` 의 인스턴스이다. 하나의 `Servlet` 은 최대 하나의 `HttpServletRequest` 와 `HttpServletResponse` 를 처리할 수 있다. 그러나 둘 이상의 `Filter` 를 사용하여 다음을 수행할 수 있다.
+
+- 다운스트림 `Filter` 인스턴스나 `Servlet` 이 호출되지 않도록 방지한다. 이 경우 `Filter` 는 일반적으로 `HttpServletResponse` 를 작성한다.
+- 다운스트림 `Filter` 인스턴스와 `Servlet` 이 사용하는 `HttpServletRequest` 또는 `HttpServletResponse` 를 수정한다.
+
+<br/>
+
+**FilterChain 사용 예제**
+
+```kotlin
+@Throws(IOException::class, ServletException::class)
+override fun doFilter(
+	request: ServletRequest?,
+	response: ServletResponse?,
+	chain: FilterChain
+) {
+  // 애플리케이션의 나머지 부분 전에 무언가를 수행
+  chain.doFilter(request, response) // 애플리케이션의 나머지 부분 호출
+  // 애플리케이션의 나머지 부분 후에 무언가를 수행
+}
+```
+
+- `Filter` 는 다운스트림 `Filter` 인스턴스와 `Servlet` 에만 영향을 미치므로, 각 `Filter` 가 호출되는 순서가 매우 중요하다.
+
+<br/>
+
+### DelegatingFilterProxy
+---
+
+Spring은 서블릿 컨테이너의 생명주기와 Spring의 `ApplicationContext` 사이를 연결할 수 있게 해주는 `DelegatingFilterProxy` 라는 `Filter` 구현을 제공한다.
+
+서블릿 컨테이너는 자체 표준을 사용하여 `Filter` 인스턴스를 등록할 수 있지만, Spring에서 정의한 빈은 인식하지 못한다. 표준 서블릿 컨테이너 메커니즘을 통해 `DelegatingFilterProxy` 를 등록하되, 모든 작업을 `Filter` 를 구현하는 Spring 빈을 위임할 수 있다.
+
+![spring-security2](/assets/img/spring-security2.png)
+
+<br/>
+
+`DelegatingFilterProxy` 는 `ApplicationContext` 에서 Bean Filter(0)을 조회한 다음 Bean Filter(0)을 호출한다. 다음은 `DelegatingFilterProxy` 의 의사 코드를 보여준다.
+
+```kotlin
+fun doFilter(
+	request: ServletRequest,
+	response: ServletResponse,
+	chain: FilterChain
+) {
+	val delegate: Filter = getFilterBean(someBeanName) // (1)
+	delegate.doFilter(request, response) // (2)
+}
+```
+
+1. Spring 빈으로 등록된 Filter를 지연 로딩한다.
+2. Spring 빈에 작업을 위임한다.
+
+<br/>
+
+### FilterChainProxy
+---
+
+Spring Security의 서블릿 지원은 `FilterChainProxy` 내에 포함되어 있다. `FilterChainProxy` 는 Spring Security가 제공하는 특별한 `Filter` 로, SecurityFilterChain을 통해 많은 `Filter` 인스턴스에 위임할 수 있게 한다.
+
+`FilterChainProxy` 는 빈이므로 일반적으로 `DelegatingFilterProxy` 로 래핑된다. 
+
+![spring-security3](/assets/img/spring-security3.png)
+
+<br/>
+
+
+
+<br/>
+
 ## Reference
 ---
 
