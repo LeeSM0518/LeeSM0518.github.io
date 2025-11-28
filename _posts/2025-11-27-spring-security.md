@@ -309,7 +309,192 @@ Spring Security의 서블릿 지원은 `FilterChainProxy` 내에 포함되어 �
 
 <br/>
 
+### SecurityFilterChain
+---
 
+`SecurityFilterChain` 은 `FilterChainProxy` 가 현재 요청에 대해 호출해야 하는 Spring Security `Filter` 인스턴스를 결정하는 데 사용된다.
+
+![spring-security4](/assets/img/spring-security4.png)
+
+<br/>
+
+`SecurityFilterChain` 의 보안 필터는 일반적으로 빈이지만, DelegatingFilterProxy 대신 `FilterChainProxy` 에 등록된다.
+
+`FilterChainProxy` 는 서블릿 컨테이너나 DelegatingFilterProxy에 직접 등록하는 것에 비해 여러 가지 이점을 제공한다.
+
+첫째, Spring Security의 모든 서블릿 지원에 대한 시작점을 제공한다. 그런 이유로, Spring Security의 서블릿 지원 문제를 해결하려고 할 때 `FilterChainProxy` 에 디버그 포인트를 추가하는 것이 좋은 시작점이다.
+
+둘째, `FilterChainProxy` 는 Spring Security 사용의 중심이므로 선택 사항으로 보이지 않는 작업을 수행할 수 있다. 
+
+또한, `SecurityFilterChain` 이 언제 호출되어야 하는지 결정하는 데 많은 유연성을 제공한다. 서블릿 컨테이너에서 `Filter` 인스턴스는 URL만을 기반으로 호출된다. 그러나 `FilterChainProxy` 는 `RequestMatcher` 인터페이스를 사용하여 `HttpServletRequest` 의 모든 것을 기반으로 호출을 결정할 수 있다.
+
+![spring-security5](/assets/img/spring-security5.png)
+
+ - `FilterChainProxy` 는 어떤 `SecuriyFilterChain` 을 사용해야 하는지 결정한다. 
+
+<br/>
+
+### Security Filters
+---
+
+보안 필터는 `SecurityFilterChain` API를 사용하여 `FilterChainProxy` 에 삽입된다. 이러한 필터는 취약점 공격 방어, 인증, 인가 등 다양한 목적으로 사용될 수 있다.
+
+필터는 적절한 시점에 호출되도록 호출되도록 보장하기 위해 특정 순서로 실행된다. 예를 들어 인증을 수행하는 필터는 인가를 수행하는 필터보다 먼저 호출되어야 한다. 
+
+<br/>
+
+보안 필터는 대부분 `HttpSecurity` 인스턴스를 사용하여 선언된다.
+
+```kotlin
+import org.springframework.security.config.web.servlet.invoke
+
+@Configuration
+@EnableWebSecurity
+class SecurityConfig {
+  
+  @Bean
+  fun filterChain(http: HttpSecurity): SecurityFilterChain {
+    http {
+      csrf { }
+      httpBasic { }
+      formLogin { }
+      authorizeHttpRequests {
+        authorize(anyRequest, authenticated)
+      }
+    }
+    return http.build()
+  }
+}
+```
+
+위 구성은 다음과 같은 `Filter` 순서를 생성한다.
+1. `CsrfFilter` 가 CSRF 공격으로부터 보호하기 위해 호출된다.
+2. `AuthenticationFilter` 가 요청을 인증하기 위해 호출된다.
+3. `AuthorizationFilter` 가 요청을 인가하기 위해 호출된다.
+
+<br/>
+
+**필터 체인에 필터 추가하기**
+
+`SecurityFilterChain` 에 사용자 정의 `Filter` 를 추가하고 싶을 수 있습니다.
+
+`HttpSecurity` 는 필터를 추가하기 위한 세 가지 메서드를 제공한다.
+
+- `#addFilterBefore(Filter, Class<?>)` : 다른 필터 앞에 필터 추가
+- `#addFilterAfter(Filter, Class<?>)` : 다른 필터 뒤에 추가
+- `#addFilterAt(Filter, Class<?>)` : 다른 필터를 자신의 필터로 교체
+
+<br/>
+
+**사용자 정의 필터 추가**
+
+자체 필터를 만드는 경우, 필터 체인에서 해당 위치를 결정해야 한다. 필터 체인에서 발생하는 주요 이벤트는 다음과 같다.
+
+1. `SecurityContext` 가 세션에서 로드된다.
+2. 요청이 일반적인 취약점 공격으로부터 보호된다.
+3. 요청이 인증된다.
+4. 요청이 인가된다.
+
+필터를 배치하기 위해 어떤 이벤트가 발생해야 하는지 고려해라. 다음은 경험 법칙이다.
+
+| 필터가 다음인 경우   | 다음 뒤에 배치                        | 이러한 이벤트가 이미 발생했으므로 |
+| ------------ | ------------------------------- | ------------------ |
+| 취약점 공격 방어 필터 | `SecurityContextHolderFilter`   | 1                  |
+| 인증 필터        | `LogoutFilter`                  | 1, 2               |
+| 인가 필터        | `AnonymousAuthenticationFilter` | 1, 2, 3            |
+
+<br/>
+
+예를 들어, 테넌트 ID 헤더를 가져오고 현재 사용자가 해당 테넌트에 접근할 수 있는지 확인하는 `Filter` 를 추가하고 싶다고 가정해 보자.
+
+먼저 `Filter` 를 만들어 보자.
+
+```java
+public class TenantFilter implements Filter {
+  
+  @Override
+  public void doFilter(
+    ServletRequest servletRequest,
+    ServletResponse servletResponse,
+    FilterChain filterChain
+  ) throws IOException, ServletException {
+    HttpServletRequest request = (HttpServletRequest) servletRequest;
+    HttpServletResponse response = (HttpServletResponse) servletResponse;
+    
+    String tenantId = request.getHeader("X-Tenant-Id");
+    boolean hasAccess = isUserAllowed(tenantId);
+    if (hasAccess) {
+      filterChain.doFilter(request, response);
+      return;
+    }
+    throw new AccessDeniedException("Access denied");
+  }
+}
+```
+
+<br/>
+
+이제 필터를 `SecurityFilterChain` 에 추가해야 한다.
+
+사용자를 알아야 하므로 인증 필터 뒤에 추가해야 한다. 경험법칙에 따라 체인에서 마지막 인증 필터인 `AnonymousAuthenticationFilter` 뒤에 다음과 같이 추가한다.
+
+```kotlin
+@Bean
+fun filterChain(http: HttpSecurity): SecurityFilterChain {
+  http
+    // ...
+    .addFilterAfter(TenantFilter(), AnonymousAuthenticationFilter::class.java)
+    
+  return http.build()
+}
+```
+
+- `HttpSecurity#addFilterAfter` 를 사용하여 `AnonymousAuthenticationFilter` 뒤에 `TenantFilter` 를 추가
+
+<br/>
+
+**필터를 빈으로 선언하기**
+
+필터를 `@Component` 로 어노테이션하거나 구성에서 빈으로 선언하여 Spring 빈으로 선언하면, Spring Boot가 자동으로 내장 컨테이너에 등록한다. 이로 인해 필터가 두 번 호출될 수 있다.
+
+<br/>
+
+**Spring Security 필터 사용자 정의**
+
+Spring Security 필터를 직접 구성하려는 경우 다음과 같이 `addFilterAt` 를 사용하여 `DSL` 에서 지정할 수 있다.
+
+```kotlin
+@Bean
+fun filterChain(http: HttpSecurity): SecurityFilterChain {
+  val basic = BasicAuthenticationFilter()
+  
+  http
+    // ...
+    .addFilterAt(basic, BasicAuthenticationFilter::class.java)
+    
+  return http.build()
+}
+```
+
+- 해당 필터가 이미 추가된 경우 Spring Security는 예외를 던진다.
+
+<br/>
+
+### 보안 예외 처리
+---
+
+`ExceptionTranslationFilter` 는 `AccessDeniedException` 및 `AuthenticationException` 을 HTTP 응답으로 변환할 수 있게 한다.
+
+`ExceptionTranslationFilter` 는 보안 필터 중 하나로 `FilterChainProxy` 에 삽입된다.
+
+<br/>
+
+다음 이미지는 `ExceptionTranslationFilter` 와 다른 구성요소와의 관계를 나타낸다.
+
+![spring-security6](/assets/img/spring-security6.png)
+
+1. 먼저, `ExceptionTranslationFilter` 는 `FilterChain.doFilter(request, response)` 를 호출하여 애플리케이션의 나머지 부분을 호출한다.
+2. 사용자가 인증되지 않았거나 `AuthenticationException` 인 경우, 인증을 시작한다.
 
 <br/>
 
