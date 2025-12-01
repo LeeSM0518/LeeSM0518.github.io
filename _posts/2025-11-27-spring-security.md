@@ -531,7 +531,8 @@ Spring Security에서는 `RequestCache` 구현을 사용하여 `HttpServletReque
 
 <br/>
 
-**RequestCache**
+#### RequestCache
+---
 
 `HttpServletRequest` 는 `RequestCache` 에 저장된다. 사용자가 성공적으로 인증하면 `RequestCache` 가 원래 요청을 재생하는 데 사용된다.
 
@@ -553,6 +554,57 @@ open fun springSecurity(http: HttpSecurity): SecurityFilterChain {
   return http.build()
 }
 ```
+
+<br/>
+
+#### 요청 저장 방지
+---
+
+로그인 전에 방문하려고 했던 페이지 대신 항상 사용자를 홈페이지로 리디렉션하려는 경우 이 기능을 끄고 싶을 수 있다.
+
+이를 수행하려면 `NullRequestCache` 구현을 사용할 수 있다.
+
+```kotlin
+@Bean
+open fun springSecurity(http: HttpSecurity): SecurityFilterChain {
+  val nullRequestCache = NullRequestCache()
+  http {
+    requestCache {
+      requestCache = nullRequestCache
+    }
+  }
+  return http.build()
+}
+```
+
+<br/>
+
+### 로깅
+---
+
+Spring Security는 DEBUG 및 TRACE 수준에서 모든 보안 관련 이벤트에 대한 포괄적인 로깅을 제공한다. 이는 보안 조치를 위해 Spring Security가 요청이 거부된 이유에 대한 세부 정보를 응답 본문에 추가하지 않기 때문에 애플리케이션을 디버깅할 때 매우 유용할 수 있다.
+
+모든 보안 이벤트를 기록하도록 애플리케이션을 구성하려면 다음을 애플리케이션에 추가할 수 있다.
+
+```
+logging.level.org.springframework.security=TRACE
+```
+{: file='application.properties'}
+
+{% raw %}
+```xml
+<configuration>
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <!-- ... -->
+  </appendar>
+  <!-- ... -->
+  <logger name="org.springframework.security" level="trace" additivity="false">
+    <appender-ref ref="Console" />
+  </logger>
+</configuration>
+```
+{: file='logback.xml'}
+{% endraw %}
 
 <br/>
 
