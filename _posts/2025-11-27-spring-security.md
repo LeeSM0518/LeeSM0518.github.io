@@ -495,6 +495,64 @@ fun filterChain(http: HttpSecurity): SecurityFilterChain {
 
 1. 먼저, `ExceptionTranslationFilter` 는 `FilterChain.doFilter(request, response)` 를 호출하여 애플리케이션의 나머지 부분을 호출한다.
 2. 사용자가 인증되지 않았거나 `AuthenticationException` 인 경우, 인증을 시작한다.
+	1. `SecurityContextHolder` 가 지워진다.
+	2. `HttpServletRequest` 가 저장되어 인증을 성공하면 원래 요청을 재생하는 데 사용할 수 있다.
+	3. `AuthenticationEntryPoint` 는 클라이언트에서 자격 증명을 요청하는데 사용된다.
+3. `AccessDeniedException` 인 경우, 접근 거부된다. `AccessDeniedHanlder` 가 접근 거부를 처리하기 위해 호출된다.
+
+<br/>
+
+`ExceptionTranslationFilter` 의 의사 코드는 다음과 같다.
+
+```java
+try {
+  filterChain.doFilter(request, response); // (1)
+} catch (AccessDeniedException | AuthenticationException ex) {
+  if (!authenticated || ex instanceof AuthenticationException) {
+    startAuthentication(); // (2)
+  } else {
+    accessDenied();  // (3)
+  }
+}
+```
+
+1. 애플리케이션의 나머지 부분을 호출한다. 애플리케이션의 다른 부분이 `AuthenticationException` 또는 `AccessDeniedException` 을 던지면 여기서 포착되어 처리된다는 것을 의미한다.
+2. 사용자가 인증되지 않았거나 `AuthenticationException` 인 경우, 인증을 시작한다.
+3. 그렇지 않으면, 접근 거부된다.
+
+<br/>
+
+### 인증 간 요청 저장
+---
+
+보안 예외 처리에서 설명한 대로, 요청에 인증이 없고 인증이 필요한 리소스에 대한 경우, 인증을 성공한 후 요청할 리소스에 대한 요청을 저장해야 한다.
+
+Spring Security에서는 `RequestCache` 구현을 사용하여 `HttpServletRequest` 를 저장함으로써 이를 수행한다.
+
+<br/>
+
+**RequestCache**
+
+`HttpServletRequest` 는 `RequestCache` 에 저장된다. 사용자가 성공적으로 인증하면 `RequestCache` 가 원래 요청을 재생하는 데 사용된다.
+
+`RequestCacheAwareFilter` 는 사용자가 인증한 후 저장된 `HttpServletRequest` 를 가져오기 위해 `RequestCache` 를 사용하고, `ExceptionTranslationFilter` 는 `AuthenticationException` 을 감지한 후 사용자를 로그인 엔드포인트로 리디렉션하기 전에 `HttpServletRequest` 를 저장하기 위해 `RequestCache` 를 사용한다.
+
+기본적으로 `HttpSessionRequestCache` 가 사용된다. 아래 코드는 `continue` 라는 매개변수가 있는 경우 저장된 요청에 대해 `HttpSession` 을 확인하는 데 사용되는 `RequestCache` 구현을 사용자 정의하는 방법을 보여준다.
+
+```kotlin
+@Bean
+open fun springSecurity(http: HttpSecurity): SecurityFilterChain {
+  val httpRequestCache = HttpSessionRequestCache()
+  httpRequestCache.setMatchingRequestParameterName("continue")
+  http {
+    requestCache {
+      requestCache = httpRequestCache
+    }
+  }
+  
+  return http.build()
+}
+```
 
 <br/>
 
