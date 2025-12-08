@@ -349,7 +349,7 @@ TCP가 연결을 시도할 때 정의한 three-way handshaking을 수행한다. 
 
 <br/>
 
-오라클에는 종료된 연결을 찾아내는 DCD(Dead Connection Detection)란 기능이 있어서 클라이언트가 급작스럽게 작동이 중지되었는지 찾아낼 수 있다. 이 기능을 활성화하면 오라클 서버는 
+오라클에는 종료된 연결을 찾아내는 DCD(Dead Connection Detection)란 기능이 있어서 클라이언트가 급작스럽게 작동이 중지되었는지 찾아낼 수 있다.
 
 <br/>
 
