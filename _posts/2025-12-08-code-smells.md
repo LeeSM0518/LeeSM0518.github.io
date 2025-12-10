@@ -24,6 +24,193 @@ description:
 
 <br/>
 
+### 긴 메서드 (Long Method)
+---
+
+#### 징후와 증상
+---
+
+메서드가 10줄 이상의 코드를 포함한다.
+
+<br/>
+
+#### 문제의 원인
+---
+
+기존 메서드에 추가하는 것보다 새 메서드를 만드는 것이 더 어려우므로 기존 메서드에 코드가 계속해서 추가되어 스파게티 코드가 된다.
+
+<br/>
+
+#### 해결 방법
+---
+
+메서드에 대해 설명이 필요해질 경우 새 메서드로 분리해야 한다. 그리고 메서드에 설명적인 이름이 있으면, 해당 메서드가 무엇을 하는지 코드를 보지 않아도 된다.
+
+<br/>
+
+메서드 길이를 줄이려면 메서드 추출을 사용해라.
+
+```java
+// 문제
+void printOwing() {
+  printBanner();
+
+  // Print details.
+  System.out.println("name: " + name);
+  System.out.println("amount: " + getOutstanding());
+}
+
+// 해결
+void printOwing() {
+  printBanner();
+  printDetails(getOutstanding());
+}
+
+void printDetails(double outstanding) {
+  System.out.println("name: " + name);
+  System.out.println("amount: " + outstanding);
+}
+```
+
+<br/>
+
+지역 변수나 매개변수 때문에 메서드를 추출하기 어렵다면, 임시 변수를 질의로 바꾸기, 매개변수 객체 만들기, 객체 통째로 넘기기를 시도해라.
+
+<br/>
+
+임시 변수를 질의로 바꾸기 예시
+
+```java
+// 문제
+double calculateTotal() {
+  double basePrice = quantity * itemPrice;
+  if (basePrice > 1000) {
+    return basePrice * 0.95;
+  }
+  else {
+    return basePrice * 0.98;
+  }
+}
+
+// 해결
+double calculateTotal() {
+  if (basePrice() > 1000) {
+    return basePrice() * 0.95;
+  }
+  else {
+    return basePrice() * 0.98;
+  }
+}
+double basePrice() {
+  return quantity * itemPrice;
+}
+```
+
+<br/>
+
+매개변수 객체 만들기 예시
+
+```java
+// 문제
+Int amountInvoicedIn(start: Date, end: Date)
+
+// 해결
+Int amountInvoicedIn(date: DateRange)
+```
+
+<br/>
+
+객체 통째로 넘기기 예시
+
+```java
+// 문제
+int low = daysTempRange.getLow();
+int high = daysTempRange.getHigh();
+boolean withinPlan = plan.withinRange(low, high);
+
+// 해결
+boolean withinPlan = plan.withinRange(daysTempRange);
+```
+
+<br/>
+
+위 방법들이 모두 통하지 않는다면, 메서드를 메서드 객체로 바꾸기로 메서드 전체를 별도 객체로 옮기는 것도 방법이다.
+
+<br/>
+
+메서드를 메서드 객체로 바꾸기 예시
+
+```java
+// 문제
+class Order {
+  // ...
+  public double price() {
+    double primaryBasePrice;
+    double secondaryBasePrice;
+    double tertiaryBasePrice;
+    // Perform logn computation.
+  }
+}
+
+// 해결
+class Order {
+  // ...
+  public double price() {
+    return new PriceCalculator(this).compute();
+  }
+}
+
+class PriceCalculator {
+  private double primaryBasePrice;
+  private double secondaryBasePrice;
+  private double tertiaryBasePrice;
+  
+  public PriceCalculator(Order order) {
+    // Copy relevant information from the
+    // order object.
+  }
+  
+  public double compute() {
+    // Perform long computation.
+  }
+}
+```
+
+<br/>
+
+조건문이나 반복문은 분리할 수 있다는 좋은 신호이다. 조건문에는 조건문 분해하기를, 반복문에는 메서드 추출을 적용해보자.
+
+<br/>
+
+조건문 분해하기 예시
+
+```java
+// 문제
+if (date.before(SUMMER_START) || date.after(SUMMER_END)) {
+  charge = quantity * winterRate + winterServiceCharge;
+}
+else {
+  charge = quantity * summerRate;
+}
+
+// 해결
+if (isSummer(date)) {
+  charge = summerCharge(quantity);
+}
+else {
+  charge = winterCharge(quantity);
+}
+```
+
+<br/>
+
+#### 장점
+---
+
+코드 이해와 유지보수가 쉬워지고, 숨어있던 중복 코드를 찾기 쉽다.
+
+<br/>
+
 ## 객체 지향 남용 (Object-Orientation Abusers)
 ---
 
