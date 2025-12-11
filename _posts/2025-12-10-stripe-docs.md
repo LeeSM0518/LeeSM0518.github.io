@@ -395,9 +395,398 @@ Stripe Billing API가 구독, 인보이스, 정기 결제를 생성하고 관리
 #### 2.6.4. (3단계) Stripe API 호출
 ---
 
-- Stripe Java 라이브러리 설치
-	- `com.stripe.stripe-java`
-- 
+Stripe Java 라이브러리 설치 : `com.stripe.stripe-java`
+
+기본 설정
+
+```java
+// 서버 포트
+port(4242);
+
+// Stripe 테스트용 비밀 API 키
+String apiKey = "sk_test_...";
+
+// 웹훅 엔드포인트 시크릿 (서명 검증용)
+String endpointSecret = "whsec_12345";
+
+final String YOUR_DOMAIN = "http://localhost:4242";
+```
+
+<br/>
+
+결제 세션(Checkout Session) 생성
+- 결제 세션은 고객이 Stripe 호스팅 결제 페이지에서 보는 항목을 제어한다.
+
+```java
+SessionCreateParams params = 
+  SessionCreateParams
+    .builder()
+    .addLineItem(
+      SessionCreateParams
+        .LineItem
+        .builder()
+          .setPrice(
+            prices
+              .getData()
+              .get(0)
+              .getId()
+          )
+          .setQuantity(1L)
+          .build()
+    )
+    .setMode(SessionCreateParams.Mode.SUBSCRIPTION)
+    .setSuccessUrl(YOUR_DOMAIN + "?success=true&session_id={CHECKOUT_SESSION_ID}")
+    .build();
+
+Session session = Session.create(params);
+
+response.redirect(session.getUrl(), 303);
+```
+- `addLineItem` : 제품 제고에 관한 가격 및 재고 상태와 같은 민감한 정보는 항상 서버에 보관하여 클라이언트 측의 고객 조작을 방지하십시오.
+- `setMode` : 모드를 `subscription` 으로 설정해라. 결제 시에는 비정기 결제를 위한 결제 및 설정 모드로 지원한다.
+- `setSuccessUrl` : Stripe가 결제 성공 후 고객을 리디렉션할 수 있는 공개적으로 접근 가능한 URL을 지정해라. URL 끝에 `session_id` 쿼리 매개변수를 추가하면 나중에 고객을 조회할 수 있으며 Stripe가 고객의 호스팅된 대시보드를 생성할 수 있다.
+- `redirect` : 세션을 생성한 후, 응답에서 반환된 URL로 고객을 리디렉션해라.
+
+<br/>
+
+lookup key로 가격 조회
+- 주문에 해당 상품의 가격을 적용하려면 가격 엔드포인트에서 상품에 대한 정의한 조회 키를 전달해라.
+
+```java
+PriceListParams priceParams =
+  PriceListParams
+    .builder()
+    .addLookupKeys(
+      request
+        .queryParams("lookup_key")
+        .build();
+    )
+    .build();
+    
+PriceCollection prices = Price.list(priceParams);
+```
+
+<br/>
+
+고객 포털 세션 생성
+- 고객이 구독 및 결제 정보를 관리할 수 있도록 Stripe에서 호스팅하는 안전한 고객 포털 세션을 시작해라.
+
+```java
+SessionCreateParams = 
+  new SessionCreateParams
+    .Builder()
+    .setCustomer(checkoutSession.getCustomer())
+    .setReturnUrl(YOUR_DOMAIN).build();
+    
+Session portalSession = Session.create(params):
+```
+
+<br/>
+
+고객 포털로 리디렉션
+
+- 포털 세션을 생성한 후, 응답에서 반환된 URL로 고객을 리디렉션하십시오.
+
+```java
+response.redirect(portalSession.getUrl(), 303);
+```
+
+<br/>
+
+구독을 완료하세요
+- 구독 활동 관련 이벤트를 수신하려면 Workbench의 웹훅 탭에서 /webhook 엔드포인트를 생성하고 웹훅 비밀 키를 획득하세요.
+- 결제 성공 후 성공 페이지로 리디렉션되면 구독 상태가 활성인지 확인하고 고객이 제품 및 기능에 대한 접근 권한을 부여하세요.
+
+```java
+post("/webhook", (request, response) -> {
+  String payload = request.body();
+  Event event = null;
+  
+  // 1단계: JSON 파싱
+  try {
+    event = ApiResource.GSON.fromJson(payload, Event.class);
+  } catch (JsonSyntaxException e) {
+    // 잘못된 페이로드
+    System.out.println("기본 요청 파싱 중 웹훅 오류 발생")
+    response.status(400);
+    return "";
+  }
+  
+  // 2단계: 서명 검증 (보안)
+  String sigHeader = request.headers("Stripe-Signature");
+  if (endpointSecret != null && sigHeader != null) {
+    try {
+      event = Webhook.constructEvent(payload, sigHeader, endpointSecret);
+    } catch (SignatureVerificationException e) {
+      // 잘못된 서명
+      System.out.println("서명 검증 중 웹훅 오류 발생");
+      response.status(400);
+      return "";
+    }
+  }
+  
+  // 3단계: 이벤트 내부의 객체 역직렬화
+  EventDataObjectDeserializer dataObjectDeserializer = 
+    event.getDataObjectDeserializer();
+  StripeObject stripeObject = null;
+  if (dataObjectDeserializer.getObject().isPresent()) {
+    stripeObject = dataObjectDeserializer.getObject().get();
+  } else {
+    // 역직렬화 실패 - API 버전 불일치 가능성
+    // EventDataObjectDeserializer Javadoc을 참고하여 처리하거나
+    // 여기서 에러를 반환하세요
+  }
+  
+  // 4단계: 이벤트 유형별 처리
+  Subscription subscription = null;
+  switch (event.getType()) {
+    case "customer.subscription.deleted":
+      // 구독이 삭제됨
+      subscription = (Subscription) stripeObject;
+      // handleSubscriptionDeleted(subscription); 같은 함수 호출
+	  
+	case "customer.subscription.trial_will_end":
+	  // 구독 체험 기간이 곧 종료됨
+	  subscription = (Subscription) stripeObject;
+	  // handleSubscriptionTrialEnding(subscription);
+	  
+    case "customer.subscription.created":
+      // 새 구독이 생성됨
+      subscription = (Subscription) stripeObject;
+      // handleSubscriptionCreated(subscription);
+    
+    case "customer.subscription.updated":
+      // 구독이 업데이트됨
+      subscription = (Subscription) stripeObject;
+      // handleSubscriptionUpdated(subscription);
+    
+    case "entitlements.active_entitlement_summary.updated":
+      // 활성 권한 요약이 업데이트됨
+      subscription = (SubscriptionObject);
+      // handleEntitlementUpdated(subscription);
+      
+    default:
+      System.out.println("처리되지 않은 이벤트 유형: " + event.getType());
+  }
+  
+  response.status(200);
+  return "";
+})
+```
+
+<br/>
+
+#### 2.6.5. 전체 흐름 요약
+---
+
+1. 고객이 구독 버튼 클릭
+	1. /create-checkout-session 호출
+	2. Stripe 결제 페이지로 이동
+2. 결제 완료
+	1. Stripe가 /webhook으로 이벤트 전송
+	2. `customer.subscription.created` 이벤트 처리
+3. 고객이 구독 관리 원함
+	1. /create-portal-session 호출
+	2. Stripe 고객 포털로 이동
+4. 구독 변경/취소 시
+	1. Stripe가 /webhook으로 이벤트 전송
+	2. 해당 이벤트 처리
+
+<br/>
+
+#### 2.6.6. 전체 코드 정리
+---
+
+```java
+public class Server {
+  // JSON 직렬화/역직렬화를 위한 Gson 인스턴스
+  private static Gson gson = new Gson();
+  
+  public static void main(String[] args) {
+    // 서버 포트 설정
+    port(4242);
+    
+    // Stripe 테스트용 비밀 API 키 설정
+    // 실제 운영 환경에서는 환경 변수나 설정 파일에서 불러와야 함
+    String apiKey = "****";
+    
+    // 웹훅 서명 검증을 위한 엔드포인트 시크릿
+    String endpointSecret = "whsec_12345";
+    
+    // 서비스 도메인 URL (리다이렉트에 사용)
+    final String YOUR_DOMAIN = "http://localhost:4242";
+    
+    // 엔드포인트 1: 체크아웃 세션 생성
+    // 고객이 구독을 시작할 때 호출됨
+    post("/create-checkout-session", (request, response) -> {
+      // 요청에서 lookup_key를 가져와서 해당하는 가격(Price) 정보 조회
+      PriceListParams priceParams = 
+        PriceListParams
+          .builder()
+          .addLookupKeys(request.queryParams("lookup_key"))
+          .build();
+	  PriceCollection prices = Price.list(priceParams);
+	  
+	  // 체크아웃 세션 파라미터 설정
+	  SessionCreateParams params = 
+	    SessionCreateParams
+	      .builder()
+	      // 구매 항목 추가 (가격 ID와 수량 설정)
+	      .addLineItem(
+	        SessionCreateParams
+	          .LineItem
+	          .builder()
+	          // 조회한 가격의 ID
+	          .setPrice(prices.getData().get(0).getId())
+	          // 수량 1개
+	          .setQuantity(1L)
+	          .build()
+	      )
+	      // 결제 모드를 구독(SUBSCRIPTION)으로 설정
+	      .setMode(SessionCreateParams.Mode.SUBSCRIPTION)
+	      // 결제 성공 시 리다이렉트될 URL (세션 ID 포함)
+	      .setSuccessUrl(YOUR_DOMAIN + "?success=true&session_id={CHECKOUT_SESSION_ID}")
+	      // 구독에 추가 데이터 설정
+	      .setSubscriptionData(
+	        SessionCreateParams
+	          .SubscriptionData
+	          .builder()
+	          // 7일 무료 체험 기간 설정
+	          .setTrialPeriodDays(7L)
+	          // 결제 주기 기준일 설정 (Unix 타임스탬프)
+	          .setBillingCycleAnchor(1672531200)
+	          // 자동 세금 계산 활성화 (고객 위치 기반)
+	          .setAutomaticTax(
+	            SessionCreateParams
+	              .AutomaticTax
+	              .builder()
+	              .setEnabled(true)
+	              .build()
+	          )
+	          .build();
+	      )
+	      .build();
+	      
+	    // Stripe API를 호출하여 체크아웃 세션 생성
+	    Session session = Session.create(params);
+	    
+	    // 생성된 세션의 URL(Stripe 결제 페이지)로 리다이렉트
+	    response.redirect(session.getUrl(), 303);
+	    return "";
+    });
+    
+    // 엔드포인트 2: 고객 포털 세션 생성
+    // 고객이 구독을 관리(변경, 취소 등)할 때 호출됨
+    post("/create-portal-session", (request, response) -> {
+      // 체크아웃 세션 ID로 세션 정보 조회하여 고객 ID 획득
+      // 실제 서비스에서는 DB에 저장된 고객 ID를 사용하는 것이 일반적
+      Session checkoutSession = Session.retrieve(request.queryParams("session_id"))
+      
+      // 고개 포털 세션 파라미터 설정
+      SessionCreateParams params =
+        new SessionCreateParams
+          .Builder()
+          // 고객 ID 설정
+          .setCustomer(checkoutSession.getCustomer())
+          // 포털에서 돌아올 URL
+          .setReturnUrl(YOUR_DOMAIN)
+          .build();
+    
+    
+      // Stripe API를 호출하여 고객 포털 세션 생성
+      Session portalSession = Session.create(params);
+      
+      // 생성된 포털 URL로 리다이렉트
+      response.redirect(portalSession.getUrl(), 303);
+      return "";
+    });
+    
+    // 엔드포인트 3: 웹훅 처리
+    // Stripe에서 발생하는 이벤트를 실시간으로 수신
+    post("/webhook", (request, response) -> {
+      // 요청 본문(페이로드) 추출
+      String payload = request.body();
+      Event event = null;
+      
+      // 1단계: JSON 파싱 시도
+      try {
+        event = ApiResource.GSON.fromJson(payload, Event.class);
+      } catch (JsonSyntaxException e) {
+        // JSON 형식이 잘못된 경우
+        System.out.println("요청을 파싱하는 동안 웹훅 에러 발생")
+        response.status(400);
+        return "";
+      }
+      
+      // 2단계: 서명 검증 (보안)
+      // Stripe-Signature 헤더를 사용하여 요청이 실제 Stripe에서 온 것인지 확인
+      String sigHeader = request.headers("Stripe-Signature");
+      if (endpointSecret != null && sigHeader != null) {
+        try {
+          // 서명 검증과 함께 이벤트 재구성
+          event = Webhook.constructEvent(payload, sigHeader, enpointSecret);
+        } catch (SignatureVerificationException e) {
+          // 서명이 유효하지 않은 경우
+          System.out.println("서명 검증하는 동안 에러 발생");
+          response.status(400);
+          return "";
+        }
+      }
+      
+      // 3단계: 이벤트 데이터 객체 역직렬화
+      EventDataObjectDeserializer dataObjectDeserializer =
+        event.getDataObjectDeserializer();
+        StripeObject stripeObject = null;
+        if (dataObjectDeserializer.getObject().isPresent()) {
+          // 역직렬화 성공
+          stripeObject = dataObjectDeserializer.getObejct().get();
+        } else {
+          // 역직렬화 실패 - API 버전 불일치 가능성
+        }
+        
+      // 4단계: 이벤트 유형별 처리
+      Subscription subscription = null;
+      switch (event.getType()) {
+        case "customer.subscription.deleted":
+          // 구독이 삭제/취소된 경우
+          subscription = (Subscription) stripeObject;
+          // handleSubscriptionDeleted(subscription); 호출하여 처리
+          
+        case "customer.subscription.trial_will_end":
+          // 구독 체험 기간이 곧 종료되는 경우 (보통 3일전 발송)
+          subscription = (Subscription) stripeObject;
+          // handleSubscriptionTrialEnding(subscription); 호출하여 처리
+          
+	    case "customer.subscription.created":
+	      // 새로운 구독이 생성된 경우
+	      subscription = (Subscription) stripeObject;
+	      // handleSubscriptionCreated(subscription); 호출하여 처리
+	      
+	    case "customer.subscription.updated":
+	      // 구독 정보가 업데이트된 경우 (플랜 변경, 결제 수단 변경 등)
+	      subscription = (Subscription) stripeObject;
+	      // handleSubscriptionUpdated(subscription); 호추라여 처리
+	      
+	    case "entitlements.active_entitlement_summary.updated":
+	      // 활성 권한(entitlement) 요약이 업데이트된 경우
+	      subscription = (Subscription) stripeObject;
+	      // handleEntitlementUpdated(subscription); 호출하여 처리
+	      
+	    default:
+	      // 위에서 처리하지 않은 이벤트 유형
+	      System.out.println("처리되지 않은 유형: " + event.getType());
+      }
+      
+      // 웹훅 수신 성공 응답 (200 OK)
+      response.status(200);
+      return "";
+    });
+  }
+}
+```
+
+<br/>
+
 
 
 <br/>
