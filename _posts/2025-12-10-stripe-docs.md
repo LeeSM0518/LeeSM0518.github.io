@@ -1065,14 +1065,14 @@ stripe login
 
 <br/>
 
-### 4.4. 2단계: 가격 모델 생성
+### 4.4. 2단계: 가격 모델 생성 (Dashboard 나 Stripe CLI)
 ---
 
 정기 가격 모델은 판매하는 상품/서비스, 비용, 결제 통화, 구독 서비스 기간을 나타냅니다. 가격 모델을 구성하려면 상품(판매 항목)과 가격(금액과 청구 주기)을 생성합니다.
 
 <br/>
 
-### 4.5. 3단계: Checkout Session 생성
+### 4.5. 3단계: Checkout Session 생성 (Client 와 Server)
 ---
 
 웹사이트에 Checkout Session을 생성하는 서버 엔드포인트를 호출하는 결제 버튼을 추가한다.
@@ -1138,9 +1138,171 @@ Session session = Session.create(params);
 
 <br/>
 
-### 4.6. 4단계: 구독 프로비저닝 및 모니터링
+### 4.6. 4단계: 구독 프로비저닝 및 모니터링 (Server)
 ---
 
+구독 가입이 성공하면 고객이 `success_url` 에서 웹사이트로 돌아오고, `checkout.session.completed` 웹훅(HTTPS 요청을 통해 JSON 페이로드로 애플리케이션에 전송되는 실시간 푸시 알림)이 시작됩니다.
+
+`checkout.session.completed` 이벤트를 받으면 권한(entitlements)을 사용하여 구독을 프로비저닝합니다. 매월(월간 과금의 경우) `invoice.paid` 이벤트를 받을 때마다 프로비저닝을 계속합니다. `invoice.payment_failed` 이벤트를 받으면 고객에게 알리고 고객 포털로 보내 결제 수단을 업데이트하도록 합니다.
+
+```java
+// 시크릿 키를 설정합니다.
+Stripe.apiKey = "***";
+
+post("/webhook", (request, response) -> {
+  String payload = request.body();
+  String sigHeader = request.headers("Stripe-Signature");
+  String endpointSecret = "{{STRIPE_WEBHOOK_SECRET}}"
+  
+  Event event = null;
+  
+  try {
+    event = Webhook.constructEvent(payload, sigHeader, endpointSecret);
+  } catch (SignatureVerificationException e) {
+    // 서명이 유효하지 않음
+    response.status(400);
+    return "";
+  }
+  
+  switch (event.getType()) {
+    case "checkout.session.completed":
+      // 결제가 성공하고 구독이 생성됨
+      // 구독을 프로비저닝하고 고객 ID를 데이터베이스에 저장해야 함
+      break;
+    case "invoice.paid":
+      // 결제가 계속될 때 구독 프로비저닝 유지
+      // 상태를 데이터베이스에 저장하고 사용자가 서비스에 접근할 때 확인
+      // 이 방식은 API 속도 제한에 걸리는 것을 방지하는 데 도움됨
+      break;
+    case "invoice.payment_failed":
+      // 결제 실패 또는 유효한 결제 수단이 없음
+      // 구독이 past_due 상태가 됨. 고객에게 알리고 고객 포털로 보내
+      // 결제 정보를 업데이트하도록 함
+      break;
+    default:
+      // 처리되지 않은 이벤트 유형 로깅
+  }
+  
+  response.status(200);
+  return "";
+});
+```
+
+- `STRIPE_WEBHOOK_SECRET` : Workbench의 Webhooks 탭에서 대상 상세 보기로 이동해서 확인할 수 있다.
+- 모니터링할 최소 이벤트 유형
+	- `checkout.session.completed` : 고객이 Checkout Session을 성공적으로 완료했을 때 전송됩니다. 새 구매를 알려줍니다.
+	- `invoice.paid` : 결제가 성공할 때마다 각 청구 기간에 전송됩니다.
+	- `invoice.payment_failed` : 고객의 결제 수단에 문제가 있을 때 각 청구 기간에 전송됩니다.
+
+<br/>
+
+### 4.7. 5단계: 고객 포털 설정 (Dashboard)
+---
+
+고객 포털을 사용하면 고객이 기존 구독과 인보이스를 직접 관리할 수 있습니다.
+
+대시보드에서 포털을 설정합니다. 최소한 고객이 결제 수단을 업데이트할 수 있도록 포털을 설정하세요.
+
+<br/>
+
+### 4.8. 6단계: 포털 세션 생성 (Server)
+---
+
+프론트엔드가 호출할 고객 포털 세션을 생성하는 엔드포인트를 정의합니다. `CUSTOMER_ID` 는 `checkout.session.completed` 이벤트를 처리하는 동안 저장한 Checkout 세션이 생성한 고객 ID입니다.
+
+```java
+// 시크릿 키를 설정
+Stripe.apiKey = "***"
+
+// 사용자가 포털에서 구독 관리를 마친 후 리디렉션될 URL
+String domainUrl = "{{DOMAIN_URL}}"
+String customer = "{{CUSTOMER_ID}}"
+
+SessionCreateParams params =
+  new SessionCreateParams.Builder()
+    .setReturnUrl(domainUrl)
+    .setCustomer(customer)
+    .build();
+    
+Session portalSession = Session.create(params)
+
+// 세션 URL로 리디렉션
+//   response.redirect(portalSession.getUrl(), 303);
+//   return "";
+```
+
+<br/>
+
+### 4.9. 7단계: 고객을 고객 포털로 보내기 (Client)
+---
+
+프론트엔드의 `success_url` 페이지에 고객 포털로 연결되는 버튼을 추가합니다.
+
+```html
+<html>  
+<head>  
+  <title>Manage Billing</title>  
+</head>  
+<body>  
+<form action="/customer-portal" method="POST">  
+  <!-- Note: If using PHP set the action to /customer-portal.php -->  
+  <button type="submit">Manage Billing</button>  
+</form>  
+</body>  
+</html>
+```
+
+- 고객 포털을 나간 후, 고객은 `return_url` 에서 웹사이트로 돌아옵니다.
+- 고객의 구독 상태를 추적하기 위해 구독 이벤트를 모니터링해라.
+- 구독 취소 같은 작업을 허용하도록 고객 포털을 설정하면 관련 이벤트를 모니터링해라.
+
+<br/>
+
+### 4.10. 8단계: 연동 테스트
+---
+
+다음 표를 사용하여 다양한 결제 수단과 시나리오를 테스트하세요.
+
+
+| 결제 수단             | 시나리오                         | 테스트 방법                                             |
+| ----------------- | ---------------------------- | -------------------------------------------------- |
+| 신용카드              | 결제 성공, 인증 불필요                | 카드 번호 `4242 4242 4242 4242` 와 아무 만료일, CVC, 우편변호 사용 |
+| 신용카드              | 결제에 인증(3DS) 필요               | 카드 번호 `4000 0025 0000 3155` 사용                     |
+| 신용카드              | 카드 거절 (`insufficient_funds`) | 카드 번호 `4000 0000 0000 9995` 사용                     |
+| BECS Direct Debit | 결제 성공                        | 계좌 번호 `900123456`, BSB `000000` 사용                 |
+| BECS Direct Debit | `account_closed` 오류          | 계좌 번호 `111111113`, BSB `000000` 사용                 |
+| SEPA Direct Debit | 결제 성공                        | 계좌 번호 `AT321904300235473204` 사용                    |
+| SEPA Direct Debit | 결제 실패                        | 계좌 번호 `AT861904300235473202` 사용                    |
+
+<br/>
+
+### 4.11. 한눈에 보기: 구독 연동 플로우
+---
+
+```
+1. Stripe 설정  
+   └── SDK 설치  
+  
+2. 가격 모델 생성  
+   ├── 상품 생성 (Basic, Premium)  
+   └── 가격 생성 (월간 정기)  
+  
+3. Checkout 세션 생성  
+   ├── 클라이언트: 결제 버튼  
+   └── 서버: 세션 생성 엔드포인트  
+  
+4. 웹훅으로 이벤트 모니터링  
+   ├── checkout.session.completed → 구독 프로비저닝  
+   ├── invoice.paid → 접근 권한 유지  
+   └── invoice.payment_failed → 고객에게 알림  
+  
+5. 고객 포털 설정  
+   ├── 대시보드에서 포털 설정  
+   └── 포털 세션 생성 엔드포인트  
+  
+6. 테스트  
+   └── 테스트 카드로 결제 시뮬레이션
+```
 
 
 <br/>
