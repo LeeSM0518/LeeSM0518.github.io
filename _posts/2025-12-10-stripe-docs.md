@@ -1321,7 +1321,9 @@ Session portalSession = Session.create(params)
 
 <br/>
 
-### 5.1. 
+### 5.1. 정액제(Flat rate) 가격 설정하기
+---
+
 
 <br/>
 
