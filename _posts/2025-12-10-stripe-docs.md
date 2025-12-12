@@ -12,7 +12,655 @@ Stripe은 인터넷 비즈니스를 위한 **결제 인프라 플랫폼**입니�
 
 <br/>
 
-## Billing API 소개
+## API 둘러보기
+---
+
+Stripe API 객체들이 어떻게 연결되는지 살펴보고, 이를 조합하는 모범 사례를 알아보세요.
+
+<br/>
+
+### 핵심 개념
+---
+
+#### 모든 것은 객체이다
+---
+
+Stripe 계정의 모든 것은 API로 생성하든 아니든 객체입니다. 잔액은 Balance 객체에 해당하고, 고객은 Customer 객체로 추적하며, 결제 정보는 PaymentMethod 객체에 저장합니다.
+
+<br/>
+
+#### 객체에는 생명주기가 있다.
+---
+
+Stripe 연동은 복잡한 프로세스를 처리합니다.
+
+API는 각 프로세스를 추적하기 위해 단일 객체를 사용합니다. 프로세스 시작 시 객체를 생성하고, 매 단계 후에 `status` 를 확인하여 다음에 무엇이 필요한지 알 수 있습니다.
+
+예를 들어, 결제를 완료하는 동안 고객이 여러 결제 수단을 시도할 수 있습니다. 하나의 결제 수단이 실패하면, `requires_payment_method` 상태를 통해 고객에게 다른 결제 수단을 요청해야 함을 알 수 있습니다.
+
+<br/>
+
+#### 연동은 협력하는 객체들로 구성된다.
+---
+
+결제를 받으려면 시스템이 여러 핵심 객체를 생성하고 여러 상태를 거쳐 관리해야 합니다.
+
+Stripe 연동은 Stripe와 통신하여 이러한 생성과 관리를 처리하는 시스템입니다.
+
+일부 연동은 그 이상의 작업을 수행합니다. 하지만 핵심 결제 기능은 여전히 동일한 객체와 단계에서 나오며, 그 핵심 주위에 더 많은 객체가 추가됩니다.
+
+<br/>
+
+### 결제 객체
+---
+
+Stripe는 결제를 처리하기 위해 다양한 관련 객체를 사용합니다. 특정 요구사항에 맞는 연동을 구축하려면 먼저 이러한 객체들이 어떻게 함께 작동하는지 익혀야 합니다.
+
+Stripe 결제 객체는 결제 과정을 관리하고 추적하는 다양한 도구로, 낮은 수준의 'Charge', 'Payment Intent' 부터 높은 수준의 'Invoice', 'Subscription', 'Checkout Session', 'Payment Link' 까지 다양한 기능을 제공하며 서로 연동되어 작동합니다.
+
+![stripe11](/assets/img/stripe11.png)
+
+<br/>
+
+#### Charges (요금, 저수준 객체)
+---
+
+정의
+: Stripe 계정으로 돈을 이동시키려는 단일 시도를 나타냅니다.
+
+포함 범위
+: 고객으로부터 수입 결제(카드 결제, 은행 이체 등)뿐만 아니라, Stripe Connect를 사용할 때 다른 Stripe 계정으로부터 Stripe 계정으로 돈이 이동하는 경우도 포함합니다.
+
+ID 접두사
+: ID는 `ch_` 또는 `py_` 접두사로 시작합니다.
+
+접근 방식
+: 사용된 접두사에 관계없이 Charges API를 통해 접근합니다.
+
+<br/>
+
+#### Payment Intents (결제 의도, 저수준 객체)
+---
+
+정의
+: 여러 시도나 연장된 기간에 걸쳐 특정 금액을 지불하려는 의도를 추적하도록 설계된 객체입니다.
+
+**기능**
+
+- 다양한 결제 지원 : 3D Secure 인증 유무에 따른 카드 결제, 은행 이체, 디지털 지갑 결제, 바우처 등 다양한 동기식 및 비동기식 결제 형태를 지원합니다.
+- ID 접두사 : 객체 ID는 `pi_` 접두사를 가집니다.
+- Charges 생성 : Payment Intent가 확인되거나 그 이후에 돈을 이동시키려고 시도할 때 Charges를 생성합니다.
+- 다중 시도 : 결제에 여러 시도가 필요할 수 있으므로, 하나의 Payment Intent는 여러 개의 Charges를 생성할 수 있습니다.
+
+특징
+: Payment Intents와 Charges는 모두 저수준 결제 객체이며, 고수준 객체들의 강력한 기반을 제공합니다.
+
+<br/>
+
+#### Invoices (명세서, 고수준 객체)
+---
+
+정의
+: 고객이 빚진 금액에 대한 상세 명세서 역할을 하며, 외부에서 접하는 일반적인 송장과 매우 유사합니다.
+
+**기능**
+
+- 명세서 역할 : 라인 항목 지정, 고객 정보, 세금 징수 등을 허용합니다.
+- ID 접두사 : 객체 ID는 `in` 접두사를 가집니다.
+- Payment Intent 생성 : 결제가 필요할 때, 청구할 총액을 징수하기 위해 Payment Intents를 생성합니다.
+
+<br/>
+
+#### Subscriptions (구독, 고수준 객체)
+---
+
+정의
+: 반복적인 결제를 용이하게 하는 Invoice 생성 엔진 역할을 합니다.
+
+**기능**
+
+- 자동 청구 : Subscription 기간마다 Stripe가 고객에게 자동으로 Invoices를 생성하도록 설정할 수 있습니다.
+- ID 접두사 : 객체 ID는 `sub_` 접두사를 가집니다.
+- 관계 : Subscriptions와 Invoices는 반복적인 수익을 징수하기 위해 설계된 Billing 객체이지만, Subscription 없이 일회성 Invoices도 생성 가능합니다.
+
+<br/>
+
+#### Checkout Sessions (체크아웃 세션)
+---
+
+Stripe Checkout은 전환율에 최적화된 호스팅 결제 페이지이며, 이를 다루는 객체들이 존재합니다.
+
+정의
+: Checkout Sessions는 Stripe Checkout의 특정 인스턴스에 대한 구성 및 상호 작용을 처리합니다.
+
+처리 내용
+: 구매할 제품, 해당 제품의 가격, 배송지 주소, 배송지 주소 수집, 프로모션 코드, 세금 등을 포함합니다.
+
+ID 접두사
+: 객체 ID는 `cs_` 접두사를 가집니다.
+
+**결제 흐름 구성**
+
+- 일회성 결제 : 단일 일회성 결제를 위해 구성될 경우 Payment Intent를 생성합니다.
+- 일회성 Invoice : 일회성 결제를 위해 Invoices를 생성하도록 구성할 수 있습니다.
+- 반복 결제 : 반복 결제를 용이하게 하기 위해 Subscription을 생성하도록 구성할 수도 있습니다.
+
+<br/>
+
+#### Payment Links (결제 링크)
+---
+
+정의
+: Payment Links는 방문 시 Checkout Sessions를 생성하는 공유 가능하고 재사용 가능한 Stripe 호스팅 URL을 관리합니다.
+
+용도
+: Stripe Checkout을 사용하여 동일한 항목을 여러 사람에게 반복적으로 판매하고 싶을 때 유용합니다.
+
+ID 접두사
+: 객체 ID는 `plink_` 접두사를 가집니다.
+
+관계
+: Payment Links는 Checkout Sessions를 생성합니다.
+
+<br/>
+
+#### 고수준 객체의 특징 및 권장 사항
+---
+
+Payment Links, Checkout Session, Subscriptions, Invoices는 모두 고수준 객체에 해당합니다.
+
+**제공 기능**
+
+- 세금 계산 및 징수, 배송 세부 정보 수집, 배송 요율 적용, 할인 계산, 고객 대상 프로모션 코드 지원 등 다양한 유용한 기능을 제공합니다.
+- 상세한 라인 항목을 제공하며, Stripe의 Product 및 Price 객체를 활용합니다.
+- 반복 결제와 같은 유용한 자동화 기능을 제공합니다.
+
+**권장 사항**
+
+- 가능한 한 고수준 객체 사용을 권장합니다.
+- 세금, 배송, 할인이 필요한 경우, 지불해야 할 금액 계산에 Stripe의 도움을 받기 위해 고수준 객체를 사용하는 것이 유용합니다.
+
+시작점
+: 여기에 표시된 객체 중 어떤 것이든 통합의 시작점이 될 수 있습니다.
+
+<br/>
+
+#### 객체 간의 다양한 결제 흐름 예시
+---
+
+객체들은 유연하게 조합되어 다양한 결제 흐름을 만들 수 있습니다.
+
+<br/>
+
+1. Payment Link 시작 흐름 (반복 결제 예시) : Subscription을 생성하도록 구성하는 경우의 순서
+    1. Payment Link가 방문되면 Checkout Session을 생성합니다.
+    2. Checkout Session은 Subscription을 생성합니다.
+    3. Subscription은 Invoice를 생성합니다.
+    4. Invoice는 청구할 총액을 징수하기 위해 Payment Intent를 생성합니다.
+    5. 최종적으로 Payment Intent는 총액을 징수하려고 시도할 때 Charge를 생성합니다.
+
+**Payment Link -> Checkout Session -> Subscription  -> Invoice -> Payment Intent -> Charge**
+
+<br/>
+
+2. 다른 시작점 선택 가능성 : 반드시 Payment Link에서 시작할 필요는 없습니다.
+    1. Checkout Session 직접 생성
+    2. Subscription 직접 생성 : Checkout Sessions를 건너뛰고 Subscriptions를 직접 생성할 수 있습니다.
+    3. Invoice 직접 생성 : Subscription 없이 Invoices를 직접 생성할 수 있습니다.
+    4. 일회성 결제 흐름
+        1. Subscription을 생성하지 않고 일회성 결제를 징수하도록 Payment Links를 구성할 수 있습니다.
+        2. Checkout Sessions를 직접 생성하여 일회성 결제를 처리할 수 있습니다.
+        3. Checkout이 일회성 결제를 위해 Invoices를 생성하도록 구성할 수도 있습니다.
+
+<br/>
+
+#### 저수준 객체 직접 사용 시나리오
+---
+
+모든 고수준 기능을 자체적으로 처리하고자 할 경우, 고수준 객체 없이 Payment Intents를 직접 생성할 수 있습니다.
+
+1. Payment Intents 직접 생성
+    1. 사용 지점 : 징수하고자 하는 정확한 금액을 이미 알고 있을 때 Payment Intents를 직접 생성해야 합니다.
+    2. 제한 사항 : Payment Intents는 라인 항목이나 할인과 같은 고수준 기능을 가지고 있지 않지만, 사용자가 세금, 배송 또는 반복 결제 일정을 자체적으로 처리하고자 할 때 자체적인 고수준 추상화를 구축하기 위한 훌륭한 기반을 제공합니다.
+2. Charges 직접 생성
+    1. 권장하지 않음 : Charges를 직접 생성하는 것은 기술적으로 가능하지만, 현재는 사용지 중단되었으며 권장되지 않습니다.
+    2. 이유 : Charges 직접 생성은 레거시 통합 경로이며, 다른 결제 객체들이 지원하는 결제 수단 및 결제 흐름의 일부 작은 하위 집합만 지원합니다.
+3. 범위 : 이 개요는 가능한 모든 사용 사례를 포괄하는 포괄적인 목록은 아닙니다.
+
+<br/>
+
+#### 최종 권장 사항
+---
+
+결제 객체의 설계 목적과 상호 관계를 이해했으므로, 사용 사례에 가장 적합한 객체를 선택하여 요구사항에 맞는 통합을 구축할 수 있습니다.
+
+1. 선택 가이드
+    1. 저수준 기반 : 구축할 기반이 필요하다면 Payment Intents를 직접 생성할 수 있습니다.
+    2. 최적의 활용 : 하지만 Stripe가 제공하는 기능을 최대한 활용하기 위해서는 가능한 한 고수준 객체와 기능을 사용하는 것을 권장합니다.
+
+<br/>
+
+### 결제까지의 경로
+---
+
+Stripe 연동에서 모든 결제는 PaymentIntent라는 객체를 사용합니다. 이름에서 알 수 있듯이, 결제를 수금하려는 의도를 나타냅니다. 이 객체는 그 의도를 실현하기 위해 거치는 단계들을 추적합니다.
+
+예를 들어, 고객이 장바구니에 100 USD 상품을 담고 결제하기 버튼을 클릭한다고 가정해 봅시다. 아직 구매한 것은 아니며, 영영 구매하지 않을 수도 있습니다. 하지만 결제하기를 클릭한 것은 구매 의도를 나타냅니다. 이 시점에서 연동은 나머지 프로세스를 추적하기 위해 100 USD 금액의 `PaymentIntent` 객체를 생성합니다.
+
+`PaymentIntent` 가 성공에 이르는 경로는 여러 상태를 거칩니다. 간략히 살펴보면 다음과 같습니다.
+
+1. requires_payment_method
+2. requires_confirmation
+3. processing
+    1. succeeded (성공)
+    2. canceled (실패)
+
+<br/>
+
+#### 결제 수단 (Payment Methods)
+---
+
+PaymentIntent는 `requires_payment_method` 상태로 시작합니다. 앞으로 진행하려면 Stripe에 고객의 결제 수단에 대한 정보가 필요합니다. 카드 번호나 다른 결제 시스템의 자격 증명 등입니다.
+
+연동에서는 이러한 정보를 PaymentMethod라는 API 객체로 나타냅니다. 일부 연동에서는 이 객체를 생성하고 PaymentIntent에 연결하는 코드를 직접 작성합니다. 다른 연동에서는 Stripe가 정보를 수집하고 대신 작업을 수행합니다. 또한 Setup Intents API를 사용하여 향후 PaymentIntent에서 사용할 결제 수단을 생성하고 저장할 수도 있습니다.
+
+<br/>
+
+#### 확인 (Confirmation)
+---
+
+다음 상태는 `requires_confirmation` 입니다. 대화형 결제 플로우에서 고객은 결제 의사가 있고, 제공한 수단으로 결제하겠다는 것을 확인해야 합니다. 일회성 온라인 결제에서는 보통 결제 버튼을 클릭할 대 이루어집니다.
+
+고객이 결제를 클릭하거나 의도를 확인하면, 연동이 API 호출로 Stripe에 알립니다. 일부 연동에서는 이 호출을 하는 코드를 직접 작성합니다. Stripe는 유연한 커스텀 연동을 구축하면서도 이를 가능하게 하는 Stripe Elements라는 드롭인 UI 요소를 제공합니다. Stripe Checkout 이나 Payment Links 연동 같은 다른 연동에서는 Stripe가 호출을 하고 다음 단계를 처리합니다. Stripe를 연동하고 다양한 객체를 조합하여 사용 사례를 처리하는 방법은 여러 가지가 있습니다.
+
+대부분의 경우 PaymentIntent가 확인되면 특정 자금 이동 시도를 나타내는 Charge가 생성됩니다. Charge는 성공하거나 실패할 수 있습니다. 실패하면 보통 새 결제 정보로 PaymentIntent를 다시 확인하여 결제를 재시도할 수 있습니다. 새 PaymentIntent를 생성할 필요 없이 즉시 재시도를 허용하면 전환율이 높아지는 경향이 있습니다.
+
+<br/>
+
+#### 처리 및 성공
+---
+
+인텐트의 상태는 이제 `processing` 이며, 이 시점에서 Stripe가 결제 처리를 시도합니다.
+
+Stripe는 항상 이 부분을 대신 수행하며, 여러 단계가 있을 수 있습니다. 단계를 거치면서 결과에 따라 인텐트의 상태를 업데이트합니다: `succeeded` 이거나 실패하면 다시 `requires_payment_method` 입니다.
+
+완료되면 마지막 객체가 등장합니다. `Event` 객체를 사용하여 활동을 나타냅니다. 이 경우 활동은 "과금이 성공했다" 또는 "과금이 실패했다" 일 수 있습니다. 일부 연동에서는 웹훅 엔드포인트를 사용하여 이벤트에 응답하는 커스텀 코드를 작성합니다. Checkout이나 Payment Links 연동 같은 다른 연동에서는 Stripe가 이벤트를 수신하고 미리 작성된 응답을 제공합니다.
+
+<br/>
+
+## Payment Intents API
+---
+
+Payment Intents API를 사용하여 PaymentIntent의 생명주기 동안 상태가 변하는 복잡한 결제 플로우를 처리할 수 있는 연동을 구축하세요. 이 API는 생성부터 결제 완료까지 결제를 추적하고, 필요할 때 추가 인증 단계를 트리거합니다.
+
+Payment Intents API 사용의 장점
+- 자동 인증 처리
+- 이중 과금 방지
+- 멱등성 키 문제 없음
+- 강력한 고객 인증(SCA) 및 유사한 규제 변경 지원
+
+<br/>
+
+#### 완벽한 API 세트
+---
+
+Payment Intents API를 Setup Intents 및 Payment Methods API와 함께 사용하세요. 이 API들은 동적 결제(ex. 3D Secure)를 처리하고, 새로운 규제와 지역별 결제 수단을 지원하면서 다른 국가로 확장할 준비를 할 수 있게 해줍니다.
+
+Payment Intents API로 연동을 구축하는 것은 두 가지 작업으로 구성됩니다: PaymentIntent 생성과 확인. 각 PaymentIntent는 일반적으로 애플리케이션의 단일 장바구니 또는 고객 세션에 해당합니다. PaymentIntent는 지원되는 결제 수단, 수금할 금액, 원하는 통화 등 거래에 대한 세부 정보를 캡슐화합니다.
+
+<br/>
+
+#### PaymentIntent 생성하기
+---
+
+서버에서 PaymentIntent를 생성하고 전체 PaymentIntent 객체 대신 클라이언트 시크릿(Stripe가 PaymentIntent의 일부로 반환하는 고유키, PaymentIntent의 상태, 금액, 통화에 접근할 수 있습니다)을 클라이언트에 전달하는 방법을 설명합니다.
+
+PaymentIntent를 생성할 때 금액과 통화 같은 옵션을 지정할 수 있습니다.
+
+```java
+// 시크릿 키 설정
+Stripe.apiKey = "***";
+
+PaymentIntentCreateParams params =
+  PaymentIntentCreateParams
+    .builder()
+    .setAmount(1099L)
+    .setCurrency("usd")
+    .build();
+    
+PaymentIntent paymentIntent = PaymentIntent.create(param);
+```
+
+<br/>
+
+**모범 사례**
+
+- 고객이 결제 프로세스를 시작할 때처럼 금액을 알게 되면 바로 PaymentIntent를 생성하는 것을 권장합니다. 구매 퍼널을 추적하는 데 도움이 됩니다. 금액이 변경되면 amount를 업데이트할 수 있습니다. 예를 들어, 고객이 결제 프로세스를 중단하고 장바구니에 새 상품을 추가하면, 다시 결제 프로세스를 시작할 때 금액을 업데이트해야 할 수 있습니다.
+- 결제 프로세스가 중단되었거나 나중에 재개되면, 새로 생성하는 대신 동일한 PaymentIntent를 재사용하세요. 각 PaymentIntent에는 필요할 때 조회하는 데 사용할 수 있는 고유 ID가 있습니다. 애플리케이션의 데이터 모델에서 고객의 장바구니나 세션에 PaymentIntent의 ID를 저장하여 쉽게 조회할 수 있습니다. PaymentIntent를 재사용하면 객체 상태가 해당 장바구니나 세션에 대한 실패한 결제 시도를 추적하는 데 도움이 됩니다.
+- 동일한 구매에 대한 중복 PaymentIntent 생성을 방지하려면 멱등성 키를 제공하세요. 이 키는 일반적으로 애플리케이션에서 장바구니나 고객 세션과 연결된 ID를 기반으로 합니다.
+
+<br/>
+
+#### 클라이언트 측에 클라이언트 시크릿 전달하기
+---
+
+PaymentIntent에는 개별 PaymentIntent에 고유한 키인 client secret이 포함되어 있습니다. 애플리케이션의 클라이언트 측에서 Stripe.js는 결제를 완료하기 위해 함수(stripe.confirmCardPayment 또는 stripe.handleCardAction 등)를 호출할 때 클라이언트 시크릿을 파라미터로 사용합니다.
+
+<br/>
+
+**클라이언트 시크릿 조회**
+
+PaymentIntent에는 클라이언트 측이 결제 프로세스를 안전하게 완료하는 데 사용하는 클라이언트 시크릿이 포함되어 있습니다. 클라이언트 시크릿을 클라이언트 측에 전달하는 여러 가지 방법이 있습니다.
+
+<br/> 
+
+*싱글 페이지 애플리케이션*
+
+브라우저의 `fetch` 함수를 사용하여 서버의 엔드포인트에서 클라이언트 시크릿을 조회합니다. 이 방식은 클라이언트 측이 React 프레임워크로 만들어진 싱글 페이지 애플리케이션일 때 가장 좋습니다.
+
+서버 코드는 다음과 같습니다.
+
+```java
+Gson gson = new Gson();
+
+get("/secret", (request, response) -> {
+  PaymentIntent intent = // ... PaymentIntent 조회 또는 생성
+  
+  Map<String, String> map = new HashMap();
+  map.put("client_secret", intent.getClientSecret());
+  
+  return map;
+}, gson::toJson);
+```
+
+클라이언트 코드는 다음과 같습니다.
+
+```js
+(async () => {
+  const response = await fetch('/secret');
+  const {client_secret: clientSecret} = await response.json();
+  // clientSecret을 사용하여 폼 렌더링
+})();
+```
+
+<br/>
+
+#### 결제 후
+---
+
+클라이언트가 결제를 확인한 후, 서버에서 웹훅을 모니터링하여 결제가 성공적으로 완료되거나 실패하는 시점을 감지하는 것이 모범 사례입니다.
+
+`PaymentIntent` 에 여러 결제 시도가 있었다면 하나 이상의 Charge 객체가 연결될 수 있습니다. 예를 들어, 재시도로 여러 `Charge` 가 생성될 수 있습니다. 각 과금에 대해 결과와 사용된 결제 수단의 세부 정보를 검사할 수 있습니다.
+
+<br/>
+
+#### 향후 결제를 위한 결제 수단 최적화
+---
+
+setip_future_usage 파라미터는 향후 다시 사용할 결제 수단을 저장합니다. 카드의 경우, SCA 같은 지역 규정 및 네트워크 규칙에 따라 승인률도 최적화합니다. 어떤 값을 사용할지 결정하려면, 향후 이 결제 수단을 어떻게 사용할지 고려하세요.
+
+
+| 결제 수단 사용 방식                                                  | setup_future_usage 값 |
+| ------------------------------------------------------------ | -------------------- |
+| 온세션(고객이 결제 플로우에 적극적으로 참여하여 결제 수단을 인증할 수 있는 상태에서 발생하는 결제) 결제만 | `on_session`         |
+| 오프세션(이전에 수집한 결제 정보를 사용하여 고객의 직접적인 참여 없이 발생하는 결제) 결제만         | `off_session`        |
+| 온세션과 오프세션 결제 모두                                              | `off_session`        |
+
+```js
+const paymentIntent = awiat stripe.paymentIntents.create({
+  amount: 1099,
+  currency: 'usd',
+  setup_future_usage: 'off_session',
+});
+```
+
+<br/>
+
+#### 동적 명세서 설명자
+---
+
+기본적으로 고객의 카드를 결제할 때마다 Stripe 계정의 명세서 설명자가 고객 명세서에 표시됩니다. 결제별로 다른 설명을 제공하려면 `statement_descriptor` 파라미터를 포함하세요.
+
+```js
+const paymentIntent = await stripe.paymentIntents.create({
+  amount: 1099,
+  currency: 'usd',
+  payment_method_types: ['card'],
+  statement_descriptor: 'Custom descriptor',
+});
+```
+
+<br/>
+
+#### 메타데이터에 정보 저장하기
+---
+
+Stripe는 결제 처리와 같이 가장 일반적인 요청에 메타데이터를 추가할 수 있도록 지원합니다. 메타데이터는 고객에게 표시되지 않으며, 결제 거부 또는 사기 방지 시스템에 의한 차단 여부에 반영되지 않습니다.
+
+포함한 메타데이터는 대시보드에서 볼 수 있고, 일반 리포트에서도 사용할 수 있습니다. 예를 들어, 해당 주문의 PaymentIntent에 스토어읭 주문 ID를 첨부할 수 있습니다. 이렇게 하면 Stripe의 결제와 시스템의 주문을 쉽게 대조할 수 있습니다.
+
+```js
+const paymentIntent = await stripe.paymentIntents.create({
+  amount: 1099,
+  currency: 'usd',
+  payment_method_types: ['card'],
+  metadata: {
+    order_id: '6735',
+  },
+});
+```
+
+<br/>
+
+### 결제 상태 업데이트
+---
+
+결제 상태를 모니터링하고 확인하여 성공 및 실패한 결제에 대응하세요.
+
+PaymentIntent는 고객이나 결제 수단이 취하는 작업에 따라 업데이트됩니다. 연동에서 PaymentIntent를 검사하여 결제 프로세스의 상태를 확인할 수 있으므로, 비즈니스 조치를 취하거나 추가 개입이 필요한 상태에 대응할 수 있습니다.
+
+Stripe 대시보드를 사용하여 성공한 결제와 같은 결제 상태에 대해 이메일을 받도록 계정을 설정할 수도 있습니다.
+
+<br/>
+
+#### 클라이언트에서 PaymentIntent 상태 확인
+---
+
+confirmCardPayment 함수로 클라이언트에서 결제를 완료할 때, 반환된 PaymentIntent를 검사하여 현재 상태를 확인할 수 있습니다.
+
+```js
+(async () => {
+  cosnt {paymentIntent, error} = await stripe.confirmCardPayment(clientSecret);
+  if (error) {
+    // 여기서 오류 처리
+  } else if (paymentIntent && paymentIntent.status === 'succeeded') {
+    // 여기서 성공한 결제 처리
+  }
+})
+```
+
+<br/>
+
+#### confirmCardPayment를 사용하지 않고 확인
+---
+
+`retrivePaymentIntent` 함수를 사용하고 클라이언트 시크릿(Stripe가 PaymentIntent의 일부로 반환하는 고유 키)을 전달하여 독립적으로 조회합니다.
+
+```js
+(async () => {
+  const {paymentIntent} = await stripe.retrievePaymentIntent(clientSecret);
+  if (paymentIntent && paymentIntent.status === 'succeeded') {
+    // 여기서 성공한 결제 처리
+  } else {
+    // 여기서 실패, 처리 중, 취소된 결제 및 API 오류 처리
+  }
+})();
+```
+- `succeded` : 고객이 결제 페이지에서 결제를 완료함
+- `requires_action` : 고객이 결제를 완료하지 않음
+- `requires_payment_method` : 고객의 결제가 결제 페이지에서 실패함
+
+<br/>
+
+### 비동기 캡쳐
+---
+
+비동기 캡처를 사용하여 PaymentIntent 확인 속도를 높이세요.
+
+비동기 캡처는 캡처 작업을 백그라운드에서 수행하여 PaymentIntent 확인의 지연 시간을 줄입니다. 캡처 요청을 보낸 후 연동은 성공 응답을 받고, Stripe는 백엔드에서 결제 캡처를 완료합니다. 더 빠른 PaymentIntent 캡처를 사용하려면 PaymentIntent를 확인할 때 `capture_method=automatic_async` 파라미터를 설정하세요.
+
+<br/>
+
+## Setup Intents API
+---
+
+결제 수단 저장을 위한 Setup Intents API에 대해 알아보세요.
+
+Setip Intent API를 사용하여 향후 결제를 위한 결제 수단을 설정하세요. 결제와 유사하지만 과금이 생성되지 않습니다.
+
+목표는 결제 자격 증명을 저장하고 향후 결제에 최적화하는 것입니다. 즉, 결제 수단이 모든 시나리오에 맞게 올바르게 구성되어야 합니다. 예를 들어 카드를 설정할 때 고객 인증이나 고객 은행에서 카드 유효성을 확인하는 것이 필요할 수 있습니다. Stripe는 이 프로세스 전반에 걸쳐 `SetupIntent` 객체를 업데이트 합니다.
+
+<br/>
+
+## PaymentIntent와 SetupIntent의 작동 방식
+---
+
+결제 플로우 내에서 PaymentIntent와 SetupIntent가 어떻게 작동하는지 알아보세요/
+
+Payment Intents API와 Setup Intents API의 주요 차이점은 다음 목적에 있습니다.
+
+- Payment Intents API : 결제를 수금하고 고객에게 즉시 청구하는 데 사용됩니다. 과금을 생성하고 거래를 처리하며 자금을 수금합니다.
+- Setup Intents API : 과금을 생성하지 않고 향후 사용을 위해 결제 수단 정보를 수집하고 저장하는 데 사용됩니다. 결제를 처리하지 않고 결제 자격 증명을 설정합니다.
+
+<br/>
+
+## Payment Methods API
+---
+
+다양한 글로벌 결제 수단을 지원하는 API에 대해 알아보세요.
+
+Payment Methods API를 사용하면 단일 API를 통해 다양한 결제 수단을 수락할 수 있습니다.
+
+PaymentMethod 객체는 결제를 생성하기 위한 결제 수단 정보를 포함합니다. Payment Methods API를 사용하면 PaymentMethod를 다음과 결합할 수 있습니다.
+
+- PaymentIntent와 결합하여 결제 수락
+- SetupIntent 및 Customer(비즈니스의 고객을 나타냅니다. 결제 수단을 재사용하고 여러 결제를 추적할 수 있게 해줍니다)와 결합하여 나중을 위해 결제 정보 저장
+
+<br/>
+
+## Payment Records API
+---
+
+Stripe 내외의 모든 결제 기록을 통합하여 관리하세요.
+
+Payment Records API를 사용하여 모든 결제의 원장을 관리하세요. Stripe를 통해 결제를 처리하거나 서드파티 프로세서와 연동하는 경우, 이 API를 사용하여 결제 내역을 통합 관리할 수 있습니다.
+
+Payment Records API로 다음을 수행할 수 있습니다.
+
+- 서드파티 프로세서로 결제를 처리하고, 결과를 Stripe에 보고하여 Subscriptions나 Radar와 같은 제품의 전체 기능 활용
+- 각 캡처를 추적할 수 있는 복잡한 결제 플로우 생성
+- Stripe 지시 카드 거래를 포함한 서드파티 및 파트너 시작 결제 추적
+
+<br/>
+
+## Product와 Price의 작동 방식
+---
+
+Stripe의 Product와 Price가 비즈니스를 어떻게 모델링하는지 알아보세요.
+
+Product와 Price는 많은 Stripe 연동의 핵심 리소스입니다. Product는 비즈니스가 제공하는 것(상품이든 서비스든)을 정의합니다. Price는 제품에 대해 얼마나 자주, 얼마를 청구할지를 정의합니다.
+
+Stripe에서 Product와 Price를 생성하거나 API를 통해 Stripe로 가져올 수 있습니다. Product와 Price를 생성한 후에는 Checkout Sessions, Payment Links, Invoices, Quotes 또는 커스텀 연동과 함께 사용하여 Subscriptions를 생성할 수 있습니다.
+
+<br/>
+
+### Product (제품)
+---
+
+Product는 고객에게 제공하는 특정 상품이나 서비스를 설명합니다. 사용 사례는 다음과 같습니다.
+
+- E-커머스 : 온라인에서 옷을 판매한다면, 예를 들어 셔츠의 각 사이즈와 색상 조함에 대해 별도의 제품을 생성할 수 있습니다.
+- SaaS 플랫폼 : 기본과 프리밍머 가격 티어를 제공할 수 있으며, 기본과 프리미엄은 별도의 제품입니다.
+- 기부 플랫폼 : 여러 다른 명분에 대한 기부를 받을 수 있으며, 각 명분은 다른 제품입니다.
+
+<br/>
+
+#### Product ID
+---
+
+각 제품에는 고유한 ID가 있습니다. 대부분의 Stripe 리소스와 달리, 제품의 ID를 직접 선택할 수 있습니다. Stripe를 사용하는 다른 시스템과 쉽게 연동할 수 있는 ID를 선택하는 것이 좋습니다. 예를 들어 물리적 상품을 판매한다면, 자체 시스템의 내부 ID를 사용할 수 있습니다.
+
+<br/>
+
+#### Product 이름
+---
+
+Stripe에서 제품을 생성할 때 이름을 제공해야 합니다. 선택적으로 설명이나 이미지와 같은 다른 속성을 추가할 수 있습니다. Stripe Tax를 사용하는 경우, 펫 미용, 전자책, SaaS와 같은 각 제품의 세금 코드도 정의할 수 있습니다. Stripe Tax는 세금 코드를 사용하여 구매 중 판매세를 자동으로 계산하고 징수합니다.
+
+<br/>
+
+### Price (가격)
+---
+
+Stripe에서 Price는 세금 동작, 볼륨 티어, 구독의 반복 간격과 같은 정보를 포함합니다. 각 구매마다 세 가격을 생성할 필요가 없습니다. 하나의 가격에 제품을 판매한다면 하나의 Price만 생성하면 됩니다. 이 가격을 제품의 기본 가격으로 설정할 수도 있습니다.
+
+<br/>
+
+#### 일회성 및 반복 결제
+---
+
+Price는 일회성 또는 반복일 수 있습니다. 구독은 반복 가격을 사용하여 "월 1회" 와 같은 간격으로 고객에게 청구합니다. 동일한 서비스를 여러 다른 간격으로 판매하는 경우, 동일한 제품에 대해 여러 반복 가격을 생성하는 것이 좋습니다.
+
+<br/>
+
+#### 변동 가격
+---
+
+두 가지 유형의 변동 가격을 사용할 수 있습니다.
+
+- 인라인 가격 : 구독, 인보이스, Checkout Session 또는 Payment Link를 생성할 때 고객의 가격을 정의합니다.
+    - 경우에 따라 미리 설정되지 않은 커스텀 가격을 사용하고 싶을 수 있습니다. 예를 들어 Stripe 외부에서 제품 카탈로그를 관리할 때 인라인 가격을 사용할 수 있습니다. 인라인 가격은 API를 통해서만 생성할 수 있습니다.
+- 원하는 만큼 지불 : 팁이나 기부와 같이 고객이 지불할 가격을 입력합니다. 반복 결제는 이 유형의 변동 가격을 지원하지 않습니다. 단일 결제에서 고객이 지풀 금액을 결정하도록 하는 방법을 참조하세요.
+
+<br/>
+
+#### 다중 통화
+---
+
+단일 Price가 여러 통화를 지원할 수 있습니다. 이는 국제적으로 판매할 때 현지화된 가격을 관리하는 데 도움이 됩니다. 예를 들어 미국에서 10 USD, 유럽에서 9 EUR, 일본에서 1300 JPY에 제품을 판매하는 경우, 동일한 `Price` 객체가 세 가지 통화를 모두 포함할 수 있습니다. 각 구매는 연동에서 가격을 사용하는 방법에 따라 가격에 대해 지원되는 통화 중 하나를 사용합니다.
+
+<br/>
+
+#### 다중 가격
+---
+
+제품은 여러 가격을 사용하여 다른 가격 옵션을 정의할 수 있습니다. 가격은 제품 설명을 공유하며, 고객의 영수증과 인보이스에서 동일하게 보입니다. 가격만 다릅니다. 제품에 여러 가격이 연결될 수 있으므로, Checkout Sessions, Payment Links, 인보이스, 견적 또는 구독을 생성할 때 사용할 가격을 지정해야 합니다.
+
+<br/>
+
+#### 단가
+---
+
+대부분의 가격은 고정된 `unit_amount` 를 정의하지만, 다른 티어나 사용량 기반 모델로 작동하도록 가격을 구성할 수도 있습니다.
+
+<br/>
+
+#### 세금 동작
+---
+
+Stripe Tax를 사용하는 경우, 세금이 이미 금액에 포함되어 있는지 또는 추가해야 하는지를 결정하기 위해 가격의 `tax_behavior` 를 지정할 수 있습니다.
+
+<br/>
+
+### Product와 Price 작업하기
+---
+
+
+
+
+<br/>
+
+## Billing API
 ---
 
 **정기 결제 (Billing)**
@@ -62,7 +710,7 @@ Stripe Billing을 사용하면 구독과 인보이스를 손쉽게 관리할 수
 | **Customer (고객)**          | 구독을 구매하는 고객을 나타냅니다. <br>구독에 연결된 Customer 객체를 사용하여 정기 결제를 처리하고 추적하며, <br>고객이 구독 중인 상품을 관리합니다.                                                                           |
 | **Entitlement (권한)**       | 고객이 구독한 서비스 상품에 포함된 기능에 대한 접근 권한을 나타냅니다.<br>고객이 상품을 정기 구매하는 구독을 생성하면, 해당 상품에 연결된 <br>각 기능에 대한 활성  권한이 자동으로 생성됩니다.<br>고객이 서비스에 접근할 때, 활성 권한을 통해 구독에 포함된 기능을 <br>활성화합니다. |
 | **Feature (기능)**           | 고객이 서비스 상품을 구독할 때 접근할 수 있는 기능이나 능력을 나타냅니다.<br>ProductFeature를 생성하여 상품에 기능을 포함시킬 수 있습니다.                                                                                |
-| **Invoice (청구서)**          | 고객이 지불해야 할 금액 명세서로, 초안부터 결제 완료 또는 확정까지 <br>결제 상태를 추적합니다.<br>구독이 자동으로 인보이스를 생성합니다.                                                                                      |
+| **Invoice (명세서)**          | 고객이 지불해야 할 금액 명세서로, 초안부터 결제 완료 또는 확정까지 <br>결제 상태를 추적합니다.<br>구독이 자동으로 인보이스를 생성합니다.                                                                                      |
 | **PaymentIntent (결제 의도)**  | 동적인 결제 플로우를 구축하는 방법입니다.<br>고객 결제 흐름의 생명주기를 추적하고, 규제 요건, Redar 사기 방지 규칙, <br>리디렉션 기반 결제 수단 등에 따라 추가 인증 단계를 트리거합니다.<br>인보이가 자동으로 PaymentIntent를 생성합니다.                   |
 | **PaymentMethod (결제 수단)**  | 고객이 상품 결제에 사용하는 결제 수단입니다.<br>예를 들어 Customer 객체에 신용카드를 저장하고 해당 고객의 <br>정기 결제에 사용할 수 있습니다.<br>주로 Payment Instents나 Setup Instents API와 함께 사용합니다.                         |
 | **Price (가격)**             | 상품의 단가, 통화, 청구 주기를 정의합니다.                                                                                                                                              |
@@ -1329,3 +1977,5 @@ Session portalSession = Session.create(params)
 ---
 
 <https://docs.stripe.com/revenue>
+
+<https://youtu.be/CUAY6IQcVQM>
