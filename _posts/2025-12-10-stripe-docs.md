@@ -1002,6 +1002,146 @@ Stripe Elements를 웹/앱 프론트엔드와 결합하고, 결제 플로우에 
 | 정액제            | 모바일 앱                               | 선불            | 정액 구독을 판매하고, 모바일 앱에 삽입된 커스텀 결제 양식으로 결제 정보를 수집하고 싶을 때 사용                                                                                  | iOS 앱, Androdi 앱 또는 React Native 앱에결제 양식 생성 및 삽입하기            |
 | 정액제            | 원클릭 결제 버튼                           | 선불            | 정액 구독을 판매하고, 원클릭 결제 버튼으로 결제 정보를 수집하고 싶을 때 사용<br><br>Stripe 호스팅 결제 페이지, 결제 플로우에 삽입하는 Stripe 호스팅 양식, 또는 직접 만든 커스텀 양식에서 사용할 수 있습니다.         | 결제 페이지에 완료될 결제 버튼 추가하기                                        |
 
+<br/>
+
+## 4. 구독 연동 구축하기
+---
+
+정기 결제를 받기 위한 구독을 생성하고 관리하는 방법을 알아보자.
+
+<br/>
+
+### 4.1. Stripe 호스팅 페이지 방식
+---
+
+미리 만들어진 호스팅 페이지를 사용하여 결제를 수집하고 구독을 관리합니다.
+
+<br/>
+
+### 4.2. 이 가이드에서 만들 것
+---
+
+이 가이드는 Stripe Checkout을 사용하여 고정 가격 월간 구독을 판매하는 방법을 설명합니다.
+
+배우게 될 내용:
+- 상품 카탈로그를 만들어 비즈니스 모델링하기
+- 사이트에 Checkout 세션 추가하기 (버튼, 성공/취소 페이지 포함)
+- 구독 이벤트를 모니터링하고 서비스 접근 권한 부여하기
+- 고객 포털 설정하기
+- 사이트에 고객 포털 세션 추가하기 (버튼, 리디렉션 포함)
+- 고객이 포털을 통해 구독을 관리하도록 허용하기
+- 유연한 과금 모드를 사용하여 향상된 과금 동작과 추가 기능에 접근하는 방법
+
+연동을 완료한 후 다음 기능을 확장할 수 있습니다:
+- 세금 표시
+- 할인 적용
+- 고객에게 무료 체험 기간 제공
+- 결제 수단 추가
+- 호스팅 인보이스 페이지 연동
+- 설정 모드에서 Checkout 사용
+- 사용량 기반 과금, 가격 구간 설정
+- 비례 정산 관리
+- 고객이 여러 상품을 구독할 수 있게 하기
+- 권한(entitlement)을 연동하여 상품 기능 접근 관리
+
+<br/>
+
+### 4.3. 1단계: Stripe 설정
+---
+
+Stripe 클라이언트를 설치합니다.
+
+```kotlin
+implementation("com.stripe:stripe-java:31.0.0")
+```
+
+선택적으로 Stripe CLI를 설치하세요. CLI는 웹훅 테스트를 제공하고, 상품과 가격을 생성하는 데 사용할 수 있습니다.
+
+```
+brew install stripe/stripe-cli/stripe
+
+stripe login
+```
+
+<br/>
+
+### 4.4. 2단계: 가격 모델 생성
+---
+
+정기 가격 모델은 판매하는 상품/서비스, 비용, 결제 통화, 구독 서비스 기간을 나타냅니다. 가격 모델을 구성하려면 상품(판매 항목)과 가격(금액과 청구 주기)을 생성합니다.
+
+<br/>
+
+### 4.5. 3단계: Checkout Session 생성
+---
+
+웹사이트에 Checkout Session을 생성하는 서버 엔드포인트를 호출하는 결제 버튼을 추가한다.
+
+```html
+<html>
+  <head>
+    <title>Checkout</title>
+  </head>
+  <body>
+    <form action="/create-checkout-session" method="POST">
+      <input type="hidden" name="priceId" value="price_G0FvDp6vZvdwRZ" />
+      <button type="submit">결제하기</button>
+    </form>
+  </body>
+</html>
+```
+
+- 서버에서 다음과 같은 값들로 세션을 생성하는 엔드포인트를 정의합니다.
+	- 고객이 가입하는 구독의 PriceId(프론트엔드에서 전달)
+	- `success_url` : 고객이 결제를 완료한 후 돌아올 페이지 URL
+- 선택적으로 설정
+	- 구독에 청구 주기 설정
+	- 커스텀 텍스트를 사용하여 구독 및 취소 약관 포함
+
+<br/>
+
+2단계에서 일회성 가격을 생성했다면, 해당 가격 ID도 함께 전달하세요. Checkout 세션을 생성한 후, 응답에서 반환된 URL로 고객을 리디렉션합니다.
+
+Checkout 세션을 생성할 때 과금 모드 타입을 `flexible` 로 설정하면 더 정확하고 예측 가능한 구독 동작을 활성화할 수 있습니다.
+
+```java
+// 시크릿 키를 설정합니다. 운영 환경에서는 라이브 시크릿 키로 전환하세요.
+Stripe.apiKey = "***"
+
+// 클라이언트에서 전달된 가격 ID
+//   String priceId = request.queryParams("priceId");
+String priceId = "{{PRICE_ID}}";
+
+SessionCreateParams params = new SessionCreateParams.Builder()
+  .setSuccessUrl("https://example.com/success.html?session_id={CHECKOUT_SESSION_ID}")
+  .setMode(SessionCreateParams.Mode.SUBSCRIPTION)
+  .addLineItem(new SessionCreateParams.LineItem.Builder()
+    // 사용량 기반 과금의 경우 quantity를 전달하지 마세요
+    .setQuantity(1L)
+    .setPrice(priceId)
+    .build()
+  )
+  .setSubscriptionData(
+    new SessionCreateParams.SubscriptionData.Builder()
+      .setBillingMode(SessionCreateParams.SubscriptionData.BillingMode.FLEXIBLE)
+      .build()
+  )
+  .build();
+  
+Session session = Session.create(params);
+
+// Checkout 세션에서 반환된 URL로 리디렉션
+```
+
+- 이 예제에서는 세션ID를 추가하여 `success_url` 을 커스터마이징합니다. 성공 페이지 커스터마이징에서 더 자세히 알아보세요.
+- 대시보드에서 고객에게 받고 싶은 결제 수단을 활성화하세요. Checkout은 다양한 결제  수단을 지원합니다.
+
+<br/>
+
+### 4.6. 4단계: 구독 프로비저닝 및 모니터링
+---
+
+
 
 <br/>
 
