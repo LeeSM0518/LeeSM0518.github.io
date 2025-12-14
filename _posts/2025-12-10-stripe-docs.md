@@ -961,7 +961,10 @@ Product product = resource.update(params);
 
 <br/>
 
+#### 대시보드에서 삭제
+---
 
+제품에 연결된 가격이 있는 경우, 제품을 삭제하기 전에 먼저 
 
 
 <br/>
