@@ -757,6 +757,211 @@ Subscriptions와 함께 반복 가격을 사용할 때
 ## Product와 Price 관리
 ---
 
+제품과 가격을 관리하는 방법을 알아보세요.
+
+대시보드나 API를 통해 제품과 가격을 생성하고 업데이트할 수 있습니다.
+
+변동 가격 생성과 같은 일부 고급 사용 사례는 API를 사용해야 합니다. 제품과 가격이 많거나 Elements를 사용한 커스텀 연동을 구축하는 경우 API를 사용하세요.
+
+- 대시보드 : 코드 작성을 피하고 싶거나 제품과 가격이 몇 개뿐인 경우 대시보드를 사용하세요. 샌드박스에서 가격 모델(가격 모델은 판매하는 제품/서비스, 가격, 결제 통화, 청구 기간(구독용)으로 구성됩니다)을 설정하고 제품 상세 페이지에서 Copy to live mode 버튼을 클릭하세요.
+- API/CLI : API나 Stripe CLI를 사용하여 제품과 가격을 생성하고 관리하세요. 프로덕션 구현에 직접 사용하는 방법입니다.
+
+<br/>
+
+### Product 생성
+---
+
+#### 대시보드에서 제품 및 가격 생성
+---
+
+**제품 생성**
+
+1. More > Product catalog로 이동
+2. +Add product 클릭
+3. 제품 이름 입력
+4. (선택) 설명 추가 - 결제, 고객 포털, 견적에 표시됨
+5. (선택) 제품 이미지 추가 - JPEG, PNG, WEBP (2MB 미만)
+6. (선택) Stripe Tax 사용 시 세금 코드 선택
+7. (선택) 명세서 설명자 입력 - 고객 은행 명세서에 표시됨
+8. (선택) 단위 라벨 입력 - 예: "seat"을 입력하면 "per seat"로 표시
+
+<br/>
+
+**제품의 가격 생성**
+
+대시보드에서 제품을 저장하려면 최소 하나의 가격을 추가해야 합니다.
+
+제품 편집기는 기본적으로 정액 가격 모델을 표시합니다. 고급 가격 옵션을 사용하면 여러 가격을 생성하거나 다른 가격 모델을 사용할 수 있습니다.
+
+가격 모델을 선택합니다.
+1. 정액 (Flat-rate) : 단위당 동일한 가격을 청구합니다. 이 옵션을 사용하는 경우 일회성 또는 반복을 선택합니다. ex) 월 $10
+2. 사용자당 (Per-seat) : 각 가격 단위가 한 명의 사용자를 나타냅니다. 예를 들어 기업이 직원용 소프트웨어를 구매하고 각 직원이 소프트웨어에 접근하려면 라이선스가 필요합니다.
+3. 티어별 (Tiered) : 단가가 수량(볼륨 기반 가격)이나 사용량(단계별 가격)에 따라 변경됩니다.
+4. 사용량 기반 (Usage-based) : 청구 기간 동안 서비스 사용량에 따라 고객에게 청구합니다. ex) API 호출 수 기준
+5. 패키지 (Package) : 패키지 또는 단위 그룹으로 청구합니다. ex) 5개당 $25
+6. 단계별 (Graduated) : 주문의 일부 단위에 다른 가격이 적용될 수 있는 가격 티어를 사용합니다. ex) 100개는 단위당 $10, 다음 50개는 단위당 $5
+7. 볼륨 (Volume) : 판매된 총 단위 수에 따라 각 단위에 동일한 가격을 청구합니다. ex) 50개 구매 -> $10/개, 100개 구매 -> $7/개
+8. 고객 선택 (Customer choose price) : 결제자가 제품, 서비스 또는 명분에 대해 지불할 금액을 결정하도록 합니다. 고객 선택 가격은 Checkout 및 Payment Links에서만 호환됩니다. ex) 기부, 팁
+
+<br/>
+
+#### API로 제품 및 가격 생성
+---
+
+단일 제품과 가격 생성하기
+
+```java
+// 비밀 키를 설정
+Stripe.apiKey = "***";
+
+ProductCreateParams params =
+  ProductCreateParams
+    .builder()
+    .setName("Basic Dashboard")
+    .setDefaultPriceData(
+      ProductCreateParams.DefaultPriceData
+        .builder()
+        .setUnitAmount(1000L) // $10.00 (센트 단위)
+        .setRecurring(
+          ProuctCreateParams.DefaultPriceData.Recurring
+            .builder()
+            .setInterval(
+              ProductCreateParams.DefaultPriceData.Recurring.Interval.MONTH
+            )
+            .build()
+        )
+        .build()
+    )
+    .addExpand("default_price")
+    .build();
+    
+Product product = Product.create(params);
+```
+
+<br/>
+
+설정 수수료 추가하기
+
+```java
+// 비밀 키를 설정
+Stripe.apiKey = "***";
+
+ProductCreateParams params =
+  ProductCreateParams.builder()
+    .setName("Starter Setup")
+    .setDefaultPriceData(
+      ProductCreateParams.DefaultPriceData.builder()
+        .setUnitAmount(2000L)
+        .setCurrency("usd")
+        // recurring 없음 = 일회성 가격
+        .build()
+    )
+    .addExpand("default_price")
+    .build();
+    
+Product product = Product.create(params);
+```
+
+<br/>
+
+### Product 편집
+---
+
+#### 대시보드에서 편집
+---
+
+1. More > Product catalog로 이동합니다.
+2. 수정할 제품을 찾아 더보기 메뉴를 클릭한 다음 Edit product를 클릭합니다.
+3. 제품을 변경합니다.
+4. Save product를 클릭합니다.
+
+<br/>
+
+#### API로 편집
+---
+
+```java
+Stripe.apiKey = "***";
+
+// 기존 제품 조회
+Product resource = Product.retrieve("prod_xxx");
+
+// 업데이트할 파라미터 설정
+ProductUpdateParams params =
+  ProductUpdateParams.builder()
+    .setName("Updated Product")
+    .build();
+    
+// 제품 업데이트 실행
+Product product = resource.update(params);
+```
+
+<br/>
+
+### Product 보관
+---
+
+제품을 비활성화하여 새 인보이스나 구독에 추가할 수 없도록 하려면 보관할 수 있습니다. 제품을 보관해도 해당 제품을 사용하는 기존 구독은 취소될 때까지 활성 상태로 유지되며, 해당 제품을 사용하는 기존 결제 링크는 비활성화됩니다. 연결된 가격이 있는 제품은 삭제할 수 없지만 보관할 수 있습니다.
+
+<br/>
+
+#### 대시보드에서 보관
+---
+
+제품을 보관하려면
+
+1. More > Product catalog로 이동합니다.
+2. 수정할 제품을 찾아 더보기 메뉴를 클릭한 다음 Archive product를 클릭합니다.
+
+제품 보관을 해제하려면
+
+1. Product catalog > Overview 페이지의 Archived 탭으로 이동합니다.
+2. 수정할 제품을 찾아 더보기 메뉴를 클릭한 다음 Unarchive product를 클릭합니다.
+
+<br/>
+
+#### API로 보관
+---
+
+비활성 상태로 새 제품 생성
+
+```java
+ProductCreateParams params =
+  ProductCreateParams.builder()
+    .setActive(false)
+    .setName("My Product")
+    .build();
+    
+Product product = Product.create(params);
+```
+
+<br/>
+
+제품 보관을 해제
+
+```java
+// 기존 제품 조회
+Product resource = Product.retrieve("prod_xxx");
+
+// 활성 상태로 변경
+ProductUpdateParams params =
+  ProductUpdateParams.builder()
+    .setActive(true)
+    .build();
+    
+Product product = resource.update(params);
+```
+
+<br/>
+
+### Product 삭제
+---
+
+연결된 가격이 없는 제품만 삭제할 수 있습니다.
+
+<br/>
+
+
 
 
 <br/>
