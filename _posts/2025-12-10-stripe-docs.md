@@ -655,7 +655,10 @@ Stripe Tax를 사용하는 경우, 세금이 이미 금액에 포함되어 있�
 ### Product와 Price 작업하기
 ---
 
+#### Product와 Price 생성 또는 가져오기
+---
 
+Product와 Price를 시작하는 가장 빠른 방법은 Stripe 대시보드를 통해 생성하는 것입니다.
 
 
 <br/>
