@@ -964,7 +964,261 @@ Product product = resource.update(params);
 #### 대시보드에서 삭제
 ---
 
-제품에 연결된 가격이 있는 경우, 제품을 삭제하기 전에 먼저 
+제품에 연결된 가격이 있는 경우, 제품을 삭제하기 전에 먼저 가격을 삭제하거나 보관해야 합니다. Stripe는 과거 거래를 위해 가격과 제품의 기록을 보관합니다.
+
+제품을 영구 삭제하려면:
+1. More > Product catalog로 이동합니다.
+2. 수정할 제품을 찾아 더보기 메뉴를 클릭한 다음 Delete product를 클릭합니다.
+
+<br/>
+
+#### API로 삭제
+---
+
+```kotlin
+Stripe.apiKey = "***";
+
+Product resource = Product.retrieve("prod_***");
+
+Product product = resource.delete();
+```
+
+<br/>
+
+### Price 생성
+---
+
+제품에 대해 단일 또는 여러 가격을 생성할 수 있습니다. 예를 들어 "starter" 레벨을 월 10 USD, 연 100 USD 또는 일회성 구매로 9 EUR에 제공할 수 있습니다.
+
+가격을 생성한 후에는 `metadata` , `nickname` , `active` 필드만 업데이트할 수 있습니다.
+
+<br/>
+
+#### 대시보드에서 가격 생성
+---
+
+대시보드에서 가격을 생성하려면 먼저 제품을 생성해야 합니다. 그런 다음 가격을 생성할 수 있습니다.
+
+1. 가격 모델을 선택합니다. (Product에서 살펴본 가격 모델과 동일)
+2. (선택) 여러 통화로 판매하는 경우 다른 통화 추가를 클릭하여 각 통화별 청구 금액을 설정합니다.
+3. 반복 가격의 청구 기간을 선택합니다. 드롭다운 옵션 중 원하는 것이 없으면 사용자 정의 기간을 추가할 수 있습니다.
+4. 가격에 세금 포함 여부를 선택합니다. 세금과 구독에 대해 더 알아보세요.
+5. (선택) 가격 설명을 입력합니다. 고객에게는 이 설명이 표시되지 않습니다.
+6. 가격 생성을 클릭하여 가격을 저장합니다. 나중에 가격을 편집할 수 있습니다.
+
+<br/>
+
+#### API로 가격 생성
+---
+
+API를 통해 가격을 생성하려면 create price를 사용합니다.
+
+`unit_amount` 파라미터는 가격에 지정된 통화의 최소 단위를 사용합니다. 이 경우 최소 단위는 센트입니다.
+
+가격을 생성하고 제품을 할당하려면 제품 ID, 단가, 통화, 간격을 전달합니다.
+
+```java
+Stripe.apiKey = "***";
+
+// 반복 가격 생성 (월 $10)
+ProductCreateParams params =
+  PriceCreateParams.builder()
+    .setProduct("prox_xxx")
+    .setUnitAmount(1000L)
+    .setCurrency("usd")
+    setRecurring(
+      PriceCreateParams.Recurring.builder()
+        .setInterval(
+          PriceCreateParams.Recurring.Interval.MONTH
+        )
+        .build()
+    )
+    .build();
+
+Price price = Price.create(params);
+```
+
+<br/>
+
+신규 고객의 설정 수수료는 20 USD 입니다. 이 청구는 구독과 별개이고 한 번만 청구하므로 `interval` 을 전달할 필요가 없습니다.
+
+```java
+// 일회성 가격 생성 ($20 설정비)
+PriceCreateParams params =
+  PriceCreateParams.builder()
+    .setProduct("prod_xxx")
+    .setUnitAmount(2000L)
+    .setCurrency("usd")
+    // recurring 없음 = 일회성
+    .build();
+
+Price price = Price.create(params);
+```
+
+<br/>
+
+### 기본 Price 설정
+---
+
+제품의 기본 가격은 고객에게 가장 일반적으로 표시하고 싶은 가격입니다. 예를 들어 제품에 시즌 세일용으로 여러 가격이 있을 수 있지만, 기본 가격은 정상 가격(세일이 아닌 가격)입니다. 대시보드에서 제품을 생성하면 이 초기 가격이 기본 가격으로 설정됩니다. 기본 가격은 반드시 활성 가격이어야 합니다.
+
+<br/>
+
+#### 대시보드에서 기본 가격 변경
+---
+
+제품의 기본 가격을 변경하려면:
+
+1. More > Product catalog로 이동합니다.
+2. 수정할 제품을 찾아 더보기 메뉴를 클릭한 다음 Edit product를 클릭합니다.
+3. Price information 섹션에서 새 기본 가격으로 설정할 가격을 찾아 Set as default price를 클릭합니다.
+4. Save product를 클릭합니다.
+
+새 가격을 생성하고 기본 가격으로 설정하려면:
+
+1. More > Product catalog로 이동합니다.
+2. 수정할 제품을 찾아 클릭하여 제품 정보 페이지를 엽니다.
+3. Pricing 섹션에서 Add another price 버튼을 클릭합니다.
+4. 가격 정보를 입력하고 Set as default price를 선택합니다.
+5. Add price를 클릭합니다.
+
+<br/>
+
+#### API 기본 가격 설정
+---
+
+```java
+// 제품 조회
+Product resource = Product.retrieve("prod_xxx");
+
+// 기본 가격 설정
+ProductUpdatePrams params =
+  ProductUpdateParams.builder()
+    .setDefaultPrice("price_xxx")
+    .build();
+
+Product product = reosurce.update(params);
+```
+
+<br/>
+
+### 인라인 Product 생성
+---
+
+인라인 가격을 생성하려면, 일회성 결제나 구독을 생성할 때 `price.id` 대신 `price_data` 를 전달합니다. 예를 들어 인라인 가격으로 고객을 원간 구독에 등록하려면:
+
+```java
+SubscriptionCreateParams params =
+  SubscriptionCreateParams.builder()
+    .setCustomer("cus_xxx")
+    .addItem(
+      SubscriptionCreateParams.Item.builder()
+        .setPriceData(
+          SubscriptionCreateParams.PriceData.builder()
+            .setUnitAmount(5000L)
+            .setCurrency("usd")
+            .setProduct("prod_xxx")
+            .setRecurring(
+              SubscriptionCreateParams
+                .Item.PriceData.Recurring.builder()
+                .setInterval(
+                  SubscriptionCreateParams
+                    .Item.PriceData.Recurring
+                    .Interval.MONTH
+                )
+                .build()
+            )
+            .build()
+        )
+        .build()
+    )
+    .build();
+    
+Subscription subscription = Subscription.create(params);
+```
+
+<br/>
+
+### 다중 통화 Price 생성
+---
+
+#### 대시보드에서 생성
+---
+
+1. 제품 카탈로그로 이동하여 제품을 선택합니다.
+2. Edit product를 클릭합니다.
+3. + Add another price를 클릭하여 새 가격을 생성합니다. 기본 통화는 가격의 첫 번째 통화입니다. 모든 가격은 동일한 기본 통화를 가져야 합니다.
+4. 가격에 새 통화 옵션을 추가하려면 + Add a price by currency 를 클릭합니다. 지원되는 통화 목록에서 검색하고 선택합니다.
+5. 새 가격을 저장하려면 Next -> Update product를 클릭합니다.
+
+<br/>
+
+#### API로 생성
+
+`currency` 파라미터는 가격의 기본 통화를 설정합니다. 모든 가격은 동일한 기본 통화를 가져야 합니다. `currency_options` 파라미터는 가격이 지원하는 다른 통화를 설정합니다.
+
+다음 코드는 `usd` 를 기본 통화로, `eur` 유료와 `jpy ` 도 지원하는 가격을 생성하는 방법을 보여줍니다.
+
+```java
+PriceCreateParams params =
+  PriceCreateParams.builder())
+    .setUnitAmount(1000L)
+    .setCurrency("usd")
+    .setProduct("prod_xxx")
+    .putCurrencyOption(
+      "eur",
+      PriceCreateParams.CurrencyOption.builder()
+        .setUnitAmount(990L)
+        .build()
+    )
+    .putCurrencyOption(
+      "jpy",
+      PriceCreateParams.CurrencyOptions.builder()
+        .setUnitAmount(1200L)
+        .build()
+    )
+    .build()
+
+Price price = Price.create(params);
+```
+
+<br/>
+
+**다중 통화 가격 렌더링**
+
+고객에게 해당 통화로 가격을 표시하려면, 다중 통화 가격을 조회하고 `currency_options.<currency>.unit_amount` 필드를 확인합니다. API 응답에너는 기본적으로 `currency_options` 가 포함되지 않습니다.
+
+```java
+PriceRetrieveParams params =
+  PriceRetrieveParams.builder()
+    .andExpand("currency_options")
+    .build();
+    
+Price price = Price.retrieve("price_xxx", params, null);
+```
+
+<br/>
+
+**다중 통화 가격 사용하기**
+
+각 구매는 연동에서 Price를 사용하는 방식에 따라 다중 통화 Price가 지원하는 통화 중 하나를 사용합니다.
+
+- Stripe Checkout
+	- Checkout은 가격이 해당 통화를 지원하는 한, 고객의 IP 주소에서 자동으로 현지 통화를 결정합니다.
+	- 고객의 현지 통화가 지원되지 않으면 Checkout은 가격의 기본 통화를 사용합니다.
+	- Checkout Session이 여러 가격, 쿠폰, 프로모션 코드 또는 배송비를 사용하는 경우, 모두 고객의 현지 통화를 지원해야 합니다.
+	- 그렇지 않으면 Checkout은 기본 통화를 사용합니다.
+	- 모두 동일한 기본 통화를 가져야 하며, 그렇지 않으면 Checkout Session 생성 시 Stripe가 오류를 반환합니다.
+	- 또는 `currency` 파라미터를 사용하여 Checkout이 사용할 통화를 명시적으로 지정할 수 있습니다.
+- Payment Links
+	- Payment Links는 가격이 해당 통화를 지원하는 한, 고객의 IP 주소에서 자동으로 현지 통화를 결정합니다.
+	- 고객의 현지 통화가 지원되지 않으면 결제 링크는 가격의 기본 통화를 사용합니다.
+	- 결제 링크에 여러 가격이 있는 경우, 모두 고객의 현지 통화를 지원해야 합니다. 그렇지 않으면 결제 링크는 기본 통화를 사용합니다.
+	- 모든 가격은 동일한 기본 통화를 가져야 하며, 그렇지 않으면 결제 링크 생성 시 Stripe가 오류를 반환합니다.
+	- 또는 `currency` 파라미터를 사용하여 결제 링크에 사용할 통화를 명시적으로 지정할 수 있습니다.
+- Subscriptions
+	- 구독은 여러 가지 방법으로 생성할 수 있습니다. 
+	- 다중 통화 가격 사용 방식은 구독 생성 방법에 따라 다릅니다.
 
 
 <br/>
