@@ -1057,15 +1057,14 @@ Price price = Price.create(params);
 
 <br/>
 
-### 기본 Price 설정
+#### 기본 Price 설정
 ---
 
 제품의 기본 가격은 고객에게 가장 일반적으로 표시하고 싶은 가격입니다. 예를 들어 제품에 시즌 세일용으로 여러 가격이 있을 수 있지만, 기본 가격은 정상 가격(세일이 아닌 가격)입니다. 대시보드에서 제품을 생성하면 이 초기 가격이 기본 가격으로 설정됩니다. 기본 가격은 반드시 활성 가격이어야 합니다.
 
 <br/>
 
-#### 대시보드에서 기본 가격 변경
----
+**대시보드에서 기본 가격 변경**
 
 제품의 기본 가격을 변경하려면:
 
@@ -1084,8 +1083,7 @@ Price price = Price.create(params);
 
 <br/>
 
-#### API 기본 가격 설정
----
+**API 기본 가격 설정**
 
 ```java
 // 제품 조회
@@ -1102,7 +1100,7 @@ Product product = reosurce.update(params);
 
 <br/>
 
-### 인라인 Product 생성
+#### 인라인 Product 생성
 ---
 
 인라인 가격을 생성하려면, 일회성 결제나 구독을 생성할 때 `price.id` 대신 `price_data` 를 전달합니다. 예를 들어 인라인 가격으로 고객을 원간 구독에 등록하려면:
@@ -1139,11 +1137,9 @@ Subscription subscription = Subscription.create(params);
 
 <br/>
 
-### 다중 통화 Price 생성
----
+**다중 통화 Price 생성**
 
-#### 대시보드에서 생성
----
+*대시보드에서 생성*
 
 1. 제품 카탈로그로 이동하여 제품을 선택합니다.
 2. Edit product를 클릭합니다.
@@ -1153,7 +1149,7 @@ Subscription subscription = Subscription.create(params);
 
 <br/>
 
-#### API로 생성
+*API로 생성*
 
 `currency` 파라미터는 가격의 기본 통화를 설정합니다. 모든 가격은 동일한 기본 통화를 가져야 합니다. `currency_options` 파라미터는 가격이 지원하는 다른 통화를 설정합니다.
 
@@ -1199,7 +1195,8 @@ Price price = Price.retrieve("price_xxx", params, null);
 
 <br/>
 
-**다중 통화 가격 사용하기**
+#### 다중 통화 가격 사용하기
+---
 
 각 구매는 연동에서 Price를 사용하는 방식에 따라 다중 통화 Price가 지원하는 통화 중 하나를 사용합니다.
 
@@ -1219,7 +1216,336 @@ Price price = Price.retrieve("price_xxx", params, null);
 - Subscriptions
 	- 구독은 여러 가지 방법으로 생성할 수 있습니다. 
 	- 다중 통화 가격 사용 방식은 구독 생성 방법에 따라 다릅니다.
+    	- Stripe Checkout : 고객 IP에서 자동 결정. 미지원 시 기본 통화 사용. 여러 가격/쿠폰/프로모션 코드/ 배송비 사용 시 모두 동일한 기본 통화 및 고객 현지 통화 지원 필요
+    	- Stripe Elements : `currency` 파라미터로 명시적 지정. 생략 시 기본 통화 사용
+    	- Subscription Schedules : `phases.currency` 파라미터로 지정. 생략 시 기본 통화 사용
+- Quotes
+    - 다중 통화 Price를 지원하지 않습니다.
+    - 다중 통화 가격으로 견적을 생성하면, 견적은 항상 가격의 기본 통화를 사용합니다.
+- Invoices
+    - 인보이스 항목을 생성할 때, `currency` 파라미터를 사용하여 다중 통화 가격에서 사용할 통화를 지정합니다.
+    - 고객의 기본 통화와 동일하더라도 `currency` 파라미터를 명시적으로 전달해야 합니다.
+    - `currency` 파라미터를 생략하면 다중 통화 가격이 작동하지 않습니다.
 
+<br/>
+
+**단일 통화 가격에서 다중 통화로 마이그레이션**
+
+기존 단일 통화 가격이 있는 경우, 대시보드에서 소급하여 여러 통화를 추가할 수 있습니다.
+
+Checkout이나 Payment Links를 사용하면 다중 통화 가격이 자동으로 적용됩니다. Stripe가 가격이 고객의 현지 통화를 지원한다고 감지하면 해당 통화를 자동으로 사용합니다. 단일 구매에서 여러 가격, 쿠폰, 프로모션 코드 또는 배송비를 사용하는 경우, 모두 고객의 현지 통화를 지원해야 하고 모두 동일한 기본 통화를 가져야 합니다.
+
+구독을 직접 생성하는 경우, `currency` 파라미터를 전달할 때까지 다중 통화 가격이 적용되지 않습니다.
+`currency` 파라미터를 전달하지 않으면 구독은 항상 가격의 기본 통화를 사용합니다.
+
+<br/>
+
+#### Lockup keys (조회 키)
+---
+
+대부분의 비즈니스 웹사이트에 가격 정보를 표시합니다. 이러한 가격이 하드코딩되어 있고 변경하고 싶다면, 프로세스는 종종 수동이며 새 코드 배포가 필요합니다. 이러한 시나리오를 더 잘 관리하려면 Price 객체의 lookup_key 속성을 사용할 수 있습니다. 이 키를 사용하면:
+
+- 프론트엔드에서 다양한 가격으로 렌더링할 수 있습니다.
+- 렌더링된 가격으로 고객에게 청구할 수 있습니다.
+
+<br/>
+
+**가격 생성 시 lookup_key 전달**
+
+```java
+PriceCreateParams params =
+  PriceCreateParams.builder()
+    .setProduct("prod_xxx")
+    .setUnitAmount(1000L)
+    .setCurrency("usd")
+    .setRecurring(
+      PriceCreateParams.Recurring.builder()
+        .setInterval(PriceCreateParams.Recurring.Interval.MONTH)
+        .build()
+    )
+    .setLookupKey("standard_monthly")
+    .build();
+
+Price price = Price.create(params);
+```
+
+<br/>
+
+**lookup_key로 가격 조회**
+
+가격 페이지에 월 10 USD와 같은 텍스트를 하드코딩하고 백엔드에서 price ID를 사용하는 대신, `standard_monthly` 키로 가격을 조회한 다음 프론트엔드에서 렌더링할 수 있습니다.
+
+```java
+PriceListParams params =
+  PriceListParams.builder()
+    .addLookupKey("standard_monthly")
+    .build();
+    
+PriceCollection prices = Price.list(params);
+```
+- 성능을 향상시키려면 가격을 가끔씩만 다시 로드하는 캐싱 레이어를 추가하는 것이 좋습니다.
+- 고객이 구독 또는 결제 버튼을 클릭하면, 위 GET 요청의 가격을 Subscriptions API에 전달합니다.
+
+<br/>
+
+**가격 변경 시 lookup_key 이전**
+
+이제 다양한 가격을 렌더링할 수 있으므로, 신규 사용자에게 월 10 USD 대신 월 20 USD를 청구하기로 결정한 경우, 새 가격을 생성하고 `transfer_lookup_key=true` 를 사용하여 lookup key를 새 가격으로 이전하기만 하면 됩니다.
+
+```java
+PriceCreateParams params =
+  PriceCreateParams.build()
+    .setProduct("prod_xxx")
+    .setUnitAmount(2000L)
+    .setCurrency("usd")
+    .setRecurring(
+      PriceCreateParams.Recurring.builder()
+        .setInterval(PriceCreateParams.Recurring.Interval.MONTH)
+        .build()
+    )
+    .setLookupKey("standard_monthly")
+    // 기존 가격에서 키 이전
+    .setTransferLookupKey(true)
+    .build();
+    
+Price price = Price.create(params)
+```
+
+<br/>
+
+**반올림 (Rounding)**
+
+반올림은 인보이스의 라인 항목 레벨에서 발생합니다. 예를 들어 `unit_amount_decimal = 0.05` 로 가격을 생성하고 해당 가격으로 `quantity = 30` 인 월간 구독을 만들면, 수량에 소수점 금액을 곱한 후 반올림이 발생합니다. 이 경우 라인 항목의 계산된 금액은 `0.05 * 30 = 1.5` 이며, 2센트로 올림됩니다. 여러 라인 항목이 있는 경우, 인보이스의 총액을 합산하기 전에 각각 올림됩니다. 이렇게 하면 소수점 금액은 가격 책정에만 적용되고, 고객에게는 여전히 정수 최소 단위 금액이 청구됩니다.
+
+외부 세금은 세율에 따라 각 라인 항목 금액에 추가됩니다. 자동 세금을 활성화하면, 인보이스 수준 할인을 포함한 인보이스 총액에 세금이 적용되고 반올림됩니다. 라인 항목 수준 또는 인보이스 수준에서 수동 세금을 사용하는 경우, 반올림 적용 방법을 선택할 수 있습니다. 대시보드의 인보이스 설정 페이지를 사용하여 각 라인 항목에 세금을 적용하고 반올림하거나, 인보이스 소계에 세금을 적용하고 반올림하세요.
+
+<br/>
+
+### Price 수정
+---
+
+대시보드나 API에서 가격의 여러 속성을 업데이트할 수 있습니다. 예를 들어 가격의 활성 여부를 변경하거나 메타데이터를 수정할 수 있습니다.
+
+API에서는 가격의 금액을 변경할 수 없습니다. 대신 새 금액으로 새 가격을 생성하고, 새 가격의 ID로 전환한 다음, 기존 가격을 비활성으로 업데이트하는 것이 좋습니다.
+
+<br/>
+
+#### 대시보드에서 가격 수정
+---
+
+1. More > Product catalog로 이동합니다.
+2. 수정할 가격의 제품을 찾아 클릭합니다.
+3. 수정할 가격을 찾아 오버플로 메뉴를 클릭한 다음 Edit price를 클릭합니다.
+4. 가격을 변경합니다. 이 시점에서 다른 가격을 추가할 수도 있습니다.
+5. Save를 클릭합니다.
+
+<br/>
+
+#### API로 가격 수정
+---
+
+API를 통해 가격을 수정하려면 update_price를 사용하고 변경할 파라미터를 지정합니다. 파라미터를 지정하지 않으면 변경되지 않습니다.
+
+```java
+Price resource = Price.retrieve("price_xxx");
+
+PriceUpdateParams params =
+  PriceUpdateParams.builder()
+    .setLookupKey("MY_LOOKUP_KEY")
+    .build();
+    
+Price price = resource.update(params);
+```
+
+<br/>
+
+### Price 보관
+---
+
+가격을 새 인보이스나 구독에 추가할 수 없도록 비활성화하려면 보관할 수 있습니다. 가격을 보관해도 해당 가격을 사용하는 기존 구독은 취소될 때까지 활성 상태로 유지되며, 해당 제품을 사용하는 기존 결제 링크는 비활성화됩니다.
+
+<br/>
+
+#### 대시보드에서 가격 보관
+---
+
+1. 가격 보관:
+    1. More > Product catalog로 이동합니다.
+    2. 수정할 제품을 찾아 오버플로 메뉴를 클릭합니다.
+    3. 제품 정보 페이지에서 수정할 가격을 찾아 옆의 오버플로 메뉴를 클릭하고 Archive price를 클릭합니다.
+2. 가격 보관 해제
+    1. More > Product catalog로 이동합니다.
+    2. 수정할 제품을 찾아 오버플로 메뉴를 클릭합니다.
+    3. 제품 정보 페이지에서 수정할 가격을 찾아 옆의 오버플로 메뉴를 클릭하고 Unarchive price를 클릭합니다.
+
+<br/>
+
+#### API로 가격 보관
+---
+
+API를 사용하여 가격을 보관하려면 `active` 파라미터를 `false` 로 변경합니다.
+
+```java
+Price resource = Price.retrieve("price_xxx");
+
+PriceUpdateParams params =
+  PriceUpdateParams.builder()
+    .setLookupKey("MY_LOOKUP_KEY")
+    .setActive(false)
+    .build();
+    
+Price price = resource.update(params);
+```
+- API를 사용하여 가격을 보관 해제 하려면 `active` 파라미터를 `true` 로 변경합니다.
+
+<br/>
+
+#### Price 삭제
+---
+
+한 번도 사용한 적 없는 가격만 삭제할 수 있습니다. 그렇지 않으면 보관할 수 있습니다.
+
+<br/>
+
+#### 대시보드에서 가격 삭제
+---
+
+1. More > Product catalog로 이동합니다.
+2. 수정할 제품을 찾아 오버플로 메뉴를 클릭합니다.
+3. 제품 정보 페이지에서 삭제할 가격을 찾아 옆의 오버플로 메뉴를 클릭하고 Delete price를 클릭합니다.
+
+<br/>
+
+#### API로 가격 삭제
+---
+
+API를 통해서는 가격을 삭제할 수 없습니다. 가격을 보관하여 `active=false` 로 표시할 수 있으며, 이는 구매에 사용할 수 없음을 나타냅니다.
+
+<br/>
+
+### 가격 정보 표시
+---
+
+제품과 가격을 생성한 후, 웹 사이트에 가격표를 삽입하여 고객에게 가격 정보를 표시할 수 있습니다. 고객이 구독 옵션을 선택하면 결제 페이지로 바로 이동합니다. 코드를 작성하지 않고도 대시보드에서 직접 구성, 커스터마이징, 업데이트할 수 있습니다.
+
+<br/>
+
+### 제품 및 가격 가져오기
+---
+
+매우 큰 제품 카탈로그가 있는 경우, Products API를 사용하여 프로그래밍 방식으로 카탈로그를 가져올 수 있습니다. 제품 카탈로그를 Stripe로 가져오는 경우, 제품 관리 시스템이나 CSV 파일 등 무엇이든 시작 데이터 소스로 사용할 수 있습니다.
+
+Products API를 사용하면 시스템의 각 제품에 대해 Stripe에 제품을 생성합니다. 시스템의 제품을 Stripe의 제품에 매핑하려면, 가져오는 각 제품에 고유한 `id` 를 할당합니다. 각 제품에 대해 Prices API를 사용하여 해당 가격을 만듭니다. 새로 생성된 가격의 `id` 를 저장해야 합니다. 연동에서 제품과 가격을 사용할 때 이 id를 전달해야 합니다.
+
+대시보드를 확인하거나 API를 사용하여 모든 제품을 목록 조회하여 가져오기를 확인합니다.
+
+<br/>
+
+#### 가져온 가격 삭제
+---
+
+개발 중에 테스트를 위해 이 스크립트를 여러 번 실행해야 할 수 있습니다. 동일한 Product ID를 사용하면 해당 ID의 Product가 이미 존재한다는 오류가 표시됩니다. 아직 Product를 사용하지 않았다면 Stripe 대시보드를 사용하여 삭제할 수 있습니다.
+
+1. Products 대시보드로 이동하여 Product를 찾습니다.
+2. Pricing 섹션에서 Price 옆의 오버플로 메뉴를 클릭하고 Delete Price를 선택합니다.
+3. 페이지 상단의 오버플로 메뉴를 클릭하고 Delete Product를 선택합니다.
+
+<br/>
+
+#### 제품 및 가격 동기화
+---
+
+가져오기를 여러 번 실행해야 할 수 있습니다. 가져오기를 테스트하는 스크립트를 만들고, 원하는 경우 원본 데이터 소스를 Stripe와 동기화할 수 있습니다. 스크립트를 멱등적이고 오류에 강하게 만들려면, 먼저 제품 생성을 안전하게 시도한 다음 제품이 이미 존재하면 업데이트할 수 있습니다.
+
+제품 카탈로그를 Stripe와 동기화된 상태로 유지하려면, webhook 이나 다른 메커니즘을 사용하여 Stripe에서 제품 업데이트를 트리거합니다. 프로그래밍 방식으로 제품을 업데이트하려면 다음 패턴을 사용합니다.
+
+<br/>
+
+**1단계 기존 가격 확인**
+
+먼저 모든 가격 목록 조회 API로 제품과 연결된 기존 가격을 찾아 가격이 여전히 데이터 소스와 일치하는지 확인합니다. 각 제품에는 정확히 하나의 활성 가격이 있어야 합니다.
+
+```java
+PriceListParams params =
+  PriceListParams.builder()
+    .setProduct("prod_xxx")
+    .setActive(true)
+    .build();
+    
+PriceCollection prices = Price.list(params);
+```
+
+<br/>
+
+**2단계: 금액 변경 확인**
+
+다음으로, 가격의 소수점 금액이 변경되었는지 확인합니다. `unit_amount_decimal` 필드는 센트 단위의 단가를 표시합니다.
+
+<br/>
+
+**3단계: 금액이 다른 경우 새 가격 생성**
+
+금액이 일치하지 않으면 새 가격을 생성해야 합니다. 새 가격을 생성할 때 원래 제품의 product ID, 통화, 업데이트된 `unit_amount` 가격을 지정합니다.
+
+```java
+PriceCreateParams params =
+  PriceCreateParams.builder()
+    .setProduct("prod_xxx")
+    .setUnitAmount(2000L)
+    .setCurrency("usd")
+    .build();
+    
+Price price = Price.create(params);
+```
+
+<br/>
+
+**4단계: 기존 가격 비활성화**
+
+기존 가격을 `active=false` 로 업데이트합니다.
+
+```java
+Price resource = Price.retrieve("price_xxx");
+
+PriceUpdateParams params =
+  PriceUpdateParams.builder()
+    .setActive(false)
+    .build();
+    
+Price price = resource.update(params);
+```
+
+<br/>
+
+### 연동에서 제품 및 가격 사용
+---
+
+여러 가지 Stripe 연동 경로에서 제품과 가격을 사용할 수 있습니다.
+
+- Stripe Checkout
+    - Checkout Session을 생성할 때 Price ID를 지정합니다.
+        - 일회성 가격을 사용하는 경우, 결제를 수락할 때 Checkout Session 생성 방법을 참조하세요.
+        - 구독을 생성하는 경우, 구독 연동을 구축할 때 Checkout Session 생성 방법을 참조하세요.
+- Payment Links
+    - Payment Links를 사용하는 경우, 다음 단계는 결제 링크를 생성할 제품을 선택하는 것입니다.
+- Subscriptions
+    - Stripe Checkout으로 구독을 생성하는 경우, Checkout Session을 생성할 때 Price ID를 지정합니다.
+    - Stripe Elements로 구독을 생성하는 경우, 구독을 생성할 때 Price ID를 지정합니다.
+- Quotes
+    - Quotes를 사용하는 경우, 대시보드를 사용한다면 다음 단계는 견적을 생성할 때 제품을 선택하는 것입니다.
+    - Quotes 연동을 위한 코드를 작성하는 경우, 견적을 생성할 때 `price.id` 를 지정합니다.
+- Invoices
+    - Invoices를 사용하는 경우, 대시보드로 인보이슬르 생성할 때 다음 단계는 제품을 선택하는 것입니다.
+    - API를 사용하는 경우 `price.id` 를 지정합니다.
+
+<br/>
+
+### 테스트
+---
+
+테스트 환경에서 라이브 모드로 제품을 복사하여 다시 생성할 필요가 없도록 할 수 있습니다. 제품과 연결된 가격도 함께 복사됩니다. 대시보드의 제품 상세 페이지에서 오른쪽 상단의 Copy to live mode를 클릭합니다.
+
+테스트 제품은 라이브 모드로 한 번만 복사할 수 있습니다. 복사 후 테스트 제품을 업데이트해도 라이브 제품에는 변경 사항이 반영되지 않습니다.
 
 <br/>
 
