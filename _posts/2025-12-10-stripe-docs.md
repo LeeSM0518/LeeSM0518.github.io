@@ -3255,6 +3255,194 @@ Stripe 대시보드를 사용하여 임베드 가능한 가격표를 만들 수 
 
 <br/>
 
+## Stripe API 개요
+---
+
+### API 레퍼런스
+---
+
+Stripe API는 REST 아키텍처를 기반으로 구성되어 있습니다. API는 예측 가능한 리소스 지향 URL을 가지며, form-encoded 요청 본문을 받고, JSON-encoded 응답을 반환하며, 표준 HTTP 응답 코드, 인증 및 동사를 사용합니다.
+
+Stripe API를 테스트 모드에서 사용할 수 있으며, 이는 라이브 데이터에 영향을 주거나 은행 네트워크와 상호작용하지 않습니다. 요청을 인증하는 데 사용하는 API 키가 요청이 라이브 모드인지 테스트 모드인지 결정합니다. 테스트 모드는 일부 v2 API를 지원합니다.
+
+Stripe API는 대량 업데이트를 지원하지 않습니다. 요청당 하나의 객체에서만 작업할 수 있습니다.
+
+Stripe API는 새로운 버전을 릴리스하고 기능을 맞춤화함에 따라 계정마다 다릅니다. 로그인하여 테스트 키와 데이터가 포함된 문서를 확인하세요.
+
+<br/>
+
+### 인증
+---
+
+Stripe API는 API 키를 사용하여 요청을 인증합니다. Stripe 대시보드에서 API 키를 확인하고 관리할 수 있습니다.
+
+테스트 모드 비밀 키는 `sk_test_` 접두사를 가지며, 라이브 모드 비밀 키는 `sk_live_` 접두사를 가집니다. 또는 세분화딘 권한을 위해 제한된 API 키를 사용할 수 있습니다.
+
+API 키는 많은 권한을 가지므로 안전하게 보관해야 합니다.
+
+<br/>
+
+#### 인증 방법
+---
+
+API 인증은 HTTP Basic Auth를 통해 수행합니다. API 키를 기본 인증 사용자 이름 값으로 제공합니다. 비밀번호는 제공할 필요가 없습니다.
+
+Bearer 인증을 통해 인증해야 하는 경우(ex. 크로스 오리진 요청의 경우) `-u sk_test_xxx:` 대신 `-H "Authorization: Bearer sk_test_xxx"` 를 사용합니다.
+
+```java
+// 전역 API 키
+Stripe.apiKey = "sk_test_xxxx";
+
+// 요청별 API 키
+RequestOptions requestOptions = RequestOptions.builder()
+  .setApiKey("sk_test_xxx")
+  .build();
+  
+Charge charge = Charge.retrieve(
+  "ch_***",
+  requestOptions
+);
+```
+
+<br/>
+
+### 오류
+---
+
+Stripe는 API 요청의 성공 또는 실패를 나타내기 위해 일반적인 HTTP 응답 코드를 사용합니다. 일반적으로 `2xx` 범위의 코드는 성공을 나타냅니다. `4xx` 범위의 코드는 제공된 정보로 인해 실패한 오류를 나타냅니다. `5xx` 범위의 코드는 Stripe 서버의 오류를 나타냅니다.
+
+프로그래밍 방식으로 처리할 수 있는 일부 `4xx` 오류에는 보고된 오류를 간략하게 설명하는 오류 코드가 포함됩니다.
+
+<br/>
+
+#### HTTP 상태 요약
+---
+
+|코드|이름|설명|
+|---|---|---|
+|**200**|OK|모든 것이 예상대로 작동했습니다.|
+|**400**|Bad Request|요청이 허용되지 않았습니다. 종종 필수 파라미터 누락 때문입니다.|
+|**401**|Unauthorized|유효한 API 키가 제공되지 않았습니다.|
+|**402**|Request Failed|파라미터는 유효했지만 요청이 실패했습니다.|
+|**403**|Forbidden|API 키에 요청을 수행할 권한이 없습니다.|
+|**404**|Not Found|요청한 리소스가 존재하지 않습니다.|
+|**409**|Conflict|요청이 다른 요청과 충돌합니다(동일한 멱등성 키 사용 등).|
+|**424**|External Dependency Failed|Stripe 외부의 종속성 실패로 인해 요청을 완료할 수 없습니다.|
+|**429**|Too Many Requests|너무 많은 요청이 API에 너무 빠르게 도달했습니다. 요청의 지수 백오프를 권장합니다.|
+|**500, 502, 503, 504**|Server Errors|Stripe 측에서 문제가 발생했습니다. (드뭅니다.)|
+
+<br/>
+
+#### 오류 유형
+---
+
+
+| 유형                      | 설명                                                                                |
+| ----------------------- | --------------------------------------------------------------------------------- |
+| `api_error`             | API 오류는 다른 유형의 문제(ex. Stripe 서버의 일시적인 문제)를 포함하며, 매우 드뭅니다.                         |
+| `card_error`            | 카드 오류는 처리해야 할 가장 일반적인 유형의 오류입니다. 사용자가 어떤 이유로 청구할 수 없는 카드를 입력할 때 발생합니다.            |
+| `idempotency_error`     | 멱등성 오류는 `Idempotency-Key` 가 첫 번째 요청의 API 엔드포인트 및 파라미터와 일치하지 않는 요청에서 재사용될 때 발생합니다. |
+| `invalid_request_error` | 유효하지 않은 요청 오류는 요청에 유효하지 않은 파라미터가 있을 때 발생합니다.                                      |
+
+<br/>
+
+#### 오류 객체 속성
+---
+
+**핵심 속성**
+
+| 속성        | 유형               | 설명                                                                                        |
+| --------- | ---------------- | ----------------------------------------------------------------------------------------- |
+| `type`    | enum             | 반환된 오류 유형. `api_error` , `card_eror` , `idempotency_error` , `invalid_request_error` 중 하나 |
+| `code`    | string, nullable | 프로그래밍 방식으로 처리할 수 있는 일부 오류의 경우 보고된 오류 코드를 나타내는 짧은 문자열                                      |
+| `message` | string, nullable | 오류에 대한 자세한 내용                                                                             |
+| `param`   | string, nullable | 오류와 관련된 파라미터                                                                              |
+| `doc_url` | string, nullable | 보고된 오류 코드에 대한 추가 정보 URL                                                                   |
+
+<br/>
+
+#### 객체 참조 속성
+---
+
+
+| 속성                    | 유형               | 설명                                               |
+| --------------------- | ---------------- | ------------------------------------------------ |
+| `payment_intent`      | object, nullable | PaymentIntent와 관련된 요청에서 반환된 오류의 PaymentIntent 객체 |
+| `payment_method`      | object, nullable | PaymentMethod와 관련된 요청에서 반환된 오류와 PaymentMethod 객체 |
+| `payment_method_type` | string, nullable | 오류가 결제 수단 유형에 특정한 경우 문제가 있는 결제 수단 유형             |
+| `setup_intent`        | object, nullable | SetupIntent와 관련된 요청에서 반환된 오류의 SetupIntent 객체     |
+| `source`              | object, nullable | 소스와 관련된 요청에서 반환된 오류의 소스 객체                       |
+| `request_log_url`     | string, nullable | 대시보드의 요청 로그 항목에 대한 URL                           |
+
+<br/>
+
+### 오류 처리
+---
+
+클라이언트 라이브러리는 청구 실패, 유효하지 않은 파라미터, 인증 오류, 네트워크 사용 불가 등 다양한 이유로 예외를 발생시킵니다. 가능한 모든 API 예외를 적절하게 처리하는 코드를 작성하는 것을 권장합니다.
+
+- 관련 가이드 : [오류 처리](https://docs.stripe.com/error-handling)
+
+<br/>
+
+#### 예외 유형 요약
+---
+
+
+| 예외 유형               | 설명                           | 처리 방법                  |
+| ------------------- | ---------------------------- | ---------------------- |
+| CardError           | 카드가 거부됨                      | 사용자에게 메시지 표시, 다른 카드 요청 |
+| RateLimitError      | API에 너무 많은 요청이 너무 빠르게 전송됨    | 지수 백오프로 재시도            |
+| InvalidRequestError | Stripe API에 유효하지 않은 파라미터 제공  | 파라미터 수정 후 재시도          |
+| AuthenticationError | Strip API 인증 실패 (API 키 변경 등) | API 키 확인               |
+| APIConnectionError  | Stripe와의 네트워크 통신 실패          | 재시도 또는 네트워크 확인         |
+| StripeError         | 기타 Stripe 관련 오류              | 일반 오류 메시지 표시           |
+
+<br/>
+
+### 응답 확장
+---
+
+많은 객체에서 `expand` 요청 파라미터를 사용하여 확장된 응답으로 추가 정보를 요청할 수 있습니다. 이 파라미터는 모든 API 요청에서 사용 가능하며, 해당 요청의 응답에만 적용됩니다. 두 가지 방법으로 응답을 확장할 수 있습니다.
+
+<br/>
+
+#### 확장 방법
+---
+
+1. 관련 객체 ID 확장
+	1. 많은 경우 객체는 응답 속성에 관해 객체의 ID를 포함합니다.
+	2. 예를 들어 `Charge` 에는 연결된 Customer ID가 있을 수 있습니다. expand 요청 파라미터를 사용하여 이러한 객체를 인라인으로 확장할 수 있습니다.
+	3. 이 문서의 `expandable` 레이블은 객체로 확장할 수 있는 ID 필드로 나타냅니다.
+2. 기본적으로 포함되지 않는 필드 요청
+	1. 일부 사용 가능한 필드는 기본적으로 응답에 포함되지 않습니다.
+	2. 예를 들어 Issuing Card 객체의 `number` , `cvc` 필드가 있습니다. `expand` 요청 파라미터를 사용하여 이러한 필드를 확정된 응답으로 요청할 수 있습니다.
+
+```java
+Stripe.apiKey = "sk_test_***";
+
+List<String> expandList = new ArrayList<>();
+expandList.add("customer");
+expandList.add("payment_intent.customer");
+
+Map<String, Object> params = new HashMap<>();
+params.put("expand", expandList);
+
+Carge charge = Chartge.retrieve("ch_***", params, null);
+```
+
+- 일반적인 확장 사용 사례
+	- Charge에서 Customer 정보 가져오기, `expand: ['customer']`
+	- PaymentIntent에서 결제 수단 가져오기 : `expand: ['payment_method']`
+	- Subscription에서 최신 인보이스 가져오기 : `expand: ['latest_invoice']`
+	- Invoice에서 구독 및 고객 정보 가져오기 : `expand: ['subscription', 'customer']`
+	- Charge 목록에서 고객 정보 가져오기 : `expand: ['daata.customer']`
+
+<br/>
+
+
+<br/>
+
 ## Reference
 ---
 
