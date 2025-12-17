@@ -3440,6 +3440,161 @@ Carge charge = Chartge.retrieve("ch_***", params, null);
 
 <br/>
 
+### 멱등성 요청
+---
+
+API는 동일한 작업을 실수로 두 번 수행하지 않고 요청을 안전하게 재시도할 수 있도록 멱등성을 지원합니다. 객체를 생성하거나 업데이트할 때 멱등성 키를 사용합니다. 그러면 연결 오류가 발생해도 두 번째 객체를 생성하거나 업데이트를 두 번 수행할 위험 없이 안전하게 요청을 반복할 수 있습니다.
+
+멱등성 요청을 수행하려면 요청 옵션에 추가 `IdempotencyKey` 요소를 제공합니다.
+
+<br/>
+
+#### 핵심 규칙
+---
+
+| 규칙      | 설명                                                            |
+| ------- | ------------------------------------------------------------- |
+| 결과 저장   | Stripe는 주어진 멱등성 키에 대한 첫 번째 요청의 상태 코드와 본문을 저장합니다.              |
+| 후속 요청   | 동일한 키를 가진 후속 요청은 `500` 오류를 포함하여 동일한 결과를 반환합니다.                |
+| 키 생성    | 클라이언트가 멱등성 키를 생성합니다. V4 UUID 또는 충돌을 피할 충분한 엔트로피를 가진 랜덤 문자열 권장 |
+| 키 길이    | 최대 255자                                                       |
+| 키 만료    | 최소 24시간 후 시스템에서 자동 제게, 원본이 제거된 후 키를 재사용하면 새 요청 생성             |
+| 파라미터 비교 | 멱등성 레이어는 들어오는 파라미터를 원래 요청의 파라미터와 비교하고 동일하지 않으면 오류 발생          |
+
+- 모든 POST 요청은 멱등성 키를 받습니다.
+- 검증 실패, 동시 요청 충돌, 엔드포인트 실행 전에는 재시도할 수 있습니다.
+
+<br/>
+
+#### 예시
+---
+
+```java
+Stripe.apiKey = "sk_test_***";
+
+Map<String, Object> customerParams = new HashMap<>();
+customerParams.put("description", "내 첫 번째 테스트 고객");
+
+RequestOptions options =
+  RequestOptions.builder()
+    .setIdempoentcyKey("***")
+    .build();
+    
+Customer customer = Customer.create(customerParams, options);
+```
+
+<br/>
+
+### include 의존 응답 값 (API v2)
+---
+
+일부 API v2 응답은 실제 값과 관계없이 기본적으로 특정 속성에 대해 null 값을 포함합니다. 이는 기본 응답 구조를 유지하면서 응답 페이로드의 크기를 줄입니다. 해당 속성의 실제 값을 검색하려면 `include` 배열 요청 파라미터에 저장합니다.
+
+주어진 요청에서 `include` 파라미터를 사용해야 하는지 확인하려면 요청 설명을 확인하세요. `include` 파라미터의 enum 값은 `include` 파라미터에 의존하는 응답 속성을 나타냅니다.
+
+<br/>
+
+#### 해시 속성의 include 동작
+---
+
+| 상황            | 동작                                                                  |
+| ------------- | ------------------------------------------------------------------- |
+| 단일 include 값  | 전체 해시를 반환하려면 해당 해시 이름을 지정. 예: `identity` 를 지정하면 전체 `identity` 해시 반환 |
+| 중첩된 include 값 | 자식 속성과 연결된 여러 `include` 값 지정 필요. 예: `configuration` 해시의 경우 개별 구성 지정 |
+| 부분 지정         | 일부만 지정하면 지정된 구성은 실제 값 반환, 지정되지 않은 구성은 null 반환                       |
+| 미지정           | 아무것도 지정하지 않으면 해당 해시는 응답에서 null                                      |
+
+
+<br/>
+
+#### 예시
+---
+
+**요청**
+
+```java
+StripeClient client = new StripeClient("***");
+
+AccountCreateParams params =
+  AccountCreateParams.builder()
+    .addInclude(AccountCreateParams.Include.IDENTITY)
+    .addInclude(AccountCreateParams.Include.CONFIGURATION__CUSTOMER)
+    .build();
+    
+Account account = client.v2().core().accounts().create(params);
+```
+
+<br/>
+
+**응답**
+
+```json
+{
+  "id": "acct_123",
+  "object": "v2.core.account",
+  "applied_configurations": [
+    "customer",
+    "merchant"
+  ],
+  "configuration": {
+    "customer": {
+      "automatic_indirect_tax": {
+        // ... 실제 값
+      },
+      "billing": {
+        // ... 실제 값
+      },
+      "capabilities": {
+        // ... 실제 값
+      }
+      // ...
+    },
+    "merchant": null,      // ← include에 미포함
+    "recipient": null      // ← include에 미포함
+  },
+  "contact_email": "furever@example.com",
+  "created": "2025-06-09T21:16:03.000Z",
+  "dashboard": "full",
+  "defaults": null,        // ← include에 미포함
+  "display_name": "Furever",
+  "identity": {
+    "business_details": {
+      "doing_business_as": "FurEver",
+      "id_numbers": [
+        {
+          "type": "us_ein"
+        }
+      ],
+      "product_description": "Saas pet grooming platform",
+      "structure": "sole_proprietorship",
+      "url": "http://accessible.stripe.com"
+    },
+    "country": "US"
+  },
+  "livemode": true,
+  "metadata": {},
+  "requirements": null     // ← include에 미포함
+}
+```
+
+<br/>
+
+#### expand vs include 비교 (v1 vs v2)
+---
+
+
+| 특정        | expand (API v1)     | include (API v2)        |
+| --------- | ------------------- | ----------------------- |
+| 목적        | 관련 객체 ID를 전체 객체로 확장 | 기본적으로 null인 속성의 실제 값 검색 |
+| 기본 동작     | ID만 반환              | null 반환                 |
+| 파라미터 지정 시 | 전체 객체 반환            | 실제 값 반환                 |
+| 이점        | 추가 API 호출 감소        | 응답 페이로드 크기 감소           |
+| 중첩 지원     | `.` 표기법             | `.` 표기법                 |
+
+<br/>
+
+
+
 
 <br/>
 
