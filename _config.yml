@@ -215,6 +215,7 @@ exclude:
   - "*.config.js"
   - package*.json
   - templates
+  - draft # 미완성 초안 보관. 빼면 /draft/ 로 공개된다
 
 jekyll-archives:
   enabled: [categories, tags]
